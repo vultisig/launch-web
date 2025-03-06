@@ -1,0 +1,13 @@
+export const alertError = "#ff5c5c";
+export const backgroundPrimary = "#02122b";
+export const backgroundSecondary = "#061b3a";
+export const backgroundTertiary = "#11284a";
+export const borderNormal = "#1b3f73";
+export const buttonPrimary = "#33e6bf";
+export const buttonPrimaryHover = "#0fbf93";
+export const buttonSecondary = "#2155df";
+export const buttonSecondaryHover = "#1e6ad1";
+export const neutral300 = "#97acbf";
+export const textPrimary = "#f0f4fc";
+export const textLight = "#c9d6e8";
+export const textExtraLight = "#8295ae";
