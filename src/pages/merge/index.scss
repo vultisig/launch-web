@@ -1,6 +1,111 @@
 @use "~variables" as *;
 
 .merge-page {
+  .bridge-tab {
+    .ant-input-number-input {
+      font-size: rem(16);
+      font-weight: 500;
+      height: rem(56);
+      padding: 0 rem(16);
+    }
+
+    .ant-input-number {
+      background-color: transparent;
+      border: solid rem(1) $border-normal;
+      border-radius: rem(12);
+      box-shadow: none;
+      color: $text-light;
+      outline: none;
+      width: 100%;
+    }
+
+    .coins {
+      display: flex;
+      flex-direction: column;
+      gap: rem(12);
+
+      .item {
+        display: flex;
+        flex-direction: column;
+        gap: rem(8);
+        width: 100%;
+
+        .arrow {
+          position: absolute;
+          right: rem(8);
+          top: 50%;
+          transform: translateY(-50%);
+        }
+
+        .logo {
+          height: rem(24);
+          width: rem(24);
+        }
+
+        .dropdown {
+          align-items: center;
+          background-color: $background-tertiary;
+          border-radius: rem(12);
+          display: flex;
+          font-weight: 500;
+          gap: rem(8);
+          height: rem(56);
+          padding: 0 rem(12);
+          position: relative;
+        }
+
+        .label {
+          font-size: rem(16);
+          font-weight: 500;
+          line-height: rem(16);
+        }
+      }
+
+      .refresh {
+        align-items: center;
+        background-color: $button-secondary;
+        border: solid rem(1) $border-normal;
+        border-radius: rem(12);
+        cursor: pointer;
+        display: flex;
+        height: rem(36);
+        justify-content: center;
+        margin: 0 auto;
+        width: rem(36);
+
+        svg {
+          height: rem(20);
+          width: rem(20);
+        }
+      }
+
+      .group {
+        display: flex;
+        gap: rem(12);
+      }
+    }
+
+    .price {
+      font-weight: 500;
+      font-size: rem(13);
+    }
+
+    .percentage {
+      display: flex;
+      gap: rem(12);
+
+      li {
+        border: solid rem(1) $border-normal;
+        border-radius: rem(8);
+        cursor: pointer;
+        font-size: rem(16);
+        font-weight: 500;
+        line-height: rem(34);
+        padding: 0 rem(12);
+      }
+    }
+  }
+
   .merge-tab {
     .coin {
       align-items: center;
@@ -28,12 +133,11 @@
       }
     }
 
-    .switch {
+    .pointer {
       align-items: center;
       background-color: $button-secondary;
       border: solid rem(1) $border-normal;
       border-radius: rem(12);
-      cursor: pointer;
       display: flex;
       height: rem(36);
       justify-content: center;
@@ -55,6 +159,58 @@
       gap: rem(8);
       padding: rem(12);
     }
+
+    .balance {
+      display: flex;
+      flex-direction: column;
+      gap: rem(16);
+
+      .ant-input-number-input {
+        font-size: rem(16);
+        font-weight: 500;
+        height: rem(56);
+        padding: 0 rem(16);
+      }
+
+      .ant-input-number {
+        background-color: transparent;
+        border: solid rem(1) $border-normal;
+        border-radius: rem(12);
+        box-shadow: none;
+        color: $text-light;
+        outline: none;
+        width: 100%;
+      }
+
+      .result {
+        border: solid rem(1) $border-normal;
+        border-radius: rem(12);
+        color: $text-extra-light;
+        font-weight: 500;
+        line-height: rem(54);
+        padding: 0 rem(16);
+      }
+    }
+
+    .price {
+      font-weight: 500;
+      font-size: rem(13);
+    }
+
+    .percentage {
+      display: flex;
+      gap: rem(12);
+
+      li {
+        border: solid rem(1) $border-normal;
+        border-radius: rem(8);
+        cursor: pointer;
+        font-size: rem(16);
+        font-weight: 500;
+        line-height: rem(34);
+        padding: 0 rem(12);
+      }
+    }
   }
 
   .ant-btn {
@@ -69,7 +225,7 @@
   .ant-tabs-tab {
     flex: 1;
     justify-content: center;
-    margin: 0;
+    margin: 0 !important;
   }
 
   .ant-tabs-nav-list {
@@ -83,7 +239,7 @@
   .ant-tabs-tabpane-active {
     display: flex;
     flex-direction: column;
-    gap: rem(16);
+    gap: rem(12);
   }
 
   .ant-tabs {
@@ -92,6 +248,55 @@
     display: flex;
     flex-direction: column;
     gap: rem(16);
-    padding: rem(4) rem(16) rem(16);
+    padding: rem(4) rem(12) rem(12);
+  }
+}
+
+@media (min-width: rem(576)) {
+  .merge-page {
+    .bridge-tab {
+      .coins {
+        gap: rem(16);
+
+        .group {
+          gap: rem(16);
+        }
+      }
+    }
+
+    .merge-tab {
+      .coin {
+        width: auto;
+      }
+
+      .pointer {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%) rotate(-90deg);
+      }
+
+      .coins {
+        flex-direction: row;
+        justify-content: space-between;
+        position: relative;
+      }
+
+      .balance {
+        flex-direction: row;
+
+        .ant-input-number,
+        .result {
+          width: calc(50% - rem(8));
+        }
+      }
+    }
+
+    .ant-tabs-tabpane-active {
+      gap: rem(16);
+    }
+
+    .ant-tabs {
+      padding: rem(4) rem(16) rem(16);
+    }
   }
 }

@@ -4,14 +4,17 @@ export default keyMirror({
   // A
   ALL_TIME_HIGH: true,
   ALL_TIME_LOW: true,
+  AVAILABLE: true,
   // B
   BRIDGE: true,
   // C
   CONNECT_WALLET: true,
+  CONNECTED_WALLET: true,
   // D
   DISCONNECT: true,
   // E
   // F
+  FROM: true,
   // G
   // H
   // I
@@ -21,6 +24,7 @@ export default keyMirror({
   // L
   // M
   MARKET_CAP: true,
+  MAX: true,
   MERGE: true,
   // N
   // O
@@ -32,9 +36,12 @@ export default keyMirror({
   SETTINGS: true,
   SWAP: true,
   // T
+  TO: true,
   TO_BUY: true,
+  TOKEN: true,
   // U
   // V
+  VAULT_BALANCE: true,
   // W
   WALLET: true,
   // Y

@@ -31,15 +31,31 @@ const Component = () => {
                 borderColorDisabled: backgroundTertiary,
                 colorBgContainerDisabled: backgroundTertiary,
               },
+              Divider: {
+                colorSplit: borderNormal,
+              },
+              Drawer: {
+                colorBgElevated: backgroundSecondary,
+                colorSplit: borderNormal,
+              },
               Layout: {
                 bodyBg: backgroundPrimary,
+              },
+              Message: {
+                contentBg: backgroundTertiary,
               },
               Modal: {
                 contentBg: backgroundSecondary,
                 headerBg: backgroundSecondary,
               },
+              Popover: {
+                colorBgElevated: backgroundSecondary,
+              },
               Tabs: {
                 colorBorderSecondary: borderNormal,
+              },
+              Tooltip: {
+                colorBgSpotlight: backgroundTertiary,
               },
             },
             token: {
