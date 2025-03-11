@@ -50,6 +50,40 @@ body {
   }
 }
 
+.primary-button {
+  align-items: center;
+  background-color: $button-primary;
+  cursor: pointer;
+  color: $text-primary;
+  border-radius: rem(30);
+  display: flex;
+  justify-content: center;
+  height: rem(44);
+  padding: 0 rem(16);
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: $button-primary-hover;
+  }
+}
+
+.secondary-button {
+  align-items: center;
+  background-color: $button-secondary;
+  cursor: pointer;
+  color: $text-primary;
+  border-radius: rem(30);
+  display: flex;
+  justify-content: center;
+  height: rem(44);
+  padding: 0 rem(16);
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: $button-secondary-hover;
+  }
+}
+
 .token-dropdown {
   align-items: center;
   background-color: $background-tertiary;
@@ -96,7 +130,7 @@ body {
   }
 
   .ant-dropdown-menu-item {
-    padding: rem(4) !important;
+    padding: rem(8) rem(4) !important;
   }
 
   .ant-dropdown-menu {

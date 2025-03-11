@@ -10,6 +10,7 @@ declare global {
 
   interface String {
     replaceArgs(args: string[]): string;
+    toNumberFormat(): string;
   }
 }
 
@@ -79,4 +80,8 @@ String.prototype.replaceArgs = function (args) {
   return this.replace(/{(\d+)}/g, (match, number) => {
     return typeof args[number] !== "undefined" ? args[number] : match;
   });
+};
+
+String.prototype.toNumberFormat = function () {
+  return this.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 };

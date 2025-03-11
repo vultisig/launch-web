@@ -127,6 +127,158 @@
   }
 }
 
+.default-layout-wallet-connect {
+  .btn {
+    align-items: center;
+    background-color: $background-tertiary;
+    border: solid rem(1) $border-normal;
+    border-radius: rem(8);
+    cursor: pointer;
+    display: flex;
+    font-weight: 500;
+    gap: rem(8);
+    line-height: rem(32);
+    padding: rem(12);
+    transition: all 0.2s;
+
+    img {
+      height: rem(32);
+    }
+
+    &:hover {
+      border-color: $button-primary;
+      color: $button-primary;
+    }
+  }
+
+  .ant-modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: rem(16);
+  }
+}
+
+.default-layout-wallet-content {
+  .ant-drawer-close {
+    margin-right: rem(-4);
+  }
+
+  .ant-drawer-title {
+    align-items: center;
+    display: flex;
+
+    .text {
+      flex: 1;
+    }
+
+    .disconnect {
+      cursor: pointer;
+      height: rem(20);
+      stroke: $text-extra-light;
+      transition: all 0.2s;
+      width: rem(20);
+
+      &:hover {
+        stroke: $alert-error;
+      }
+    }
+  }
+
+  .ant-drawer-header {
+    padding: rem(24) rem(16);
+  }
+
+  .ant-drawer-body {
+    padding: rem(24) rem(16);
+  }
+
+  .address {
+    align-items: center;
+    display: flex;
+    gap: rem(12);
+
+    span {
+      flex: 1;
+      font-weight: 500;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    img {
+      border-radius: 50%;
+      height: rem(32);
+      width: rem(32);
+    }
+
+    svg {
+      cursor: pointer;
+    }
+  }
+
+  .total {
+    display: flex;
+    gap: rem(8);
+    justify-content: space-between;
+    line-height: rem(32);
+
+    .label {
+      font-weight: 500;
+    }
+
+    .price {
+      align-items: center;
+      display: flex;
+      font-size: rem(16);
+      font-weight: 600;
+      gap: rem(4);
+    }
+  }
+
+  .token {
+    align-items: center;
+    display: flex;
+    gap: rem(8);
+
+    .logo {
+      height: rem(32);
+      width: rem(32);
+    }
+
+    .info {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      gap: rem(2);
+
+      .name {
+        color: $text-extra-light;
+      }
+
+      .ticker {
+        font-size: rem(16);
+        font-weight: 700;
+      }
+    }
+
+    .value {
+      display: flex;
+      flex-direction: column;
+      gap: rem(2);
+      text-align: right;
+
+      .balance {
+        color: $text-light;
+      }
+
+      .price {
+        font-size: rem(16);
+        font-weight: 700;
+      }
+    }
+  }
+}
+
 @media (min-width: rem(768)) {
   .default-layout {
     .ant-layout-content {

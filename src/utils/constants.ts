@@ -31,8 +31,11 @@ export enum ChainKey {
   ZKSYNC = "Zksync",
 }
 
-export enum ModalKey {
+export enum HashKey {
+  BRIDGE = "#BRIDGE",
   CONNECT = "#CONNECT",
+  MERGE = "#MERGE",
+  WALLET = "#WALLET",
 }
 
 export enum PageKey {
@@ -64,6 +67,9 @@ export enum Language {
   PORTUGUESE = "pt",
   SPANISH = "es",
 }
+
+export const VULT_CONTRACT_ADDRESS =
+  "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"; // currently WETH
 
 export const currencyName: Record<Currency, string> = {
   [Currency.AUD]: "Australian Dollar",

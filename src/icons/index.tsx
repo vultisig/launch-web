@@ -135,6 +135,87 @@ export const ChevronUp: FC<SVGProps<SVGSVGElement>> = ({
   </svg>
 );
 
+export const Copy: FC<SVGProps<SVGSVGElement>> = ({
+  fill = "none",
+  height = 24,
+  stroke = "white",
+  strokeLinecap = "round",
+  strokeLinejoin = "round",
+  strokeWidth = 2,
+  width = 24,
+  ...props
+}) => (
+  <svg
+    viewBox="0 0 24 24"
+    {...{
+      ...props,
+      fill,
+      height,
+      stroke,
+      strokeLinecap,
+      strokeLinejoin,
+      strokeWidth,
+      width,
+    }}
+  >
+    <path d="M4 16C2.9 16 2 15.1 2 14V4C2 2.9 2.9 2 4 2H14C15.1 2 16 2.9 16 4M10 8H20C21.1046 8 22 8.89543 22 10V20C22 21.1046 21.1046 22 20 22H10C8.89543 22 8 21.1046 8 20V10C8 8.89543 8.89543 8 10 8Z" />
+  </svg>
+);
+
+export const Power: FC<SVGProps<SVGSVGElement>> = ({
+  fill = "none",
+  height = 24,
+  stroke = "white",
+  strokeLinecap = "round",
+  strokeLinejoin = "round",
+  strokeWidth = 2,
+  width = 24,
+  ...props
+}) => (
+  <svg
+    viewBox="0 0 24 24"
+    {...{
+      ...props,
+      fill,
+      height,
+      stroke,
+      strokeLinecap,
+      strokeLinejoin,
+      strokeWidth,
+      width,
+    }}
+  >
+    <path d="M12.0002 2V12M18.4003 6.6001C19.6569 7.8572 20.5132 9.45827 20.8611 11.2014C21.209 12.9445 21.0329 14.7516 20.3551 16.3948C19.6774 18.038 18.5282 19.4437 17.0525 20.4346C15.5769 21.4255 13.8408 21.9573 12.0634 21.9628C10.2859 21.9684 8.54654 21.4475 7.06471 20.4659C5.58288 19.4842 4.42491 18.0857 3.73684 16.4468C3.04876 14.8079 2.8614 13.002 3.19837 11.2567C3.53533 9.51145 4.38155 7.90505 5.63029 6.6401" />
+  </svg>
+);
+
+export const RefreshCW: FC<SVGProps<SVGSVGElement>> = ({
+  fill = "none",
+  height = 24,
+  stroke = "white",
+  strokeLinecap = "round",
+  strokeLinejoin = "round",
+  strokeWidth = 2,
+  width = 24,
+  ...props
+}) => (
+  <svg
+    viewBox="0 0 24 24"
+    {...{
+      ...props,
+      fill,
+      height,
+      stroke,
+      strokeLinecap,
+      strokeLinejoin,
+      strokeWidth,
+      width,
+    }}
+  >
+    <path d="M3 12C3 9.61305 3.94821 7.32387 5.63604 5.63604C7.32387 3.94821 9.61305 3 12 3C14.516 3.00947 16.931 3.99122 18.74 5.74L21 8M21 8V3M21 8H16M21 12C21 14.3869 20.0518 16.6761 18.364 18.364C16.6761 20.0518 14.3869 21 12 21C9.48395 20.9905 7.06897 20.0088 5.26 18.26L3 16M3 16H8M3 16V21" />
+  </svg>
+);
+
 export const SettingsOne: FC<SVGProps<SVGSVGElement>> = ({
   fill = "none",
   height = 24,
