@@ -4,6 +4,7 @@ export default {
   // A
   [translation.ALL_TIME_HIGH]: "All Time High",
   [translation.ALL_TIME_LOW]: "All Time Low",
+  [translation.APPROVE]: "Approve",
   [translation.AVAILABLE]: "Available",
   // B
   [translation.BRIDGE]: "Bridge",

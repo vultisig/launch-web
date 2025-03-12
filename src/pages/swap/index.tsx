@@ -27,6 +27,7 @@ import { FeeAmount, Pool } from "@uniswap/v3-sdk";
 import { CONTRACTS, POOLS_ABI } from "utils/contracts";
 import { Contract, formatEther, JsonRpcProvider } from "ethers";
 import { erc20Abi } from "viem";
+import useTokenApproval from "hooks/useTokenApproval";
 
 const { Content } = Layout;
 
@@ -207,36 +208,46 @@ const Stats: FC<{ volume: number }> = ({ volume }) => {
 
 const SwapVult: FC = () => {
   const { t } = useTranslation();
+
   const initialState: {
     currencyToVult: boolean;
-    tokenBalanceA?: number;
-    tokenBalanceB?: number;
+    tokenAmountA?: number;
+    tokenAmountB?: number;
   } = { currencyToVult: true };
+
   const [state, setState] = useState(initialState);
-  const { tokenBalanceA, tokenBalanceB, currencyToVult } = state;
+  const { tokenAmountA, tokenAmountB, currencyToVult } = state;
+  const { approvedAmount, isApproving, needsApproval, requestApproval } =
+    useTokenApproval(CONTRACTS.USDCToken, CONTRACTS.swapRouter, tokenAmountA);
   const { currency } = useBaseContext();
   const { isConnected } = useAccount();
 
   const handleChangeTokenA: InputNumberProps["onChange"] = debounce(
-    (tokenBalanceA) => {
-      quote(USDC_TOKEN, WETH_TOKEN, tokenBalanceA).then((tokenBalanceB) => {
+    (tokenAmountA) => {
+      quote(USDC_TOKEN, WETH_TOKEN, tokenAmountA).then((tokenAmountB) => {
         setState((prevState) => ({
           ...prevState,
-          tokenBalanceA,
-          tokenBalanceB,
+          tokenAmountA,
+          tokenAmountB,
         }));
+        console.log({
+          approvedAmount,
+          isApproving,
+          needsApproval,
+          requestApproval,
+        });
       });
     },
     200
   );
 
   const handleChangeTokenB: InputNumberProps["onChange"] = debounce(
-    (tokenBalanceB) => {
-      quote(WETH_TOKEN, USDC_TOKEN, tokenBalanceB).then((tokenBalanceA) => {
+    (tokenAmountB) => {
+      quote(WETH_TOKEN, USDC_TOKEN, tokenAmountB).then((tokenAmountA) => {
         setState((prevState) => ({
           ...prevState,
-          tokenBalanceA,
-          tokenBalanceB,
+          tokenAmountA,
+          tokenAmountB,
         }));
       });
     },
@@ -271,7 +282,7 @@ const SwapVult: FC = () => {
         min={0}
         onChange={handleChangeTokenA}
         placeholder="0.00"
-        value={tokenBalanceA}
+        value={tokenAmountA}
       />
       <Dropdown
         menu={{ items: [] }}
@@ -299,7 +310,7 @@ const SwapVult: FC = () => {
         min={0}
         onChange={handleChangeTokenB}
         placeholder="0.00"
-        value={tokenBalanceB}
+        value={tokenAmountB}
       />
       <Dropdown
         menu={{ items: [] }}
@@ -324,7 +335,13 @@ const SwapVult: FC = () => {
       </span> */}
     </>
   );
-
+  const handleSwapButton = () => {
+    if (needsApproval) {
+      requestApproval().then((res) => {
+        console.log("approve res:", res);
+      });
+    }
+  };
   return (
     <div className="vultswap">
       <span className="heading">{t(constantKeys.SWAP)}</span>
@@ -358,7 +375,9 @@ const SwapVult: FC = () => {
         </div>
       </div>
       {isConnected ? (
-        <span className="secondary-button">{t(constantKeys.SWAP)}</span>
+        <span className="secondary-button" onClick={handleSwapButton}>
+          {needsApproval ? t(constantKeys.APPROVE) : t(constantKeys.SWAP)}
+        </span>
       ) : (
         <Link to={HashKey.CONNECT} className="secondary-button">
           {t(constantKeys.CONNECT_WALLET)}
