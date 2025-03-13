@@ -1,8 +1,9 @@
 import axios from "axios";
 import { request } from "graphql-request";
 
-import { VULT_CONTRACT_ADDRESS } from "utils/constants";
 import { toCamelCase } from "utils/functions";
+import { CONTRACTS } from "./contracts";
+export const rootApiAddress = "https://api.vultisig.com";
 
 const fetch = axios.create({
   baseURL: `${import.meta.env.VITE_SERVER_ADDRESS}`,
@@ -99,7 +100,7 @@ const api = {
     if (days > 7) {
       return await api.historicalPriceByDay(
         endpoint,
-        VULT_CONTRACT_ADDRESS,
+        CONTRACTS.WETHToken,
         Math.floor(startEpochHours / 24),
         Math.floor(endEpochHours / 24)
       );
@@ -110,7 +111,7 @@ const api = {
       while (currentStart > endEpochHours) {
         const data = await api.historicalPriceByHour(
           endpoint,
-          VULT_CONTRACT_ADDRESS,
+          CONTRACTS.WETHToken,
           currentStart,
           endEpochHours
         );
@@ -133,7 +134,7 @@ const api = {
     }/subgraphs/id/5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV`;
     const currentEpochDay = Math.floor(Date.now() / 1000 / 3600 / (24 * days));
     const query = `{
-      tokenDayData(id: "${VULT_CONTRACT_ADDRESS}-${currentEpochDay}") {
+      tokenDayData(id: "${CONTRACTS.WETHToken}-${currentEpochDay}") {
         volumeUSD
       }
     }`;

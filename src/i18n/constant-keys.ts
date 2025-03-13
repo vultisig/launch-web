@@ -4,6 +4,7 @@ export default keyMirror({
   // A
   ALL_TIME_HIGH: true,
   ALL_TIME_LOW: true,
+  APPROVE: true,
   AVAILABLE: true,
   // B
   BRIDGE: true,
