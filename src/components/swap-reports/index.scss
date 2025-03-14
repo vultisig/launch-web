@@ -1,0 +1,44 @@
+@use "~variables" as *;
+
+.swap-reports {
+  .heading {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: rem(8);
+
+    .title {
+      font-size: rem(16);
+      font-weight: 600;
+    }
+
+    .period {
+      background-color: $background-secondary;
+      border-radius: rem(6);
+      display: flex;
+      gap: rem(4);
+      padding: rem(4);
+
+      li {
+        border-radius: rem(6);
+        cursor: pointer;
+        font-weight: 600;
+        font-size: rem(13);
+        height: rem(26);
+        line-height: rem(26);
+        text-align: center;
+        transition: all 0.2s;
+        width: rem(56);
+
+        &:hover {
+          background-color: $background-tertiary;
+        }
+
+        &.active {
+          background-color: $background-tertiary;
+          color: $button-primary;
+        }
+      }
+    }
+  }
+}

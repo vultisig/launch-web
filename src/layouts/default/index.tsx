@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from "react";
+import { FC, Fragment, useEffect, useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -9,17 +9,28 @@ import {
   MenuProps,
   message,
   Modal,
+  Popconfirm,
+  Spin,
   Tooltip,
 } from "antd";
-import { useAccount, useConnect, useDisconnect } from "wagmi";
+import { Connector, useAccount, useConnect, useDisconnect } from "wagmi";
 import MediaQuery from "react-responsive";
 
 import { useBaseContext } from "context";
-import { HashKey, PageKey } from "utils/constants";
+import { HashKey, PageKey, defaultTokens } from "utils/constants";
+import { TokenProps } from "utils/interfaces";
 import constantKeys from "i18n/constant-keys";
 import constantPaths from "routes/constant-paths";
+import api from "utils/api";
 
-import { ArrowDownUp, ArrowRightToLine, Copy, Power, SettingsOne } from "icons";
+import {
+  ArrowDownUp,
+  ArrowRightToLine,
+  Copy,
+  Power,
+  RefreshCW,
+  SettingsOne,
+} from "icons";
 
 const { Footer, Header } = Layout;
 
@@ -32,6 +43,11 @@ const Connect: FC = () => {
   const { connectors, connect } = useConnect();
   const { hash, pathname } = useLocation();
   const navigate = useNavigate();
+
+  const handleConnect = (connector: Connector) => {
+    connect({ connector });
+    navigate(-1);
+  };
 
   const componentDidUpdate = () => {
     if (hash === HashKey.CONNECT) {
@@ -60,9 +76,7 @@ const Connect: FC = () => {
       {connectors.map((connector) => (
         <span
           key={connector.uid}
-          onClick={() => {
-            connect({ connector }), navigate(-1);
-          }}
+          onClick={() => handleConnect(connector)}
           className="btn"
         >
           {connector.icon ? <img src={connector.icon} /> : null}
@@ -75,9 +89,17 @@ const Connect: FC = () => {
 
 const Content: FC = () => {
   const { t } = useTranslation();
-  const initialState: { open: boolean } = { open: false };
+  const initialState: {
+    loading: boolean;
+    open: boolean;
+    tokens: TokenProps[];
+  } = {
+    loading: true,
+    open: false,
+    tokens: defaultTokens,
+  };
   const [state, setState] = useState(initialState);
-  const { open } = state;
+  const { loading, open, tokens } = state;
   const { address, isConnected } = useAccount();
   const { currency } = useBaseContext();
   const { disconnect } = useDisconnect();
@@ -96,6 +118,49 @@ const Content: FC = () => {
       });
   };
 
+  const componentMustUpdate = () => {
+    if (address) {
+      setState((prevState) => ({ ...prevState, loading: true }));
+
+      Promise.all([
+        Promise.all(
+          tokens.map((token) =>
+            api.balance(
+              address,
+              token.decimals,
+              token.contractAddress,
+              token.isNative
+            )
+          )
+        ).then((balances) => {
+          setState((prevState) => ({
+            ...prevState,
+            tokens: prevState.tokens.map((token, index) => ({
+              ...token,
+              balance: balances[index],
+            })),
+          }));
+        }),
+        api
+          .values(
+            tokens.map(({ cmcId }) => cmcId),
+            currency
+          )
+          .then((values) => {
+            setState((prevState) => ({
+              ...prevState,
+              tokens: prevState.tokens.map((token) => ({
+                ...token,
+                value: values[token.cmcId] || token.value,
+              })),
+            }));
+          }),
+      ]).then(() => {
+        setState((prevState) => ({ ...prevState, loading: false }));
+      });
+    }
+  };
+
   const componentDidUpdate = () => {
     if (hash === HashKey.WALLET) {
       if (isConnected) {
@@ -108,6 +173,7 @@ const Content: FC = () => {
     }
   };
 
+  useEffect(componentMustUpdate, [address]);
   useEffect(componentDidUpdate, [hash, isConnected]);
 
   return (
@@ -121,59 +187,67 @@ const Content: FC = () => {
         title={
           <>
             <span className="text">{t(constantKeys.CONNECTED_WALLET)}</span>
-            <Tooltip title={t(constantKeys.DISCONNECT)}>
-              <Power onClick={() => disconnect()} className="disconnect" />
-            </Tooltip>
+            <RefreshCW className="refresh" onClick={componentMustUpdate} />
+            <Popconfirm
+              title={t(constantKeys.DISCONNECT)}
+              onConfirm={() => disconnect()}
+            >
+              <Power className="disconnect" />
+            </Popconfirm>
           </>
         }
         width={360}
       >
         <div className="address">
           <img src="/avatars/1.png" alt="Avatar" />
-          <Tooltip title={address}>{address}</Tooltip>
-          <Copy onClick={handleCopy} />
+          <span>{address}</span>
+          <Tooltip title={t(constantKeys.COPY)}>
+            <Copy onClick={handleCopy} />
+          </Tooltip>
         </div>
         <Divider />
         <div className="total">
           <span className="label">{t(constantKeys.VAULT_BALANCE)}</span>
-          <span className="price ">{(123190.33).toPriceFormat(currency)}</span>
+          {loading ? (
+            <Spin size="small" />
+          ) : (
+            <span className="price">
+              {tokens
+                .reduce(
+                  (accumulator, { balance, value }) =>
+                    accumulator + balance * value,
+                  0
+                )
+                .toPriceFormat(currency)}
+            </span>
+          )}
         </div>
-        <Divider />
-        <div className="token">
-          <img src="/tokens/eth.svg" alt="USDC" className="logo" />
-          <div className="info">
-            <span className="ticker">ETH</span>
-            <span className="name">Ethereum</span>
-          </div>
-          <div className="value">
-            <span className="price">{(35789).toPriceFormat(currency)}</span>
-            <span className="balance">{`${(5899).toBalanceFormat()} ETH`}</span>
-          </div>
-        </div>
-        <Divider />
-        <div className="token">
-          <img src="/tokens/usdc.svg" alt="USDC" className="logo" />
-          <div className="info">
-            <span className="ticker">USDC</span>
-            <span className="name">USD Coin</span>
-          </div>
-          <div className="value">
-            <span className="price">{(65830).toPriceFormat(currency)}</span>
-            <span className="balance">{`${(65830).toBalanceFormat()} USDC`}</span>
-          </div>
-        </div>
-        <Divider />
-        <div className="token">
-          <img src="/tokens/vult.svg" alt="VULT" className="logo" />
-          <div className="info">
-            <span className="ticker">VULT</span>
-            <span className="name">Vult</span>
-          </div>
-          <div className="value">
-            <span className="price">{(23048).toPriceFormat(currency)}</span>
-            <span className="balance">{`${(34394).toBalanceFormat()} VULT`}</span>
-          </div>
-        </div>
+        {tokens.map(({ balance, name, ticker, value }) => (
+          <Fragment key={ticker}>
+            <Divider />
+            <div className="token">
+              <img
+                src={`/tokens/${ticker.toLowerCase()}.svg`}
+                alt={ticker}
+                className="logo"
+              />
+              <div className="info">
+                <span className="ticker">{ticker}</span>
+                <span className="name">{name}</span>
+              </div>
+              {loading ? (
+                <Spin size="small" />
+              ) : (
+                <div className="value">
+                  <span className="price">
+                    {(balance * value).toPriceFormat(currency)}
+                  </span>
+                  <span className="balance">{`${balance.toBalanceFormat()} ${ticker}`}</span>
+                </div>
+              )}
+            </div>
+          </Fragment>
+        ))}
       </Drawer>
 
       {messageHolder}

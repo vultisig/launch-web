@@ -2,22 +2,30 @@ import keyMirror from "keymirror";
 
 export default keyMirror({
   // A
+  ADVANCED: true,
   ALL_TIME_HIGH: true,
   ALL_TIME_LOW: true,
   APPROVE: true,
   AVAILABLE: true,
   // B
+  BASIC: true,
   BRIDGE: true,
   // C
+  CONFIRM: true,
   CONNECT_WALLET: true,
   CONNECTED_WALLET: true,
+  COPY: true,
+  CUSTOM: true,
   // D
   DISCONNECT: true,
   // E
+  ENTER_AMOUNT: true,
   // F
+  FAST: true,
   FROM: true,
   // G
   // H
+  HOURLY_INCREASE: true,
   // I
   I_WANT_TO_ALLOCATE: true,
   // J
@@ -30,17 +38,25 @@ export default keyMirror({
   // N
   // O
   // P
+  PER_HOUR: true,
   PRICE: true,
   // Q
   // R
+  RESET: true,
   // S
   SETTINGS: true,
+  SLIPPAGE: true,
+  SLOW: true,
+  STANDARD: true,
   SWAP: true,
   // T
   TO: true,
+  TOTAL_ALLOCATION: true,
   TO_BUY: true,
   TOKEN: true,
+  TRANSACTION_SETTINGS: true,
   // U
+  USED_ALLOCATION: true,
   // V
   VAULT_BALANCE: true,
   // W

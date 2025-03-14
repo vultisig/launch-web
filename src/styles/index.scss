@@ -10,6 +10,11 @@
 
 @use "../layouts/default";
 
+@use "../components/swap-fees";
+@use "../components/swap-reports";
+@use "../components/swap-stats";
+@use "../components/swap-vult";
+
 @use "../pages/merge";
 @use "../pages/settings";
 @use "../pages/swap";

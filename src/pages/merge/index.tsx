@@ -13,7 +13,7 @@ import { useAccount } from "wagmi";
 
 import { useBaseContext } from "context";
 import { HashKey, PageKey } from "utils/constants";
-import { USDC_TOKEN, WETH_TOKEN } from "utils/quote-provider";
+import { USDC_TOKEN, WETH_TOKEN } from "utils/tokens";
 import constantKeys from "i18n/constant-keys";
 
 import { ArrowDown, ChevronDown, RefreshCW } from "icons";

@@ -1,41 +1,58 @@
 import { useState, useEffect, useCallback } from "react";
-import { Contract, JsonRpcProvider } from "ethers";
+import { Contract, parseUnits } from "ethers";
 import { useAccount, useWalletClient } from "wagmi";
 
-import { encodeFunctionData, erc20Abi } from "viem";
-import { rootApiAddress } from "utils/api";
+import { encodeFunctionData, erc20Abi, formatUnits } from "viem";
 
-const useTokenApproval = (
-  tokenAddress: string,
-  spenderAddress: string,
-  amount?: number
-) => {
+import { getRPCProvider } from "utils/providers/rpcProvider";
+import { ContractAddress } from "utils/constants";
+import { Token } from "utils/tokens";
+
+const useTokenApproval = (token?: Token, amount?: number) => {
   const { address } = useAccount();
-
+  const rpcClient = getRPCProvider();
   const { data: walletClient } = useWalletClient();
   const [approvedAmount, setApprovedAmount] = useState(BigInt(0));
   const [isApproving, setIsApproving] = useState(false);
   const [needsApproval, setNeedsApproval] = useState(false);
 
-  const rpcClient = new JsonRpcProvider(`${rootApiAddress}/eth/`);
-
   const checkApproval = useCallback(async () => {
-    if (!walletClient || !tokenAddress || !spenderAddress || !address) return;
+    if (
+      !walletClient ||
+      !token?.address ||
+      !ContractAddress.SWAP_ROUTER ||
+      !address
+    )
+      return;
     try {
-      const tokenContract = new Contract(tokenAddress, erc20Abi, rpcClient);
-      const allowance = await tokenContract.allowance(address, spenderAddress);
+      const tokenContract = new Contract(token.address, erc20Abi, rpcClient);
+      const allowance = await tokenContract.allowance(
+        address,
+        ContractAddress.SWAP_ROUTER
+      );
       setApprovedAmount(allowance);
-      setNeedsApproval(amount && amount > 0 ? allowance < amount : false);
+      setNeedsApproval(
+        amount && amount > 0
+          ? Number(formatUnits(allowance, token.decimals)) < amount
+          : false
+      );
     } catch (error) {
       console.error("Error checking approval:", error);
     }
-  }, [walletClient, tokenAddress, spenderAddress, amount, address, rpcClient]);
+  }, [
+    walletClient,
+    token?.address,
+    ContractAddress.SWAP_ROUTER,
+    amount,
+    address,
+    rpcClient,
+  ]);
 
   const requestApproval = async () => {
     if (
       !walletClient ||
-      !tokenAddress ||
-      !spenderAddress ||
+      !token?.address ||
+      !ContractAddress.SWAP_ROUTER ||
       !address ||
       !amount
     )
@@ -44,12 +61,12 @@ const useTokenApproval = (
     try {
       setIsApproving(true);
       const approvalData = encodeApproval(
-        spenderAddress as `0x${string}`,
-        BigInt(amount)
+        ContractAddress.SWAP_ROUTER as `0x${string}`,
+        parseUnits(String(amount), token.decimals)
       );
 
       const tx = await walletClient.sendTransaction({
-        to: tokenAddress as `0x${string}`,
+        to: token.address as `0x${string}`,
         data: approvalData,
       });
 
