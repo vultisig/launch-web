@@ -9,6 +9,7 @@ import {
   borderNormal,
   buttonPrimary,
   buttonPrimaryHover,
+  buttonSecondary,
 } from "colors";
 import { config } from "utils/wagmi-config";
 
@@ -37,6 +38,13 @@ const Component = () => {
               Drawer: {
                 colorBgElevated: backgroundSecondary,
                 colorSplit: borderNormal,
+              },
+              InputNumber: {
+                activeBorderColor: buttonSecondary,
+                activeShadow: buttonSecondary,
+                colorBgContainer: backgroundSecondary,
+                colorBorder: borderNormal,
+                hoverBorderColor: buttonSecondary,
               },
               Layout: {
                 bodyBg: backgroundPrimary,

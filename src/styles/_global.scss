@@ -57,13 +57,21 @@ body {
   color: $text-primary;
   border-radius: rem(30);
   display: flex;
+  font-weight: 600;
   justify-content: center;
-  height: rem(44);
+  height: rem(48);
   padding: 0 rem(16);
   transition: all 0.2s;
 
   &:hover {
     background-color: $button-primary-hover;
+    color: $text-primary;
+  }
+
+  &.disabled {
+    background-color: $button-disabled;
+    color: $button-disabled-text;
+    cursor: default;
   }
 }
 
@@ -74,13 +82,21 @@ body {
   color: $text-primary;
   border-radius: rem(30);
   display: flex;
+  font-weight: 600;
   justify-content: center;
-  height: rem(44);
+  height: rem(48);
   padding: 0 rem(16);
   transition: all 0.2s;
 
   &:hover {
     background-color: $button-secondary-hover;
+    color: $text-primary;
+  }
+
+  &.disabled {
+    background-color: $button-disabled;
+    color: $button-disabled-text;
+    cursor: default;
   }
 }
 
