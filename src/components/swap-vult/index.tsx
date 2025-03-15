@@ -69,7 +69,7 @@ const Settings: FC<ChildProps> = ({ changeMode }) => {
   };
 
   return (
-    <Form form={form} onFinish={handleSubmit} className="swap-vult">
+    <Form form={form} onFinish={handleSubmit} className="swap-vult settings">
       <div className="heading">
         <span className="text">{t(constantKeys.SETTINGS)}</span>
         <Popconfirm title={t(constantKeys.CONFIRM)}>
@@ -170,6 +170,9 @@ const Settings: FC<ChildProps> = ({ changeMode }) => {
         </div>
       </div>
       <div className={`advanced-tab${advancedMode ? " active" : ""}`}></div>
+      <span onClick={changeMode} className="secondary-button">
+        {t(constantKeys.SAVE)}
+      </span>
     </Form>
   );
 };
@@ -243,7 +246,7 @@ const Swap: FC<ChildProps> = ({ changeMode }) => {
 
   const handleSwitch = () => {
     //ignore switch denom for now
-    return
+    return;
     form.setFieldsValue({
       allocateAmount: form.getFieldValue("buyAmount"),
       allocateCoin: form.getFieldValue("buyCoin"),
@@ -260,7 +263,7 @@ const Swap: FC<ChildProps> = ({ changeMode }) => {
         buyCoin: TickerKey.WETH,
       }}
       onFinish={handleSwap}
-      className="swap-vult"
+      className="swap-vult transaction"
     >
       <div className="heading">
         <span className="text">{t(constantKeys.SWAP)}</span>
