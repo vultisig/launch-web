@@ -25,7 +25,6 @@ export default keyMirror({
   FROM: true,
   // G
   // H
-  HOURLY_INCREASE: true,
   // I
   I_WANT_TO_ALLOCATE: true,
   // J
@@ -51,12 +50,12 @@ export default keyMirror({
   SWAP: true,
   // T
   TO: true,
-  TOTAL_ALLOCATION: true,
+  ALLOCATION_FIRST_HOUR: true,
   TO_BUY: true,
   TOKEN: true,
+  TOTAL_WL_ALLOCATION: true,
   TRANSACTION_SETTINGS: true,
   // U
-  USED_ALLOCATION: true,
   // V
   VAULT_BALANCE: true,
   // W

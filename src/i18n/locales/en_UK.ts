@@ -25,7 +25,6 @@ export default {
   [translation.FROM]: "From",
   // G
   // H
-  [translation.HOURLY_INCREASE]: "Hourly Increase",
   // I
   [translation.I_WANT_TO_ALLOCATE]: "I want to Allocate",
   // J
@@ -51,12 +50,12 @@ export default {
   [translation.SWAP]: "Swap",
   // T
   [translation.TO]: "To",
-  [translation.TOTAL_ALLOCATION]: "Total Allocation",
+  [translation.ALLOCATION_FIRST_HOUR]: "Allocation in the 1st hour",
   [translation.TO_BUY]: "To buy",
   [translation.TOKEN]: "Token",
+  [translation.TOTAL_WL_ALLOCATION]: "Total WL allocation",
   [translation.TRANSACTION_SETTINGS]: "Transaction Settings",
   // U
-  [translation.USED_ALLOCATION]: "Used Allocation",
   // V
   [translation.VAULT_BALANCE]: "Vault Balance",
   // W
