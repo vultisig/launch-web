@@ -2,7 +2,7 @@
 
 .swap-fees {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: rem(12);
 
   .icon {
@@ -38,16 +38,12 @@
     gap: rem(4);
     padding: rem(12) rem(12) rem(12) rem(50);
     position: relative;
-    width: calc(50% - rem(8));
-
-    &:nth-child(3n) {
-      width: 100%;
-    }
   }
 }
 
 @media (min-width: rem(768)) {
   .swap-fees {
+    flex-direction: row;
     gap: rem(16);
 
     .icon {
@@ -64,6 +60,7 @@
 
     .item {
       padding: rem(16) rem(16) rem(16) rem(58);
+      width: calc(50% - rem(8));
     }
   }
 }
