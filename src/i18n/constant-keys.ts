@@ -24,6 +24,8 @@ export default keyMirror({
   FAST: true,
   FROM: true,
   // G
+  GAS_LIMIT: true,
+  GWEI: true,
   // H
   // I
   I_WANT_TO_ALLOCATE: true,
@@ -33,6 +35,8 @@ export default keyMirror({
   // M
   MARKET_CAP: true,
   MAX: true,
+  MAX_FEE: true,
+  MAX_PRIORITY_FEE: true,
   MERGE: true,
   // N
   // O

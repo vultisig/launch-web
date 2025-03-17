@@ -6,8 +6,14 @@ import { erc20Abi } from "viem";
 import MediaQuery from "react-responsive";
 
 import { useBaseContext } from "context";
-import { POOLS_ABI, ContractAddress, PageKey, Period } from "utils/constants";
-import { USDC_TOKEN, WETH_TOKEN } from "utils/tokens";
+import {
+  POOLS_ABI,
+  ContractAddress,
+  PageKey,
+  Period,
+  uniswapTokens,
+  TickerKey,
+} from "utils/constants";
 import api from "utils/api";
 
 import SwapFees from "components/swap-fees";
@@ -30,7 +36,7 @@ interface InitialState {
 const Component: FC = () => {
   const initialState: InitialState = {
     marketCap: 0,
-    period: Period.day,
+    period: Period.DAY,
     price: 0,
     reports: [],
     volume: 0,
@@ -50,8 +56,8 @@ const Component: FC = () => {
     const slot0 = await contract.slot0();
     const poolLiquidity = String(await contract.liquidity());
     const pool = new Pool(
-      WETH_TOKEN,
-      USDC_TOKEN,
+      uniswapTokens[TickerKey.WETH],
+      uniswapTokens[TickerKey.USDC],
       FeeAmount.HIGH,
       String(slot0.sqrtPriceX96),
       poolLiquidity,

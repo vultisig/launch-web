@@ -6,15 +6,16 @@ import { encodeFunctionData, erc20Abi, formatUnits } from "viem";
 
 import { getRPCProvider } from "utils/providers/rpcProvider";
 import { ContractAddress } from "utils/constants";
-import { Token } from "utils/tokens";
+import { UniswapTokenProps } from "utils/interfaces";
+import { getStoredGasSettings } from "utils/storage";
 
-const useTokenApproval = (token?: Token, amount?: number) => {
+const useTokenApproval = (token?: UniswapTokenProps, amount?: number) => {
   const { address } = useAccount();
   const rpcClient = getRPCProvider();
   const { data: walletClient } = useWalletClient();
   const [approvedAmount, setApprovedAmount] = useState(BigInt(0));
   const [isApproving, setIsApproving] = useState(false);
-  const [needsApproval, setNeedsApproval] = useState(false);
+  const [needsApproval, setNeedsApproval] = useState(true);
 
   const checkApproval = useCallback(async () => {
     if (
@@ -60,6 +61,7 @@ const useTokenApproval = (token?: Token, amount?: number) => {
 
     try {
       setIsApproving(true);
+      const gasSetting = getStoredGasSettings();
       const approvalData = encodeApproval(
         ContractAddress.SWAP_ROUTER as `0x${string}`,
         parseUnits(String(amount), token.decimals)
@@ -68,6 +70,15 @@ const useTokenApproval = (token?: Token, amount?: number) => {
       const tx = await walletClient.sendTransaction({
         to: token.address as `0x${string}`,
         data: approvalData,
+        gas: gasSetting.gasLimit > 0 ? BigInt(gasSetting.gasLimit) : undefined,
+        maxPriorityFeePerGas:
+          gasSetting.maxPriorityFee > 0
+            ? BigInt(parseUnits(gasSetting.maxPriorityFee.toString(), "gwei"))
+            : undefined,
+        maxFeePerGas:
+          gasSetting.maxFee > 0
+            ? BigInt(parseUnits(gasSetting.maxFee.toString(), "gwei"))
+            : undefined,
       });
 
       await rpcClient.waitForTransaction(tx);
