@@ -59,22 +59,22 @@ const Component: FC<ComponentProps> = ({ data, onChangePeriod, period }) => {
         <span className="title">{t(constantKeys.PRICE)}</span>
         <ul className="period">
           <li
-            className={period === Period.day ? "active" : ""}
-            onClick={() => onChangePeriod(Period.day)}
+            className={period === Period.DAY ? "active" : ""}
+            onClick={() => onChangePeriod(Period.DAY)}
           >
             24h
           </li>
           <li
-            className={period === Period.week ? "active" : ""}
-            onClick={() => onChangePeriod(Period.week)}
+            className={period === Period.WEEK ? "active" : ""}
+            onClick={() => onChangePeriod(Period.WEEK)}
           >
-            {`${Period.week}d`}
+            {`${Period.WEEK}d`}
           </li>
           <li
-            className={period === Period.month ? "active" : ""}
-            onClick={() => onChangePeriod(Period.month)}
+            className={period === Period.MONTH ? "active" : ""}
+            onClick={() => onChangePeriod(Period.MONTH)}
           >
-            {`${Period.month}d`}
+            {`${Period.MONTH}d`}
           </li>
         </ul>
       </div>

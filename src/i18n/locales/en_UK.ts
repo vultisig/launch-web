@@ -24,6 +24,8 @@ export default {
   [translation.FAST]: "Fast",
   [translation.FROM]: "From",
   // G
+  [translation.GAS_LIMIT]: "Gas Limit",
+  [translation.GWEI]: "GWEI",
   // H
   // I
   [translation.I_WANT_TO_ALLOCATE]: "I want to Allocate",
@@ -33,6 +35,8 @@ export default {
   // M
   [translation.MARKET_CAP]: "Market Cap",
   [translation.MAX]: "Max",
+  [translation.MAX_FEE]: "Max Fee",
+  [translation.MAX_PRIORITY_FEE]: "Max Priority Fee",
   [translation.MERGE]: "Merge",
   // N
   // O

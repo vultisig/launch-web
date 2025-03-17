@@ -100,60 +100,6 @@ body {
   }
 }
 
-.token-dropdown {
-  align-items: center;
-  background-color: $background-tertiary;
-  border-radius: rem(20);
-  display: flex;
-  font-weight: 500;
-  gap: rem(4);
-  padding: rem(8) rem(32) rem(8) rem(8);
-  position: relative;
-
-  .logo {
-    height: rem(24);
-    width: rem(24);
-  }
-
-  .arrow {
-    position: absolute;
-    right: rem(4);
-    top: 50%;
-    transform: translateY(-50%);
-  }
-
-  &.vult {
-    padding-right: rem(12);
-
-    .logo {
-      align-items: center;
-      background-color: $background-primary;
-      border-radius: 50%;
-      display: flex;
-      padding: rem(4);
-
-      img {
-        width: 100%;
-      }
-    }
-  }
-}
-
-.token-dropdown-menu {
-  .ant-dropdown-menu-item-icon {
-    height: rem(24);
-    width: rem(24);
-  }
-
-  .ant-dropdown-menu-item {
-    padding: rem(8) rem(4) !important;
-  }
-
-  .ant-dropdown-menu {
-    background-color: $background-tertiary;
-  }
-}
-
 @media (max-width: rem(576)) {
   .ant-modal {
     margin: 0 !important;

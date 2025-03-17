@@ -1,25 +1,25 @@
 import { useState, useCallback } from "react";
 import { useAccount, useWalletClient } from "wagmi";
-import { encodeFunctionData, parseUnits } from "viem";
-import { JsonRpcProvider } from "ethers";
+import { encodeFunctionData } from "viem";
+import { JsonRpcProvider, parseUnits } from "ethers";
 
 import Router from "@uniswap/v3-periphery/artifacts/contracts/SwapRouter.sol/SwapRouter.json";
 import { ContractAddress } from "utils/constants";
-import { Token } from "utils/tokens";
+import { UniswapTokenProps } from "utils/interfaces";
+import { getStoredGasSettings } from "utils/storage";
+import { getPoolConstants } from "utils/swap";
 
 interface TokenSwapParams {
-  tokenIn?: Token;
-  tokenOut?: Token;
+  tokenIn?: UniswapTokenProps;
+  tokenOut?: UniswapTokenProps;
   amountIn?: number;
-  slippageBps?: number | undefined;
-  fee?: number | undefined;
+  amountOut?: number;
 }
 const useTokenSwap = ({
   tokenIn,
   tokenOut,
   amountIn,
-  slippageBps = 50, // 0.5% default slippage
-  fee = 3000, // 0.3% Uniswap pool fee
+  amountOut,
 }: TokenSwapParams) => {
   const { address } = useAccount();
   const { data: walletClient } = useWalletClient();
@@ -32,16 +32,26 @@ const useTokenSwap = ({
   );
 
   const executeSwap = useCallback(async () => {
-    if (!walletClient || !address || !tokenIn || !tokenOut || !amountIn) return;
+    if (
+      !walletClient ||
+      !address ||
+      !tokenIn ||
+      !tokenOut ||
+      !amountIn ||
+      !amountOut
+    )
+      return;
+    const gasSetting = getStoredGasSettings();
+    const poolConstants = await getPoolConstants(tokenIn, tokenOut);
     const parsedAmountIn = parseUnits(String(amountIn), tokenIn.decimals);
     try {
       setIsSwapping(true);
       setSwapError(null);
-      const recipient = address;
-      const amountOutMinimum =
-        (BigInt(parsedAmountIn) * BigInt(10000 - slippageBps)) / BigInt(10000);
+      const amountOutMinimum = parseUnits(
+        String(amountOut * (100 - gasSetting.slippage)),
+        tokenOut.decimals
+      );
       const sqrtPriceLimitX96 = 0; // No price limit
-
       const swapData = encodeFunctionData({
         abi: Router.abi,
         functionName: "exactInputSingle",
@@ -49,8 +59,8 @@ const useTokenSwap = ({
           {
             tokenIn: tokenIn.address as `0x${string}`,
             tokenOut: tokenOut.address as `0x${string}`,
-            fee,
-            recipient,
+            fee: poolConstants.fee,
+            recipient: address,
             deadline: Math.floor(Date.now() / 1000) + 60 * 10, // 10 min deadline
             amountIn: BigInt(parsedAmountIn),
             amountOutMinimum,
@@ -62,6 +72,15 @@ const useTokenSwap = ({
       const tx = await walletClient.sendTransaction({
         to: ContractAddress.SWAP_ROUTER as `0x${string}`,
         data: swapData,
+        gas: gasSetting.gasLimit > 0 ? BigInt(gasSetting.gasLimit) : undefined,
+        maxPriorityFeePerGas:
+          gasSetting.maxPriorityFee > 0
+            ? BigInt(parseUnits(gasSetting.maxPriorityFee.toString(), "gwei"))
+            : undefined,
+        maxFeePerGas:
+          gasSetting.maxFee > 0
+            ? BigInt(parseUnits(gasSetting.maxFee.toString(), "gwei"))
+            : undefined,
         value: 0n, // No ETH needed unless swapping ETH
       });
 
@@ -72,7 +91,14 @@ const useTokenSwap = ({
     } finally {
       setIsSwapping(false);
     }
-  }, [walletClient, address, tokenIn, tokenOut, amountIn, slippageBps, fee]);
+  }, [
+    walletClient,
+    address,
+    tokenIn,
+    tokenOut,
+    amountIn,
+    getStoredGasSettings(),
+  ]);
 
   return { executeSwap, isSwapping, swapError, txHash };
 };

@@ -12,8 +12,7 @@ import {
 import { useAccount } from "wagmi";
 
 import { useBaseContext } from "context";
-import { HashKey, PageKey } from "utils/constants";
-import { USDC_TOKEN, WETH_TOKEN } from "utils/tokens";
+import { HashKey, PageKey, TickerKey, defaultTokens } from "utils/constants";
 import constantKeys from "i18n/constant-keys";
 
 import { ArrowDown, ChevronDown, RefreshCW } from "icons";
@@ -32,20 +31,24 @@ const BridgeTab: FC = () => {
   const items: MenuProps["items"] = [
     {
       key: "1",
-      label: USDC_TOKEN.symbol,
+      label: defaultTokens[TickerKey.USDC].ticker,
       icon: (
         <img
-          src={`/tokens/${USDC_TOKEN.symbol?.toLowerCase()}.svg`}
+          src={`/tokens/${defaultTokens[
+            TickerKey.USDC
+          ].ticker.toLowerCase()}.svg`}
           alt="Ethereum"
         />
       ),
     },
     {
       key: "2",
-      label: WETH_TOKEN.symbol,
+      label: defaultTokens[TickerKey.WETH].ticker,
       icon: (
         <img
-          src={`/tokens/${WETH_TOKEN.symbol?.toLowerCase()}.svg`}
+          src={`/tokens/${defaultTokens[
+            TickerKey.WETH
+          ].ticker.toLowerCase()}.svg`}
           alt="Ethereum"
         />
       ),
@@ -68,11 +71,15 @@ const BridgeTab: FC = () => {
             <Dropdown menu={{ items }} rootClassName="token-dropdown-menu">
               <span className="dropdown">
                 <img
-                  src={`/tokens/${USDC_TOKEN.symbol?.toLowerCase()}.svg`}
-                  alt={USDC_TOKEN.symbol}
+                  src={`/tokens/${defaultTokens[
+                    TickerKey.USDC
+                  ].ticker.toLowerCase()}.svg`}
+                  alt={defaultTokens[TickerKey.USDC].ticker}
                   className="logo"
                 />
-                <span className="ticker">{USDC_TOKEN.symbol}</span>
+                <span className="ticker">
+                  {defaultTokens[TickerKey.USDC].ticker}
+                </span>
                 <ChevronDown className="arrow" />
               </span>
             </Dropdown>
@@ -94,11 +101,15 @@ const BridgeTab: FC = () => {
             <Dropdown menu={{ items }} rootClassName="token-dropdown-menu">
               <span className="dropdown">
                 <img
-                  src={`/tokens/${WETH_TOKEN.symbol?.toLowerCase()}.svg`}
-                  alt={WETH_TOKEN.symbol}
+                  src={`/tokens/${defaultTokens[
+                    TickerKey.WETH
+                  ].ticker.toLowerCase()}.svg`}
+                  alt={defaultTokens[TickerKey.WETH].ticker}
                   className="logo"
                 />
-                <span className="ticker">{WETH_TOKEN.symbol}</span>
+                <span className="ticker">
+                  {defaultTokens[TickerKey.WETH].ticker}
+                </span>
                 <ChevronDown className="arrow" />
               </span>
             </Dropdown>

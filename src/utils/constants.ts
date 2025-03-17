@@ -1,3 +1,5 @@
+import { ChainId, Token } from "@uniswap/sdk-core";
+
 import { TokenProps } from "utils/interfaces";
 
 export enum ChainKey {
@@ -47,12 +49,13 @@ export enum PageKey {
 }
 
 export enum ContractAddress {
-  QUOTER = "0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6",
   POOL_FACTORY = "0x1F98431c8aD98523631AE4a59f267346ea31F984",
+  QUOTER = "0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6",
   SWAP_ROUTER = "0xE592427A0AEce92De3Edee1F18E0157C05861564",
-  WETH_TOKEN = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+  UNI_TOKEN = "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
   USDC_TOKEN = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
   WETH_USDC_POOL = "0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640",
+  WETH_TOKEN = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
 }
 
 export enum Currency {
@@ -80,16 +83,28 @@ export enum Language {
 }
 
 export enum Period {
-  day = 1,
-  week = 7,
-  month = 30,
+  DAY = 1,
+  WEEK = 7,
+  MONTH = 30,
 }
 
 export enum TickerKey {
   ETH = "ETH",
-  VULT = "VULT",
+  //VULT = "VULT",
+  UNI = "UNI",
   USDC = "USDC",
   WETH = "WETH",
+}
+
+export enum GasSettingsSpeed {
+  FAST = "FAST",
+  SLOW = "SLOW",
+  STANDARD = "STANDARD",
+}
+
+export enum GasSettingsMode {
+  ADVANCED = "ADVANCED",
+  BASIC = "BASIC",
 }
 
 export const currencyName: Record<Currency, string> = {
@@ -129,48 +144,101 @@ export const languageName: Record<Language, string> = {
   [Language.SPANISH]: "Espanol",
 };
 
-export const defaultTokens: TokenProps[] = [
-  {
+export const defaultTokens: Record<TickerKey, TokenProps> = {
+  [TickerKey.ETH]: {
     balance: 0,
     cmcId: 1027,
-    contractAddress: "",
+    contractAddress: ContractAddress.WETH_TOKEN,
     decimals: 18,
+    isAirdropToken: false,
     isNative: true,
     name: "Ethereum",
     ticker: TickerKey.ETH,
     value: 0,
   },
-  {
-    balance: 0,
-    cmcId: 3408,
-    contractAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-    decimals: 6,
-    isNative: false,
-    name: "USD Coin",
-    ticker: TickerKey.USDC,
-    value: 0,
-  },
-  {
-    balance: 0,
-    cmcId: 2396,
-    contractAddress: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-    decimals: 18,
-    isNative: false,
-    name: "Wrapped Ether",
-    ticker: TickerKey.WETH,
-    value: 0,
-  },
-  // {
+  // [TickerKey.VULT]: {
   //   balance: 0,
   //   cmcId: 0,
   //   contractAddress: "",
   //   decimals: 18,
+  //   isAirdropToken: true,
   //   isNative: false,
   //   name: "Vult",
   //   ticker: TickerKey.VULT,
   //   value: 0,
   // },
-];
+  [TickerKey.UNI]: {
+    balance: 0,
+    cmcId: 7083,
+    contractAddress: ContractAddress.UNI_TOKEN,
+    decimals: 18,
+    isAirdropToken: true,
+    isNative: false,
+    name: "Uniswap",
+    ticker: TickerKey.UNI,
+    value: 0,
+  },
+  [TickerKey.USDC]: {
+    balance: 0,
+    cmcId: 3408,
+    contractAddress: ContractAddress.USDC_TOKEN,
+    decimals: 6,
+    isAirdropToken: false,
+    isNative: false,
+    name: "USD Coin",
+    ticker: TickerKey.USDC,
+    value: 0,
+  },
+  [TickerKey.WETH]: {
+    balance: 0,
+    cmcId: 2396,
+    contractAddress: ContractAddress.WETH_TOKEN,
+    decimals: 18,
+    isAirdropToken: false,
+    isNative: false,
+    name: "Wrapped Ether",
+    ticker: TickerKey.WETH,
+    value: 0,
+  },
+};
+
+export const uniswapTokens: Record<TickerKey, Token> = {
+  [TickerKey.ETH]: new Token(
+    ChainId.MAINNET,
+    defaultTokens[TickerKey.ETH].contractAddress,
+    defaultTokens[TickerKey.ETH].decimals,
+    TickerKey.ETH,
+    defaultTokens[TickerKey.ETH].name
+  ),
+  [TickerKey.UNI]: new Token(
+    ChainId.MAINNET,
+    defaultTokens[TickerKey.UNI].contractAddress,
+    defaultTokens[TickerKey.UNI].decimals,
+    defaultTokens[TickerKey.UNI].ticker,
+    defaultTokens[TickerKey.UNI].name
+  ),
+  // [TickerKey.VULT]: new Token(
+  //   ChainId.MAINNET,
+  //   ContractAddress.WETH_TOKEN,
+  //   defaultTokens[TickerKey.VULT].decimals,
+  //   defaultTokens[TickerKey.VULT].ticker,
+  //   defaultTokens[TickerKey.VULT].name,
+  // ),
+  [TickerKey.USDC]: new Token(
+    ChainId.MAINNET,
+    defaultTokens[TickerKey.USDC].contractAddress,
+    defaultTokens[TickerKey.USDC].decimals,
+    defaultTokens[TickerKey.USDC].ticker,
+    defaultTokens[TickerKey.USDC].name
+  ),
+  [TickerKey.WETH]: new Token(
+    ChainId.MAINNET,
+    defaultTokens[TickerKey.WETH].contractAddress,
+    defaultTokens[TickerKey.WETH].decimals,
+    defaultTokens[TickerKey.WETH].ticker,
+    defaultTokens[TickerKey.WETH].name
+  ),
+};
 
 export const POOLS_ABI = [
   {

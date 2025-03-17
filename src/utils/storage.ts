@@ -1,10 +1,17 @@
 import KeyMirror from "keymirror";
 
-import { Currency, Language } from "utils/constants";
+import {
+  Currency,
+  GasSettingsMode,
+  GasSettingsSpeed,
+  Language,
+} from "utils/constants";
+import { GasSettingsProps } from "utils/interfaces";
 
 export const storageKey = KeyMirror({
   CURRENCY: true,
   LANGUAGE: true,
+  GAS_SETTINGS: true,
 });
 
 export const getStoredCurrency = (): Currency => {
@@ -59,4 +66,29 @@ export const getStoredLanguage = (): Language => {
 
 export const setStoredLanguage = (language: Language): void => {
   localStorage.setItem(storageKey.LANGUAGE, language);
+};
+
+export const getStoredGasSettings = (): GasSettingsProps => {
+  let settings: GasSettingsProps = {
+    gasLimit: 0,
+    maxFee: 0,
+    maxPriorityFee: 0,
+    mode: GasSettingsMode.BASIC,
+    slippage: 0.5,
+    speed: GasSettingsSpeed.STANDARD,
+  };
+
+  try {
+    const data = localStorage.getItem(storageKey.GAS_SETTINGS);
+
+    if (data) settings = JSON.parse(data);
+
+    return settings;
+  } catch {
+    return settings;
+  }
+};
+
+export const setStoredGasSettings = (settings: GasSettingsProps): void => {
+  localStorage.setItem(storageKey.GAS_SETTINGS, JSON.stringify(settings));
 };

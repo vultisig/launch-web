@@ -96,7 +96,7 @@ const Content: FC = () => {
   } = {
     loading: true,
     open: false,
-    tokens: defaultTokens,
+    tokens: Object.values(defaultTokens),
   };
   const [state, setState] = useState(initialState);
   const { loading, open, tokens } = state;
