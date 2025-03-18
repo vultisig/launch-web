@@ -37,16 +37,22 @@ export default keyMirror({
   MARKET_CAP: true,
   MAX: true,
   MAX_FEE: true,
+  MAX_NETWORK_FEE: true,
   MAX_PRIORITY_FEE: true,
+  MAX_SLIPPAGE: true,
   MERGE: true,
+  MIN_RECEIVED: true,
   // N
+  NETWORK_FEE_EST: true,
   // O
   // P
   PER_HOUR: true,
   PRICE: true,
+  PRICE_IMPACT: true,
   // Q
   // R
   RESET: true,
+  ROUTE: true,
   // S
   SAVE: true,
   SETTINGS: true,
