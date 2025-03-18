@@ -18,9 +18,9 @@ export interface GasSettingsProps {
 
 export interface SwapFormProps {
   allocateAmount: number;
-  allocateCoin: TickerKey;
+  allocateToken: TickerKey;
   buyAmount: number;
-  buyCoin: TickerKey;
+  buyToken: TickerKey;
 }
 
 export interface TokenProps {

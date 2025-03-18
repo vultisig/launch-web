@@ -32,6 +32,7 @@ export default {
   // J
   // K
   // L
+  [translation.LOADING]: "Loading",
   // M
   [translation.MARKET_CAP]: "Market Cap",
   [translation.MAX]: "Max",

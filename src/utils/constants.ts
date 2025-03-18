@@ -49,6 +49,7 @@ export enum PageKey {
 }
 
 export enum ContractAddress {
+  ETH_TOKEN = "0x0000000000000000000000000000000000000000",
   POOL_FACTORY = "0x1F98431c8aD98523631AE4a59f267346ea31F984",
   QUOTER = "0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6",
   SWAP_ROUTER = "0xE592427A0AEce92De3Edee1F18E0157C05861564",
@@ -148,7 +149,7 @@ export const defaultTokens: Record<TickerKey, TokenProps> = {
   [TickerKey.ETH]: {
     balance: 0,
     cmcId: 1027,
-    contractAddress: ContractAddress.WETH_TOKEN,
+    contractAddress: ContractAddress.ETH_TOKEN,
     decimals: 18,
     isAirdropToken: false,
     isNative: true,

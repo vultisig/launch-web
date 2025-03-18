@@ -32,6 +32,7 @@ export default keyMirror({
   // J
   // K
   // L
+  LOADING: true,
   // M
   MARKET_CAP: true,
   MAX: true,
