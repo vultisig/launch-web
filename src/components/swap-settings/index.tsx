@@ -1,20 +1,30 @@
-import { FC, useEffect } from "react";
+import { FC, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Form, InputNumber, Radio } from "antd";
 import { GasSettingsMode, GasSettingsSpeed } from "utils/constants";
 import { GasSettingsProps } from "utils/interfaces";
-import { getStoredGasSettings, setStoredGasSettings } from "utils/storage";
+import {
+  DEFAULT_GAS_SETTING,
+  getStoredGasSettings,
+  setStoredGasSettings,
+} from "utils/storage";
 import constantKeys from "i18n/constant-keys";
 
 import { CarFront, ChevronLeft, Hourglass, Timer } from "icons";
+import api, { SuggestedGasFeeData } from "utils/api";
 
 interface ComponentProps {
   onClose: () => void;
 }
-
+interface InitialState {
+  fees: SuggestedGasFeeData | null;
+}
 const Component: FC<ComponentProps> = ({ onClose }) => {
+  const initialState: InitialState = { fees: null };
   const { t } = useTranslation();
   const [form] = Form.useForm<GasSettingsProps>();
+  const [state, setState] = useState(initialState);
+  const { fees } = state;
 
   const handleReset = () => {
     form.resetFields();
@@ -34,9 +44,29 @@ const Component: FC<ComponentProps> = ({ onClose }) => {
       .validateFields()
       .then((values) => {
         if (values.mode === GasSettingsMode.BASIC) {
-          values.maxFee = 0;
-          values.maxPriorityFee = 0;
-          values.gasLimit = 0;
+          switch (values.speed) {
+            case GasSettingsSpeed.FAST: {
+              values.maxFee = Number(fees?.high.suggestedMaxFeePerGas);
+              values.maxPriorityFee = Number(
+                fees?.high.suggestedMaxPriorityFeePerGas
+              );
+              break;
+            }
+            case GasSettingsSpeed.STANDARD: {
+              values.maxFee = Number(fees?.medium.suggestedMaxFeePerGas);
+              values.maxPriorityFee = Number(
+                fees?.medium.suggestedMaxPriorityFeePerGas
+              );
+              break;
+            }
+            case GasSettingsSpeed.SLOW: {
+              values.maxFee = Number(fees?.low.suggestedMaxFeePerGas);
+              values.maxPriorityFee = Number(
+                fees?.low.suggestedMaxPriorityFeePerGas
+              );
+              break;
+            }
+          }
         }
 
         setStoredGasSettings(values);
@@ -47,9 +77,23 @@ const Component: FC<ComponentProps> = ({ onClose }) => {
   };
 
   const componentDidMount = () => {
-    const settings = getStoredGasSettings();
-
-    form.setFieldsValue(settings);
+    let settings = getStoredGasSettings();
+    api
+      .suggestedFees()
+      .then((fees) => {
+        setState((preState) => ({ ...preState, fees }));
+        if (settings === DEFAULT_GAS_SETTING) {
+          settings = {
+            ...settings,
+            maxFee: Number(fees.medium.suggestedMaxFeePerGas),
+            maxPriorityFee: Number(fees.medium.suggestedMaxPriorityFeePerGas),
+          };
+          setStoredGasSettings(settings);
+        }
+      })
+      .finally(() => {
+        form.setFieldsValue(settings);
+      });
   };
 
   useEffect(componentDidMount, []);
@@ -111,7 +155,7 @@ const Component: FC<ComponentProps> = ({ onClose }) => {
         >
           <InputNumber
             min={0.1}
-            max={50}
+            max={1.5}
             step={0.1}
             controls={false}
             suffix={t(constantKeys.CUSTOM)}
@@ -159,25 +203,52 @@ const Component: FC<ComponentProps> = ({ onClose }) => {
                       <Timer className="icon" />
                       <span className="title">
                         <span className="text">{t(constantKeys.FAST)}</span>
-                        <span className="speed">~10s</span>
+                        <span className="speed">
+                          ~{Number(fees?.high.minWaitTimeEstimate) / 1000}s
+                        </span>
                       </span>
-                      <span className="gwei">0 - 0.004293 Gwei</span>
+                      <span className="gwei">
+                        0 -{" "}
+                        {(
+                          Number(fees?.high.suggestedMaxFeePerGas) +
+                          Number(fees?.high.suggestedMaxPriorityFeePerGas)
+                        ).toFixed(6)}{" "}
+                        Gwei
+                      </span>
                     </Radio>
                     <Radio value={GasSettingsSpeed.STANDARD}>
                       <CarFront className="icon" />
                       <span className="title">
                         <span className="text">{t(constantKeys.STANDARD)}</span>
-                        <span className="speed">~30s</span>
+                        <span className="speed">
+                          ~{Number(fees?.medium.maxWaitTimeEstimate) / 1000}s
+                        </span>
                       </span>
-                      <span className="gwei">0 - 0.003786 Gwei</span>
+                      <span className="gwei">
+                        0 -{" "}
+                        {(
+                          Number(fees?.medium.suggestedMaxFeePerGas) +
+                          Number(fees?.medium.suggestedMaxPriorityFeePerGas)
+                        ).toFixed(6)}{" "}
+                        Gwei
+                      </span>
                     </Radio>
                     <Radio value={GasSettingsSpeed.SLOW}>
                       <Hourglass className="icon" />
                       <span className="title">
                         <span className="text">{t(constantKeys.SLOW)}</span>
-                        <span className="speed">~120s</span>
+                        <span className="speed">
+                          ~{Number(fees?.low.maxWaitTimeEstimate) / 1000}s
+                        </span>
                       </span>
-                      <span className="gwei">0 - 0.002864 Gwei</span>
+                      <span className="gwei">
+                        0 -{" "}
+                        {(
+                          Number(fees?.low.suggestedMaxFeePerGas) +
+                          Number(fees?.low.suggestedMaxPriorityFeePerGas)
+                        ).toFixed(6)}{" "}
+                        Gwei
+                      </span>
                     </Radio>
                   </Radio.Group>
                 </Form.Item>

@@ -8,6 +8,15 @@ import {
 } from "utils/constants";
 import { GasSettingsProps } from "utils/interfaces";
 
+export const DEFAULT_GAS_SETTING: GasSettingsProps = {
+  gasLimit: 120000,
+  maxFee: 0,
+  maxPriorityFee: 0,
+  mode: GasSettingsMode.BASIC,
+  slippage: 0.5,
+  speed: GasSettingsSpeed.STANDARD,
+};
+
 export const storageKey = KeyMirror({
   CURRENCY: true,
   LANGUAGE: true,
@@ -69,15 +78,7 @@ export const setStoredLanguage = (language: Language): void => {
 };
 
 export const getStoredGasSettings = (): GasSettingsProps => {
-  let settings: GasSettingsProps = {
-    gasLimit: 0,
-    maxFee: 0,
-    maxPriorityFee: 0,
-    mode: GasSettingsMode.BASIC,
-    slippage: 0.5,
-    speed: GasSettingsSpeed.STANDARD,
-  };
-
+  let settings = DEFAULT_GAS_SETTING;
   try {
     const data = localStorage.getItem(storageKey.GAS_SETTINGS);
 

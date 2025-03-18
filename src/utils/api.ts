@@ -33,6 +33,27 @@ interface HistoricalPriceProps {
   price: number;
 }
 
+interface GasFeeEstimate {
+  suggestedMaxPriorityFeePerGas: string;
+  suggestedMaxFeePerGas: string;
+  minWaitTimeEstimate: number;
+  maxWaitTimeEstimate: number;
+}
+
+export interface SuggestedGasFeeData {
+  low: GasFeeEstimate;
+  medium: GasFeeEstimate;
+  high: GasFeeEstimate;
+  estimatedBaseFee: string;
+  networkCongestion: number;
+  latestPriorityFeeRange: [string, string];
+  historicalPriorityFeeRange: [string, string];
+  historicalBaseFeeRange: [string, string];
+  priorityFeeTrend: "up" | "down" | "stable";
+  baseFeeTrend: "up" | "down" | "stable";
+  version: string;
+}
+
 const api = {
   balance: async (
     address: string,
@@ -179,6 +200,16 @@ const api = {
 
       return allData;
     }
+  },
+  suggestedFees: async (): Promise<SuggestedGasFeeData> => {
+    const endpoint =
+      "https://gas.api.cx.metamask.io/networks/1/suggestedGasFees";
+    const response = await axios.get(endpoint, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
   },
   volume: async (days: number): Promise<number> => {
     const endpoint = `https://gateway.thegraph.com/api/${
