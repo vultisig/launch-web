@@ -67,6 +67,8 @@ const Component: FC<ComponentProps> = ({ onClose }) => {
               break;
             }
           }
+        } else {
+          values.speed = GasSettingsSpeed.CUSTOM;
         }
 
         setStoredGasSettings(values);
@@ -155,7 +157,7 @@ const Component: FC<ComponentProps> = ({ onClose }) => {
         >
           <InputNumber
             min={0.1}
-            max={1.5}
+            max={50}
             step={0.1}
             controls={false}
             suffix={t(constantKeys.CUSTOM)}

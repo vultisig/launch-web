@@ -48,15 +48,24 @@ export enum PageKey {
   SWAP = "3",
 }
 
+export enum TxStatus {
+  PENDING = "pending",
+  SUCCESS = "success",
+  FAILED = "failed",
+}
+
 export enum ContractAddress {
   ETH_TOKEN = "0x0000000000000000000000000000000000000000",
+  LAUNCH_LIST = "0x334eb11D23c0C187A844B234BA0e52121F60Fdf7",
   POOL_FACTORY = "0x1F98431c8aD98523631AE4a59f267346ea31F984",
   QUOTER = "0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6",
   SWAP_ROUTER = "0xE592427A0AEce92De3Edee1F18E0157C05861564",
   UNI_TOKEN = "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
   USDC_TOKEN = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-  WETH_USDC_POOL = "0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640",
+  VULT = "0xb788144df611029c60b859df47e79b7726c4deba",
+  VULT_WETH_POOL = "0xeDeC8b375f256B7cf34f0b0d85A13E7b2E3F46af",
   WETH_TOKEN = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+  WETH_USDC_POOL = "0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640",
 }
 
 export enum Currency {
@@ -98,9 +107,10 @@ export enum TickerKey {
 }
 
 export enum GasSettingsSpeed {
-  FAST = "FAST",
-  SLOW = "SLOW",
-  STANDARD = "STANDARD",
+  CUSTOM = "Custom",
+  FAST = "Fast",
+  SLOW = "Slow",
+  STANDARD = "Standard",
 }
 
 export enum GasSettingsMode {

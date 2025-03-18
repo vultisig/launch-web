@@ -5,7 +5,7 @@ declare global {
     toBalanceFormat(): string;
     toHexFormat(zeroPad: number): string;
     toNumberFormat(): string;
-    toPriceFormat(currency: Currency): string;
+    toPriceFormat(currency: Currency, decimal?: number): string;
   }
 
   interface String {
@@ -66,11 +66,14 @@ Number.prototype.toNumberFormat = function () {
   return formattedValue;
 };
 
-Number.prototype.toPriceFormat = function (currency: Currency) {
+Number.prototype.toPriceFormat = function (
+  currency: Currency,
+  decimal?: number
+) {
   const formattedValue = this.toLocaleString("en-US", {
     style: "decimal",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: decimal || 2,
+    maximumFractionDigits: decimal || 2,
   });
 
   return `${currencySymbol[currency]}${formattedValue}`;
@@ -82,6 +85,8 @@ String.prototype.replaceArgs = function (args) {
   });
 };
 
-String.prototype.toNumberFormat = function () {
-  return this.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+String.prototype.toNumberFormat = function (): string {
+  const [integerPart, decimalPart] = this.split(".");
+  const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return decimalPart ? `${formattedInteger}.${decimalPart}` : formattedInteger;
 };

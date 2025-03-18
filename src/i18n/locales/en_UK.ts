@@ -37,15 +37,21 @@ export default {
   [translation.MARKET_CAP]: "Market Cap",
   [translation.MAX]: "Max",
   [translation.MAX_FEE]: "Max Fee",
+  [translation.MAX_NETWORK_FEE]: "Max Network Fee",
   [translation.MAX_PRIORITY_FEE]: "Max Priority Fee",
+  [translation.MAX_SLIPPAGE]: "Max Slippage",
   [translation.MERGE]: "Merge",
+  [translation.MIN_RECEIVED]: "Min Received",
   // N
+  [translation.NETWORK_FEE_EST]: "Network Fee (est)",
   // O
   // P
   [translation.PER_HOUR]: "Per Hour",
   [translation.PRICE]: "Price",
+  [translation.PRICE_IMPACT]: "Price Impact",
   // Q
   [translation.RESET]: "Reset",
+  [translation.ROUTE]: "Route",
   // R
   // S
   [translation.SETTINGS]: "Settings",

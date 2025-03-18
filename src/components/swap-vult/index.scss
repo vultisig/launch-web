@@ -38,6 +38,28 @@
     }
   }
 
+  .info {
+    display: flex;
+    flex-direction: column;
+    gap: rem(12);
+
+    .item {
+      align-items: center;
+      display: flex;
+      font-weight: 500;
+      justify-content: space-between;
+      line-height: rem(24);
+    }
+
+    .error {
+      color: $alert-error;
+    }
+
+    .success {
+      color: $button-primary;
+    }
+  }
+
   .swap {
     align-items: center;
     display: flex;

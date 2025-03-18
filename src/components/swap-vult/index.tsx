@@ -8,14 +8,8 @@ import { useAccount } from "wagmi";
 import { useBaseContext } from "context";
 import { HashKey, TickerKey, uniswapTokens } from "utils/constants";
 import { SwapFormProps } from "utils/interfaces";
-import {
-  checkApproval,
-  executeSwap,
-  getPoolPrice,
-  getTokensValue,
-  getUniswapQuote,
-  requestApproval,
-} from "utils/swap";
+import { getStoredGasSettings } from "utils/storage";
+import useSwapVult from "hooks/swap";
 import constantKeys from "i18n/constant-keys";
 
 import { ArrowDownUp, SettingsTwo } from "icons";
@@ -25,7 +19,10 @@ import TokenDropdown from "components/token-dropdown";
 interface InitialState {
   approving?: boolean;
   loading?: boolean;
+  maxNetworkFee: number;
   needsApproval?: boolean;
+  poolPrice: number;
+  priceImpact: number;
   settingsMode?: boolean;
   swapping?: boolean;
   values?: Record<TickerKey, number>;
@@ -33,13 +30,36 @@ interface InitialState {
 
 const Component: FC = () => {
   const { t } = useTranslation();
-  const initialState: InitialState = {};
+  const initialState: InitialState = {
+    maxNetworkFee: 0,
+    poolPrice: 0,
+    priceImpact: 0,
+  };
   const [state, setState] = useState(initialState);
-  const { approving, loading, needsApproval, settingsMode, swapping, values } =
-    state;
+  const {
+    approving,
+    loading,
+    maxNetworkFee,
+    needsApproval,
+    priceImpact,
+    settingsMode,
+    swapping,
+    values,
+  } = state;
   const { currency } = useBaseContext();
   const { address, isConnected } = useAccount();
   const [form] = Form.useForm<SwapFormProps>();
+  const {
+    checkApproval,
+    executeSwap,
+    getMaxNetworkFee,
+    getPoolPrice,
+    getPriceImpact,
+    getTokensValue,
+    getUniswapQuote,
+    requestApproval,
+  } = useSwapVult();
+  const gasSettings = getStoredGasSettings();
 
   const handleChangeToken = (ticker: TickerKey, reverse: boolean) => {
     if (!loading) {
@@ -116,7 +136,7 @@ const Component: FC = () => {
       } else {
         setState((prevState) => ({ ...prevState, swapping: true }));
 
-        executeSwap(allocateAmount, buyAmount, tokenIn, tokenOut, address)
+        executeSwap(allocateAmount, buyAmount, tokenIn, tokenOut)
           .then((txHash) => {
             console.log("swap done:", txHash);
           })
@@ -160,15 +180,17 @@ const Component: FC = () => {
         Promise.all([
           getTokensValue(),
           getPoolPrice(tokenA, tokenB),
+          getPriceImpact(tokenA, tokenB, amountIn),
           address
             ? checkApproval(
                 reverse ? amountOut : amountIn,
                 reverse ? tokenB.address : tokenA.address,
-                reverse ? tokenB.decimals : tokenA.decimals,
-                address
+                reverse ? tokenB.decimals : tokenA.decimals
               ).then(({ needsApproval }) => needsApproval)
             : Promise.resolve(true),
-        ]).then(([values, _poolPrice, needsApproval]) => {
+        ]).then(([values, poolPrice, priceImpact, needsApproval]) => {
+          console.log("priceImpact: ", priceImpact);
+
           form.setFieldValue(
             reverse ? "allocateAmount" : "buyAmount",
             amountOut
@@ -177,7 +199,10 @@ const Component: FC = () => {
           setState((prevState) => ({
             ...prevState,
             loading: false,
+            maxNetworkFee: getMaxNetworkFee(values[TickerKey.ETH]),
             needsApproval,
+            poolPrice,
+            priceImpact,
             values,
           }));
         });
@@ -295,40 +320,92 @@ const Component: FC = () => {
       </div>
       <Form.Item<SwapFormProps>
         shouldUpdate={(prevValues, curValues) =>
+          prevValues.allocateAmount !== curValues.allocateAmount ||
+          prevValues.buyAmount !== curValues.buyAmount ||
+          prevValues.allocateToken !== curValues.allocateToken ||
           prevValues.buyToken !== curValues.buyToken
         }
         noStyle
       >
-        {({ getFieldValue }) => {
-          const allocateAmount: number = getFieldValue("allocateAmount");
-          const buyAmount: number = getFieldValue("buyAmount");
+        {({ getFieldsValue }) => {
+          const { allocateAmount, allocateToken, buyAmount, buyToken } =
+            getFieldsValue();
 
           return loading ? (
             <span className="secondary-button disabled">
               {t(constantKeys.LOADING)}
             </span>
-          ) : isConnected ? (
-            allocateAmount && buyAmount ? (
-              <span
-                className={`secondary-button${approving ? " disabled" : ""}`}
-                onClick={handleSwap}
-              >
-                {needsApproval && !approving
-                  ? t(constantKeys.APPROVE)
-                  : t(constantKeys.SWAP)}
-              </span>
-            ) : (
-              <span className="secondary-button disabled">
-                {t(constantKeys.ENTER_AMOUNT)}
-              </span>
-            )
           ) : (
-            <Link
-              to={HashKey.CONNECT}
-              className={`secondary-button${loading ? " disabled" : ""}`}
-            >
-              {t(constantKeys.CONNECT_WALLET)}
-            </Link>
+            <>
+              {allocateAmount && buyAmount ? (
+                <div className="info">
+                  <div className="item">
+                    <span className="label">
+                      {t(constantKeys.MAX_SLIPPAGE)}
+                    </span>
+                    <span className="value success">{`${gasSettings.slippage}%`}</span>
+                  </div>
+                  <div className="item">
+                    <span className="label">
+                      {t(constantKeys.MIN_RECEIVED)}
+                    </span>
+                    <span className="value">
+                      {buyAmount * (1 - gasSettings.slippage / 100)}
+                    </span>
+                  </div>
+                  <div className="item">
+                    <span className="label">
+                      {t(constantKeys.NETWORK_FEE_EST)}
+                    </span>
+                    <span className="value success">{gasSettings.speed}</span>
+                  </div>
+                  <div className="item">
+                    <span className="label">
+                      {t(constantKeys.MAX_NETWORK_FEE)}
+                    </span>
+                    <span className="value">
+                      {maxNetworkFee.toPriceFormat(currency, 6)}
+                    </span>
+                  </div>
+                  <div className="item">
+                    <span className="label">
+                      {t(constantKeys.PRICE_IMPACT)}
+                    </span>
+                    <span className="value error">{`${priceImpact}%`}</span>
+                  </div>
+                  <div className="item">
+                    <span className="label">{t(constantKeys.ROUTE)}</span>
+                    <span className="value success">{`${allocateToken} → ${buyToken}`}</span>
+                  </div>
+                </div>
+              ) : null}
+              {isConnected ? (
+                allocateAmount && buyAmount ? (
+                  approving ? (
+                    <span className="secondary-button disabled">
+                      {t(constantKeys.APPROVE)}
+                    </span>
+                  ) : (
+                    <span className="secondary-button" onClick={handleSwap}>
+                      {needsApproval
+                        ? t(constantKeys.APPROVE)
+                        : t(constantKeys.SWAP)}
+                    </span>
+                  )
+                ) : (
+                  <span className="secondary-button disabled">
+                    {t(constantKeys.ENTER_AMOUNT)}
+                  </span>
+                )
+              ) : (
+                <Link
+                  to={HashKey.CONNECT}
+                  className={`secondary-button${loading ? " disabled" : ""}`}
+                >
+                  {t(constantKeys.CONNECT_WALLET)}
+                </Link>
+              )}
+            </>
           );
         }}
       </Form.Item>
