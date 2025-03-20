@@ -12,7 +12,7 @@ import { getStoredGasSettings } from "utils/storage";
 import useSwapVult from "hooks/swap";
 import constantKeys from "i18n/constant-keys";
 
-import { ArrowDownUp, SettingsTwo } from "icons";
+import { ArrowDownUp, Check, Info, SettingsTwo } from "icons";
 import Settings from "components/swap-settings";
 import TokenDropdown from "components/token-dropdown";
 
@@ -50,6 +50,7 @@ const Component: FC = () => {
   const { address, isConnected } = useAccount();
   const [form] = Form.useForm<SwapFormProps>();
   const {
+    isWhitelist,
     checkApproval,
     executeSwap,
     getMaxNetworkFee,
@@ -126,13 +127,15 @@ const Component: FC = () => {
       if (needsApproval) {
         setState((prevState) => ({ ...prevState, approving: true }));
 
-        requestApproval(
-          allocateAmount,
-          tokenIn.address,
-          tokenIn.decimals
-        ).finally(() => {
-          setState((prevState) => ({ ...prevState, approving: false }));
-        });
+        requestApproval(allocateAmount, tokenIn.address, tokenIn.decimals)
+          .then((tx) => {
+            // returned tx hash
+            console.log("approve txHash:", tx);
+            setState((prevState) => ({ ...prevState, needsApproval: false }));
+          })
+          .finally(() => {
+            setState((prevState) => ({ ...prevState, approving: false }));
+          });
       } else {
         setState((prevState) => ({ ...prevState, swapping: true }));
 
@@ -181,13 +184,11 @@ const Component: FC = () => {
           getTokensValue(),
           getPoolPrice(tokenA, tokenB),
           getPriceImpact(tokenA, tokenB, amountIn),
-          address
-            ? checkApproval(
-                reverse ? amountOut : amountIn,
-                reverse ? tokenB.address : tokenA.address,
-                reverse ? tokenB.decimals : tokenA.decimals
-              ).then(({ needsApproval }) => needsApproval)
-            : Promise.resolve(true),
+          checkApproval(
+            reverse ? amountOut : amountIn,
+            reverse ? tokenB.address : tokenA.address,
+            reverse ? tokenB.decimals : tokenA.decimals
+          ).then(({ needsApproval }) => needsApproval),
         ]).then(([values, poolPrice, priceImpact, needsApproval]) => {
           console.log("priceImpact: ", priceImpact);
 
@@ -380,23 +381,36 @@ const Component: FC = () => {
                 </div>
               ) : null}
               {isConnected ? (
-                allocateAmount && buyAmount ? (
-                  approving ? (
-                    <span className="secondary-button disabled">
-                      {t(constantKeys.APPROVE)}
-                    </span>
+                <>
+                  {isWhitelist ? (
+                    <div className="whitelist islisted">
+                      <Check />
+                      {t(constantKeys.WHITELISTED)}
+                    </div>
                   ) : (
-                    <span className="secondary-button" onClick={handleSwap}>
-                      {needsApproval
-                        ? t(constantKeys.APPROVE)
-                        : t(constantKeys.SWAP)}
+                    <div className="whitelist notlisted">
+                      <Info />
+                      {t(constantKeys.NOT_WHITELISTED)}
+                    </div>
+                  )}
+                  {allocateAmount && buyAmount ? (
+                    approving ? (
+                      <span className="secondary-button disabled">
+                        {t(constantKeys.APPROVE)}
+                      </span>
+                    ) : (
+                      <span className="secondary-button" onClick={handleSwap}>
+                        {needsApproval
+                          ? t(constantKeys.APPROVE)
+                          : t(constantKeys.SWAP)}
+                      </span>
+                    )
+                  ) : (
+                    <span className="secondary-button disabled">
+                      {t(constantKeys.ENTER_AMOUNT)}
                     </span>
-                  )
-                ) : (
-                  <span className="secondary-button disabled">
-                    {t(constantKeys.ENTER_AMOUNT)}
-                  </span>
-                )
+                  )}
+                </>
               ) : (
                 <Link
                   to={HashKey.CONNECT}

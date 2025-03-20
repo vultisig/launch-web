@@ -1,7 +1,7 @@
 import { FC, useEffect, useState } from "react";
 import { Layout } from "antd";
 import { FeeAmount, Pool } from "@uniswap/v3-sdk";
-import { Contract, formatEther, JsonRpcProvider } from "ethers";
+import { Contract, formatEther } from "ethers";
 import { erc20Abi } from "viem";
 import MediaQuery from "react-responsive";
 
@@ -17,9 +17,11 @@ import {
 import api from "utils/api";
 
 import SwapFees from "components/swap-fees";
+import SwapHistory from "components/swap-history";
 import SwapReports from "components/swap-reports";
 import SwapStats from "components/swap-stats";
 import SwapVult from "components/swap-vult";
+import { getRPCProvider } from "utils/providers";
 
 const { Content } = Layout;
 
@@ -47,11 +49,10 @@ const Component: FC = () => {
   const { changePage } = useBaseContext();
 
   const fetchPrice = async () => {
-    const provider = new JsonRpcProvider("https://api.vultisig.com/eth/");
     const contract = new Contract(
       ContractAddress.WETH_USDC_POOL,
       POOLS_ABI,
-      provider
+      getRPCProvider()
     );
     const slot0 = await contract.slot0();
     const poolLiquidity = String(await contract.liquidity());
@@ -89,11 +90,10 @@ const Component: FC = () => {
     });
 
     fetchPrice().then((price) => {
-      const provider = new JsonRpcProvider("https://api.vultisig.com/eth/");
       const contract = new Contract(
         ContractAddress.WETH_TOKEN,
         erc20Abi,
-        provider
+        getRPCProvider()
       );
 
       contract.totalSupply().then((totalSupply) => {
@@ -123,6 +123,7 @@ const Component: FC = () => {
             period={period}
             onChangePeriod={handlePeriod}
           />
+          <SwapHistory />
         </div>
       </MediaQuery>
       <MediaQuery maxWidth={1399}>
@@ -134,6 +135,7 @@ const Component: FC = () => {
           period={period}
           onChangePeriod={handlePeriod}
         />
+        <SwapHistory />
       </MediaQuery>
     </Content>
   );

@@ -18,6 +18,12 @@
 
     .secondary-button {
       height: rem(44);
+      width: rem(144);
+
+      .middle-truncate {
+        text-align: center;
+        flex: 1;
+      }
     }
 
     .ant-menu-item-icon {
@@ -213,9 +219,6 @@
     span {
       flex: 1;
       font-weight: 500;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
     }
 
     img {

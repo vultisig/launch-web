@@ -1,6 +1,6 @@
 import { ChainId, Token } from "@uniswap/sdk-core";
 
-import { TokenProps } from "utils/interfaces";
+import { GasSettingsProps, TokenProps } from "utils/interfaces";
 
 export enum ChainKey {
   ARBITRUM = "Arbitrum",
@@ -249,6 +249,15 @@ export const uniswapTokens: Record<TickerKey, Token> = {
     defaultTokens[TickerKey.WETH].ticker,
     defaultTokens[TickerKey.WETH].name
   ),
+};
+
+export const DEFAULT_GAS_SETTING: GasSettingsProps = {
+  gasLimit: 120000,
+  maxFee: 0,
+  maxPriorityFee: 0,
+  mode: GasSettingsMode.BASIC,
+  slippage: 0.5,
+  speed: GasSettingsSpeed.STANDARD,
 };
 
 export const POOLS_ABI = [

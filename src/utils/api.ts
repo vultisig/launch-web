@@ -115,15 +115,14 @@ const api = {
   ): Promise<HistoricalPriceProps[]> => {
     const query = `{
       tokenDayDatas(
-        where: {id_lte: "${contract}-${start}", id_gte: "${contract}-${end}"}
-        orderBy: id
+        orderBy: date
         orderDirection: desc
-      ) {
+        where: {date_lte: ${start}, date_gte: ${end}, token_: {id: "${contract.toLowerCase()}"}}
+      ) { 
         date
-        priceUSD  
+        priceUSD
       }
     }`;
-
     return await request<{
       tokenDayDatas: { date: number; priceUSD: string }[];
     }>(endpoint, query)
@@ -142,16 +141,15 @@ const api = {
     end: number
   ): Promise<HistoricalPriceProps[]> => {
     const query = `{
-      tokenHourDatas(
-        where: {id_lte: "${contract}-${start}", id_gte: "${contract}-${end}"}
-        orderBy: id
-        orderDirection: desc
-      ) {
-        periodStartUnix
-        priceUSD  
-      }
-    }`;
-
+    tokenHourDatas(
+      orderBy: periodStartUnix
+      orderDirection: desc
+      where: {periodStartUnix_lte: ${start}, periodStartUnix_gte: ${end}, token_: {id: "${contract.toLowerCase()}"}}
+    ) {
+      priceUSD
+      periodStartUnix
+    }
+  }`;
     return await request<{
       tokenHourDatas: { periodStartUnix: number; priceUSD: string }[];
     }>(endpoint, query)
@@ -167,26 +165,27 @@ const api = {
     const endpoint = `https://gateway.thegraph.com/api/${
       import.meta.env.VITE_GRAPH_API_KEY
     }/subgraphs/id/5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV`;
-    const startEpochHours = Math.floor(Date.now() / 1000 / 3600);
-    const endEpochHours = startEpochHours - 24 * days;
+
+    const startEpochSec = Math.floor(Date.now() / 1000);
+    const endEpochSec = startEpochSec - 24 * days * 3600;
 
     if (days > 7) {
       return await api.historicalPriceByDay(
         endpoint,
-        ContractAddress.WETH_TOKEN,
-        Math.floor(startEpochHours / 24),
-        Math.floor(endEpochHours / 24)
+        ContractAddress.UNI_TOKEN,
+        startEpochSec,
+        endEpochSec
       );
     } else {
       let allData: HistoricalPriceProps[] = [];
-      let currentStart = startEpochHours;
+      let currentStart = startEpochSec;
 
-      while (currentStart > endEpochHours) {
+      while (currentStart > endEpochSec) {
         const data = await api.historicalPriceByHour(
           endpoint,
-          ContractAddress.WETH_TOKEN,
+          ContractAddress.UNI_TOKEN,
           currentStart,
-          endEpochHours
+          endEpochSec
         );
 
         if (!data.length) break;
@@ -217,7 +216,7 @@ const api = {
     }/subgraphs/id/5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV`;
     const currentEpochDay = Math.floor(Date.now() / 1000 / 3600 / (24 * days));
     const query = `{
-      tokenDayData(id: "${ContractAddress.WETH_TOKEN}-${currentEpochDay}") {
+      tokenDayData(id: "${ContractAddress.UNI_TOKEN.toLowerCase()}-${currentEpochDay}") {
         volumeUSD
       }
     }`;

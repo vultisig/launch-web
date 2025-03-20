@@ -189,6 +189,60 @@ export const ChevronLeft: FC<SVGProps<SVGSVGElement>> = ({
   </svg>
 );
 
+export const ChevronRight: FC<SVGProps<SVGSVGElement>> = ({
+  fill = "none",
+  height = 24,
+  stroke = "white",
+  strokeLinecap = "round",
+  strokeLinejoin = "round",
+  strokeWidth = 2,
+  width = 24,
+  ...props
+}) => (
+  <svg
+    viewBox="0 0 24 24"
+    {...{
+      ...props,
+      fill,
+      height,
+      stroke,
+      strokeLinecap,
+      strokeLinejoin,
+      strokeWidth,
+      width,
+    }}
+  >
+    <path d="M9 18L15 12L9 6" />
+  </svg>
+);
+
+export const Check: FC<SVGProps<SVGSVGElement>> = ({
+  fill = "none",
+  height = 24,
+  stroke = "white",
+  strokeLinecap = "round",
+  strokeLinejoin = "round",
+  strokeWidth = 2,
+  width = 24,
+  ...props
+}) => (
+  <svg
+    viewBox="0 0 24 24"
+    {...{
+      ...props,
+      fill,
+      height,
+      stroke,
+      strokeLinecap,
+      strokeLinejoin,
+      strokeWidth,
+      width,
+    }}
+  >
+    <path d="M20 6L9 17L4 12" />
+  </svg>
+);
+
 export const CheckCheck: FC<SVGProps<SVGSVGElement>> = ({
   fill = "none",
   height = 24,
@@ -240,6 +294,33 @@ export const ChevronUp: FC<SVGProps<SVGSVGElement>> = ({
     }}
   >
     <path d="M18 15L12 9L6 15" />
+  </svg>
+);
+
+export const CircleCheckBig: FC<SVGProps<SVGSVGElement>> = ({
+  fill = "none",
+  height = 24,
+  stroke = "white",
+  strokeLinecap = "round",
+  strokeLinejoin = "round",
+  strokeWidth = 2,
+  width = 24,
+  ...props
+}) => (
+  <svg
+    viewBox="0 0 24 24"
+    {...{
+      ...props,
+      fill,
+      height,
+      stroke,
+      strokeLinecap,
+      strokeLinejoin,
+      strokeWidth,
+      width,
+    }}
+  >
+    <path d="M21.8011 9.99999C22.2578 12.2413 21.9323 14.5714 20.879 16.6018C19.8256 18.6322 18.108 20.24 16.0126 21.1573C13.9172 22.0746 11.5707 22.2458 9.3644 21.6424C7.15807 21.0389 5.22529 19.6974 3.88838 17.8414C2.55146 15.9854 1.89122 13.7272 2.01776 11.4434C2.14431 9.15952 3.04998 6.98808 4.58375 5.29116C6.11752 3.59424 8.18668 2.47442 10.4462 2.11844C12.7056 1.76247 15.0189 2.19185 17.0001 3.33499M9 11L12 14L22 4" />
   </svg>
 );
 
@@ -321,6 +402,87 @@ export const Hourglass: FC<SVGProps<SVGSVGElement>> = ({
     }}
   >
     <path d="M5 22H19M5 2H19M17 22V17.828C16.9999 17.2976 16.7891 16.789 16.414 16.414L12 12M12 12L7.586 16.414C7.2109 16.789 7.00011 17.2976 7 17.828V22M12 12L7.586 7.586C7.2109 7.21101 7.00011 6.70239 7 6.172V2M12 12L16.414 7.586C16.7891 7.21101 16.9999 6.70239 17 6.172V2" />
+  </svg>
+);
+
+export const Info: FC<SVGProps<SVGSVGElement>> = ({
+  fill = "none",
+  height = 24,
+  stroke = "white",
+  strokeLinecap = "round",
+  strokeLinejoin = "round",
+  strokeWidth = 2,
+  width = 24,
+  ...props
+}) => (
+  <svg
+    viewBox="0 0 24 24"
+    {...{
+      ...props,
+      fill,
+      height,
+      stroke,
+      strokeLinecap,
+      strokeLinejoin,
+      strokeWidth,
+      width,
+    }}
+  >
+    <path d="M12 16V12M12 8H12.01M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" />
+  </svg>
+);
+
+export const Loader: FC<SVGProps<SVGSVGElement>> = ({
+  fill = "none",
+  height = 24,
+  stroke = "white",
+  strokeLinecap = "round",
+  strokeLinejoin = "round",
+  strokeWidth = 2,
+  width = 24,
+  ...props
+}) => (
+  <svg
+    viewBox="0 0 24 24"
+    {...{
+      ...props,
+      fill,
+      height,
+      stroke,
+      strokeLinecap,
+      strokeLinejoin,
+      strokeWidth,
+      width,
+    }}
+  >
+    <path d="M12 2V6M16.2 7.7999L19.1 4.8999M18 12H22M16.2 16.2L19.1 19.1M12 18V22M4.90002 19.1L7.80002 16.2M2 12H6M4.90002 4.8999L7.80002 7.7999" />
+  </svg>
+);
+
+export const OctagonAlert: FC<SVGProps<SVGSVGElement>> = ({
+  fill = "none",
+  height = 24,
+  stroke = "white",
+  strokeLinecap = "round",
+  strokeLinejoin = "round",
+  strokeWidth = 2,
+  width = 24,
+  ...props
+}) => (
+  <svg
+    viewBox="0 0 24 24"
+    {...{
+      ...props,
+      fill,
+      height,
+      stroke,
+      strokeLinecap,
+      strokeLinejoin,
+      strokeWidth,
+      width,
+    }}
+  >
+    <path d="M12 16H12.01M12 8V12M15.312 2C15.8424 2.00011 16.351 2.2109 16.726 2.586L21.414 7.274C21.7891 7.64899 21.9999 8.15761 22 8.688V15.312C21.9999 15.8424 21.7891 16.351 21.414 16.726L16.726 21.414C16.351 21.7891 15.8424 21.9999 15.312 22H8.688C8.15761 21.9999 7.64899 21.7891 7.274 21.414L2.586 16.726C2.2109 16.351 2.00011 15.8424 2 15.312V8.688C2.00011 8.15761 2.2109 7.64899 2.586 7.274L7.274 2.586C7.64899 2.2109 8.15761 2.00011 8.688 2H15.312Z" />
   </svg>
 );
 

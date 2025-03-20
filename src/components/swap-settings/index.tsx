@@ -1,13 +1,13 @@
 import { FC, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Form, InputNumber, Radio } from "antd";
-import { GasSettingsMode, GasSettingsSpeed } from "utils/constants";
-import { GasSettingsProps } from "utils/interfaces";
 import {
   DEFAULT_GAS_SETTING,
-  getStoredGasSettings,
-  setStoredGasSettings,
-} from "utils/storage";
+  GasSettingsMode,
+  GasSettingsSpeed,
+} from "utils/constants";
+import { GasSettingsProps } from "utils/interfaces";
+import { getStoredGasSettings, setStoredGasSettings } from "utils/storage";
 import constantKeys from "i18n/constant-keys";
 
 import { CarFront, ChevronLeft, Hourglass, Timer } from "icons";
@@ -16,9 +16,11 @@ import api, { SuggestedGasFeeData } from "utils/api";
 interface ComponentProps {
   onClose: () => void;
 }
+
 interface InitialState {
   fees: SuggestedGasFeeData | null;
 }
+
 const Component: FC<ComponentProps> = ({ onClose }) => {
   const initialState: InitialState = { fees: null };
   const { t } = useTranslation();
@@ -80,11 +82,12 @@ const Component: FC<ComponentProps> = ({ onClose }) => {
 
   const componentDidMount = () => {
     let settings = getStoredGasSettings();
+
     api
       .suggestedFees()
       .then((fees) => {
         setState((preState) => ({ ...preState, fees }));
-        if (settings === DEFAULT_GAS_SETTING) {
+        if (JSON.stringify(settings) === JSON.stringify(DEFAULT_GAS_SETTING)) {
           settings = {
             ...settings,
             maxFee: Number(fees.medium.suggestedMaxFeePerGas),

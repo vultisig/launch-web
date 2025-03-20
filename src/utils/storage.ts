@@ -1,26 +1,13 @@
 import KeyMirror from "keymirror";
 
-import {
-  Currency,
-  GasSettingsMode,
-  GasSettingsSpeed,
-  Language,
-} from "utils/constants";
-import { GasSettingsProps } from "utils/interfaces";
-
-export const DEFAULT_GAS_SETTING: GasSettingsProps = {
-  gasLimit: 120000,
-  maxFee: 0,
-  maxPriorityFee: 0,
-  mode: GasSettingsMode.BASIC,
-  slippage: 0.5,
-  speed: GasSettingsSpeed.STANDARD,
-};
+import { DEFAULT_GAS_SETTING, Currency, Language } from "utils/constants";
+import { GasSettingsProps, TransactionProps } from "utils/interfaces";
 
 export const storageKey = KeyMirror({
   CURRENCY: true,
   LANGUAGE: true,
   GAS_SETTINGS: true,
+  TRANSACTIONS: true,
 });
 
 export const getStoredCurrency = (): Currency => {
@@ -92,4 +79,69 @@ export const getStoredGasSettings = (): GasSettingsProps => {
 
 export const setStoredGasSettings = (settings: GasSettingsProps): void => {
   localStorage.setItem(storageKey.GAS_SETTINGS, JSON.stringify(settings));
+};
+
+export const getStoredTransaction = (
+  address: string,
+  hash: string
+): TransactionProps | undefined => {
+  try {
+    const transactions = getStoredTransactions(address);
+
+    return transactions.find((tx) => tx.hash === hash);
+  } catch {
+    return undefined;
+  }
+};
+
+export const setStoredTransaction = (
+  address: string,
+  transaction: TransactionProps
+): void => {
+  const transactions = getStoredTransactions(address);
+
+  setStoredTransactions(
+    address,
+    transactions.map((tx) => (tx.hash === transaction.hash ? transaction : tx))
+  );
+};
+
+export const getStoredTransactions = (address: string): TransactionProps[] => {
+  let transactions: TransactionProps[] = [];
+
+  try {
+    const data = localStorage.getItem(storageKey.TRANSACTIONS);
+
+    if (data) {
+      const vaults: Record<string, TransactionProps[]> = JSON.parse(data);
+
+      if (vaults[address]) transactions = vaults[address];
+    }
+
+    return transactions;
+  } catch {
+    return transactions;
+  }
+};
+
+export const setStoredTransactions = (
+  address: string,
+  transactions: TransactionProps[]
+): void => {
+  const data = localStorage.getItem(storageKey.TRANSACTIONS);
+  let wallets: Record<string, TransactionProps[]>;
+
+  try {
+    if (data) {
+      wallets = JSON.parse(data);
+
+      wallets[address] = transactions;
+    } else {
+      wallets = { [address]: transactions };
+    }
+  } catch {
+    wallets = {};
+  }
+
+  localStorage.setItem(storageKey.TRANSACTIONS, JSON.stringify(wallets));
 };

@@ -12,7 +12,7 @@
     <linearGradient id="linear-gradient-5" x1="13" y1="19.6" x2="13" y2="6.1" xlink:href="#linear-gradient"/>
     <linearGradient id="linear-gradient-6" x1="10.9" y1="19.6" x2="10.9" y2="6.1" xlink:href="#linear-gradient"/>
   </defs>
-  <circle cx="12" cy="12" r="12" fill="#02122b"/>
+  <circle cx="12" cy="12" r="12" fill="#061b3a"/>
   <path d="M5,16.2h0s-1-1-1-1l5.9-3.9h0s1.9,1.1,1.9,1.1h0s-6.7,3.8-6.7,3.8Z" fill="url(#linear-gradient-1)"/>
   <path d="M5.5,17.8l-.4-1.4h0s6.7-3.8,6.7-3.8v2.1s0,0,0,0l-6.4,3.1h0Z" fill="url(#linear-gradient-2)"/>
   <path d="M18.5,17.8h0s-6.4-3.1-6.4-3.1h0s0-2.1,0-2.1h0s6.7,3.8,6.7,3.8l-.4,1.4Z" fill="url(#linear-gradient-3)"/>
