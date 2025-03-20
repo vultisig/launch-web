@@ -17,6 +17,7 @@ import {
 import api from "utils/api";
 
 import SwapFees from "components/swap-fees";
+import SwapHistory from "components/swap-history";
 import SwapReports from "components/swap-reports";
 import SwapStats from "components/swap-stats";
 import SwapVult from "components/swap-vult";
@@ -123,6 +124,7 @@ const Component: FC = () => {
             period={period}
             onChangePeriod={handlePeriod}
           />
+          <SwapHistory />
         </div>
       </MediaQuery>
       <MediaQuery maxWidth={1399}>
@@ -134,6 +136,7 @@ const Component: FC = () => {
           period={period}
           onChangePeriod={handlePeriod}
         />
+        <SwapHistory />
       </MediaQuery>
     </Content>
   );

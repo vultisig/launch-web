@@ -31,6 +31,7 @@ import {
   RefreshCW,
   SettingsOne,
 } from "icons";
+import MiddleTruncate from "components/middle-truncate";
 
 const { Footer, Header } = Layout;
 
@@ -200,7 +201,7 @@ const Content: FC = () => {
       >
         <div className="address">
           <img src="/avatars/1.png" alt="Avatar" />
-          <span>{address}</span>
+          <MiddleTruncate text={address ?? ""} />
           <Tooltip title={t(constantKeys.COPY)}>
             <Copy onClick={handleCopy} />
           </Tooltip>
@@ -292,7 +293,7 @@ const Component: FC = () => {
         </MediaQuery>
         {isConnected ? (
           <Link to={HashKey.WALLET} className="secondary-button">
-            {`${address.substring(0, 10)}...`}
+            <MiddleTruncate text={address ?? ""} />
           </Link>
         ) : (
           <Link to={HashKey.CONNECT} className="secondary-button">

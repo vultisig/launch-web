@@ -21,6 +21,7 @@ export default {
   // E
   [translation.ENTER_AMOUNT]: "Enter Amount",
   // F
+  [translation.FAILED]: "Failed",
   [translation.FAST]: "Fast",
   [translation.FROM]: "From",
   // G
@@ -44,8 +45,10 @@ export default {
   [translation.MIN_RECEIVED]: "Min Received",
   // N
   [translation.NETWORK_FEE_EST]: "Network Fee (est)",
+  [translation.NOT_WHITELISTED]: "You are not whitelisted",
   // O
   // P
+  [translation.PENDING]: "Pending",
   [translation.PER_HOUR]: "Per Hour",
   [translation.PRICE]: "Price",
   [translation.PRICE_IMPACT]: "Price Impact",
@@ -54,11 +57,12 @@ export default {
   [translation.ROUTE]: "Route",
   // R
   // S
+  [translation.SAVE]: "Save",
   [translation.SETTINGS]: "Settings",
   [translation.SLOW]: "Slow",
   [translation.SLIPPAGE]: "Slippage",
   [translation.STANDARD]: "Standard",
-  [translation.SAVE]: "Save",
+  [translation.SUCCESS]: "Success",
   [translation.SWAP]: "Swap",
   // T
   [translation.TO]: "To",
@@ -67,9 +71,11 @@ export default {
   [translation.TOKEN]: "Token",
   [translation.TOTAL_WL_ALLOCATION]: "Total WL allocation",
   [translation.TRANSACTION_SETTINGS]: "Transaction Settings",
+  [translation.TRANSACTIONS]: "Transactions",
   // U
   // V
   [translation.VAULT_BALANCE]: "Vault Balance",
   // W
   [translation.WALLET]: "Wallet",
+  [translation.WHITELISTED]: "You are whitelisted",
 };

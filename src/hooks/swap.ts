@@ -23,8 +23,18 @@ import { UniswapTokenProps } from "utils/interfaces";
 import { getBrowserProvider, getRPCProvider } from "utils/providers";
 import { getStoredGasSettings } from "utils/storage";
 import api from "utils/api";
+import { useEffect, useState } from "react";
+
+interface InitialState {
+  isWhitelist: boolean;
+}
 
 const useSwapVult = () => {
+  const initialState: InitialState = {
+    isWhitelist: false,
+  };
+  const [state, setState] = useState(initialState);
+  const { isWhitelist } = state;
   const { address } = useAccount();
   const { data: walletClient } = useWalletClient();
   const gasSetting = getStoredGasSettings();
@@ -127,7 +137,7 @@ const useSwapVult = () => {
     const launchListContract = new Contract(
       ContractAddress.LAUNCH_LIST,
       LAUNCH_LIST_ABI,
-      getRPCProvider()
+      rpcClient
     );
     try {
       const weiValue = await launchListContract.addressEthSpent(address);
@@ -157,7 +167,7 @@ const useSwapVult = () => {
     const launchListContract = new Contract(
       ContractAddress.LAUNCH_LIST,
       LAUNCH_LIST_ABI,
-      getRPCProvider()
+      rpcClient
     );
     try {
       const weiValue = await launchListContract.phase1EthLimit();
@@ -172,7 +182,7 @@ const useSwapVult = () => {
     const launchListContract = new Contract(
       ContractAddress.LAUNCH_LIST,
       LAUNCH_LIST_ABI,
-      getRPCProvider()
+      rpcClient
     );
     try {
       const weiValue = await launchListContract.phase2EthLimit();
@@ -244,7 +254,6 @@ const useSwapVult = () => {
     amountIn: number
   ): Promise<number> => {
     try {
-      console.log("Calculating price impact... ",amountIn);
       const poolContract = await getPoolConstant(tokenA, tokenB);
       const fee = await poolContract.fee();
       const liquidity = await poolContract.liquidity();
@@ -403,12 +412,15 @@ const useSwapVult = () => {
     }
   };
 
-  const isAddressWhitelisted = async (address: string): Promise<boolean> => {
+  const isAddressWhitelisted = async (): Promise<boolean> => {
     const launchListContract = new Contract(
       ContractAddress.LAUNCH_LIST,
       LAUNCH_LIST_ABI,
-      getRPCProvider()
+      rpcClient
     );
+
+    if (!address) return false;
+
     try {
       const isWhitelisted =
         await launchListContract.isAddressOnLaunchList(address);
@@ -467,7 +479,14 @@ const useSwapVult = () => {
     return TxStatus.PENDING; // If an error occurs or receipt is null, assume pending
   };
 
+  useEffect(() => {
+    isAddressWhitelisted().then((isWhitelist) => {
+      setState((prevState) => ({ ...prevState, isWhitelist }));
+    });
+  }, [address]);
+
   return {
+    isWhitelist,
     checkApproval,
     executeSwap,
     getAddressSpentETH,

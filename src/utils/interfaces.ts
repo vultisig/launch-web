@@ -5,6 +5,7 @@ import {
   GasSettingsMode,
   GasSettingsSpeed,
   TickerKey,
+  TxStatus,
 } from "utils/constants";
 
 export interface GasSettingsProps {
@@ -33,6 +34,12 @@ export interface TokenProps {
   name: string;
   ticker: TickerKey;
   value: number;
+}
+
+export interface TransactionProps extends SwapFormProps {
+  date: number;
+  hash: string;
+  status: TxStatus;
 }
 
 export { Token as UniswapTokenProps };

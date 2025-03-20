@@ -21,6 +21,7 @@ export default keyMirror({
   // E
   ENTER_AMOUNT: true,
   // F
+  FAILED: true,
   FAST: true,
   FROM: true,
   // G
@@ -44,8 +45,10 @@ export default keyMirror({
   MIN_RECEIVED: true,
   // N
   NETWORK_FEE_EST: true,
+  NOT_WHITELISTED: true,
   // O
   // P
+  PENDING: true,
   PER_HOUR: true,
   PRICE: true,
   PRICE_IMPACT: true,
@@ -59,6 +62,7 @@ export default keyMirror({
   SLIPPAGE: true,
   SLOW: true,
   STANDARD: true,
+  SUCCESS: true,
   SWAP: true,
   // T
   TO: true,
@@ -66,12 +70,14 @@ export default keyMirror({
   TO_BUY: true,
   TOKEN: true,
   TOTAL_WL_ALLOCATION: true,
+  TRANSACTIONS: true,
   TRANSACTION_SETTINGS: true,
   // U
   // V
   VAULT_BALANCE: true,
   // W
   WALLET: true,
+  WHITELISTED: true,
   // Y
   // Z
 });
