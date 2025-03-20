@@ -2,6 +2,8 @@ import { FC, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAccount } from "wagmi";
 import dayjs from "dayjs";
+import type { JSX } from "react";
+
 
 import { TxStatus } from "utils/constants";
 import { TransactionProps } from "utils/interfaces";
