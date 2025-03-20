@@ -125,8 +125,6 @@ const useSwapVult = () => {
         value: 0n, // No ETH needed unless swapping ETH
       });
 
-      await rpcClient.waitForTransaction(tx);
-
       return tx;
     } catch (error) {
       console.log(`Swap failed: ${error}`);
@@ -346,8 +344,8 @@ const useSwapVult = () => {
       receipt === null
         ? TxStatus.PENDING
         : receipt.status === 1
-          ? TxStatus.SUCCESS
-          : TxStatus.FAILED
+        ? TxStatus.SUCCESS
+        : TxStatus.FAILED
     );
   };
 
@@ -422,8 +420,9 @@ const useSwapVult = () => {
     if (!address) return false;
 
     try {
-      const isWhitelisted =
-        await launchListContract.isAddressOnLaunchList(address);
+      const isWhitelisted = await launchListContract.isAddressOnLaunchList(
+        address
+      );
       return isWhitelisted;
     } catch (error) {
       console.error("Error checking whitelist status:", error);
@@ -458,7 +457,7 @@ const useSwapVult = () => {
             : undefined,
       });
 
-      await rpcClient.waitForTransaction(tx);
+      return tx;
     } catch (error) {
       console.error("Approval failed:", error);
     }

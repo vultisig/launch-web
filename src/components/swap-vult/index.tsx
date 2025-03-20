@@ -127,13 +127,15 @@ const Component: FC = () => {
       if (needsApproval) {
         setState((prevState) => ({ ...prevState, approving: true }));
 
-        requestApproval(
-          allocateAmount,
-          tokenIn.address,
-          tokenIn.decimals
-        ).finally(() => {
-          setState((prevState) => ({ ...prevState, approving: false }));
-        });
+        requestApproval(allocateAmount, tokenIn.address, tokenIn.decimals)
+          .then((tx) => {
+            // returned tx hash
+            console.log("approve txHash:", tx);
+            setState((prevState) => ({ ...prevState, needsApproval: false }));
+          })
+          .finally(() => {
+            setState((prevState) => ({ ...prevState, approving: false }));
+          });
       } else {
         setState((prevState) => ({ ...prevState, swapping: true }));
 
