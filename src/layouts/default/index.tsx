@@ -29,8 +29,9 @@ import {
   Copy,
   Power,
   RefreshCW,
-  SettingsOne,
 } from "icons";
+import { DatabaseOutlined } from '@ant-design/icons';
+
 import MiddleTruncate from "components/middle-truncate";
 
 const { Footer, Header } = Layout;
@@ -268,16 +269,12 @@ const Component: FC = () => {
       label: <Link to={constantPaths.swap}>{t(constantKeys.SWAP)}</Link>,
     },
     {
-      key: PageKey.MERGE,
-      icon: <ArrowRightToLine />,
-      label: <Link to={constantPaths.merge}>{t(constantKeys.MERGE)}</Link>,
+      key: PageKey.STAKING,
+      label: t(constantKeys.STAKING),
     },
     {
-      key: PageKey.SETTINGS,
-      icon: <SettingsOne />,
-      label: (
-        <Link to={constantPaths.settings}>{t(constantKeys.SETTINGS)}</Link>
-      ),
+      key: PageKey.POOL,
+      label: t(constantKeys.POOL),
     },
   ];
 
@@ -313,18 +310,18 @@ const Component: FC = () => {
             {t(constantKeys.SWAP)}
           </Link>
           <Link
-            to={constantPaths.merge}
-            className={activePage === PageKey.MERGE ? "active" : ""}
+            to=""
+            className={activePage === PageKey.STAKING ? "active" : ""}
           >
             <ArrowRightToLine />
-            {t(constantKeys.MERGE)}
+            {t(constantKeys.STAKING)}
           </Link>
           <Link
-            to={constantPaths.settings}
-            className={activePage === PageKey.SETTINGS ? "active" : ""}
+            to=""
+            className={activePage === PageKey.POOL ? "active" : ""}
           >
-            <SettingsOne />
-            {t(constantKeys.SETTINGS)}
+            <DatabaseOutlined />
+            {t(constantKeys.POOL)}
           </Link>
         </Footer>
       </MediaQuery>
