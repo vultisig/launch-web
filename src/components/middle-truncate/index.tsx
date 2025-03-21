@@ -1,6 +1,9 @@
-import { FC, useEffect, useRef, useState } from "react";
+import { FC, RefObject, useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 
 interface ComponentProps {
+  href?: string;
+  targetBlank?: boolean;
   text: string;
 }
 
@@ -10,7 +13,7 @@ interface InitialState {
   truncating: boolean;
 }
 
-const Component: FC<ComponentProps> = ({ text }) => {
+const Component: FC<ComponentProps> = ({ href, targetBlank, text }) => {
   const initialState: InitialState = {
     counter: 0,
     ellipsis: "",
@@ -18,7 +21,7 @@ const Component: FC<ComponentProps> = ({ text }) => {
   };
   const [state, setState] = useState(initialState);
   const { counter, ellipsis, truncating } = state;
-  const elmRef = useRef<HTMLSpanElement>(null);
+  const elmRef = useRef<HTMLElement>(null);
 
   const ellipsisDidUpdate = (): void => {
     if (elmRef.current) {
@@ -55,9 +58,34 @@ const Component: FC<ComponentProps> = ({ text }) => {
   useEffect(ellipsisDidUpdate, [ellipsis]);
   useEffect(componentDidUpdate, [text]);
 
-  return (
-    <span ref={elmRef} className="middle-truncate">
-      {truncating ? <span>{ellipsis}</span> : ellipsis}
+  const children = truncating ? <span>{ellipsis}</span> : ellipsis;
+
+  return href ? (
+    targetBlank ? (
+      <a
+        href={href}
+        ref={elmRef as RefObject<HTMLAnchorElement>}
+        rel="noopener noreferrer"
+        className="middle-truncate"
+        target="_blank"
+      >
+        {children}
+      </a>
+    ) : (
+      <Link
+        to={href}
+        ref={elmRef as RefObject<HTMLAnchorElement>}
+        className="middle-truncate"
+      >
+        {children}
+      </Link>
+    )
+  ) : (
+    <span
+      ref={elmRef as RefObject<HTMLSpanElement>}
+      className="middle-truncate"
+    >
+      {children}
     </span>
   );
 };

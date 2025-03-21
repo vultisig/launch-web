@@ -6,9 +6,9 @@ import { debounce } from "lodash";
 import { useAccount } from "wagmi";
 
 import { useBaseContext } from "context";
-import { HashKey, TickerKey, uniswapTokens } from "utils/constants";
+import { HashKey, TickerKey, TxStatus, uniswapTokens } from "utils/constants";
 import { SwapFormProps } from "utils/interfaces";
-import { getStoredGasSettings } from "utils/storage";
+import { getStoredGasSettings, setStoredTransaction } from "utils/storage";
 import useSwapVult from "hooks/swap";
 import constantKeys from "i18n/constant-keys";
 
@@ -119,18 +119,19 @@ const Component: FC = () => {
 
   const handleSwap = () => {
     if (address && !approving && !swapping) {
-      const { allocateAmount, allocateToken, buyAmount, buyToken } =
-        form.getFieldsValue();
-      const tokenIn = uniswapTokens[allocateToken];
-      const tokenOut = uniswapTokens[buyToken];
+      const values = form.getFieldsValue();
+      const tokenIn = uniswapTokens[values.allocateToken];
+      const tokenOut = uniswapTokens[values.buyToken];
 
       if (needsApproval) {
         setState((prevState) => ({ ...prevState, approving: true }));
 
-        requestApproval(allocateAmount, tokenIn.address, tokenIn.decimals)
-          .then((tx) => {
-            // returned tx hash
-            console.log("approve txHash:", tx);
+        requestApproval(
+          values.allocateAmount,
+          tokenIn.address,
+          tokenIn.decimals
+        )
+          .then(() => {
             setState((prevState) => ({ ...prevState, needsApproval: false }));
           })
           .finally(() => {
@@ -139,9 +140,18 @@ const Component: FC = () => {
       } else {
         setState((prevState) => ({ ...prevState, swapping: true }));
 
-        executeSwap(allocateAmount, buyAmount, tokenIn, tokenOut)
+        executeSwap(values.allocateAmount, values.buyAmount, tokenIn, tokenOut)
           .then((txHash) => {
-            console.log("swap done:", txHash);
+            if (txHash) {
+              const date = new Date();
+
+              setStoredTransaction(address, {
+                ...values,
+                date: date.getTime(),
+                hash: txHash,
+                status: TxStatus.PENDING,
+              });
+            }
           })
           .finally(() => {
             setState((prevState) => ({ ...prevState, swapping: false }));

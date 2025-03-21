@@ -104,7 +104,7 @@ export enum Period {
 
 export enum TickerKey {
   ETH = "ETH",
-  //VULT = "VULT",
+  VULT = "VULT",
   UNI = "UNI",
   USDC = "USDC",
   WETH = "WETH",
@@ -171,17 +171,17 @@ export const defaultTokens: Record<TickerKey, TokenProps> = {
     ticker: TickerKey.ETH,
     value: 0,
   },
-  // [TickerKey.VULT]: {
-  //   balance: 0,
-  //   cmcId: 0,
-  //   contractAddress: "",
-  //   decimals: 18,
-  //   isAirdropToken: true,
-  //   isNative: false,
-  //   name: "Vult",
-  //   ticker: TickerKey.VULT,
-  //   value: 0,
-  // },
+  [TickerKey.VULT]: {
+    balance: 0,
+    cmcId: 33502,
+    contractAddress: ContractAddress.VULT,
+    decimals: 18,
+    isAirdropToken: true,
+    isNative: false,
+    name: "Vult",
+    ticker: TickerKey.VULT,
+    value: 0,
+  },
   [TickerKey.UNI]: {
     balance: 0,
     cmcId: 7083,
@@ -232,13 +232,13 @@ export const uniswapTokens: Record<TickerKey, Token> = {
     defaultTokens[TickerKey.UNI].ticker,
     defaultTokens[TickerKey.UNI].name
   ),
-  // [TickerKey.VULT]: new Token(
-  //   ChainId.MAINNET,
-  //   ContractAddress.WETH_TOKEN,
-  //   defaultTokens[TickerKey.VULT].decimals,
-  //   defaultTokens[TickerKey.VULT].ticker,
-  //   defaultTokens[TickerKey.VULT].name,
-  // ),
+  [TickerKey.VULT]: new Token(
+    ChainId.MAINNET,
+    ContractAddress.VULT,
+    defaultTokens[TickerKey.VULT].decimals,
+    defaultTokens[TickerKey.VULT].ticker,
+    defaultTokens[TickerKey.VULT].name
+  ),
   [TickerKey.USDC]: new Token(
     ChainId.MAINNET,
     defaultTokens[TickerKey.USDC].contractAddress,

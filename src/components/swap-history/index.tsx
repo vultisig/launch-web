@@ -4,7 +4,6 @@ import { useAccount } from "wagmi";
 import dayjs from "dayjs";
 import type { JSX } from "react";
 
-
 import { TxStatus } from "utils/constants";
 import { TransactionProps } from "utils/interfaces";
 import { setStoredTransaction } from "utils/storage";
@@ -12,8 +11,9 @@ import useSwapHistory from "hooks/swap-history";
 import useSwapVult from "hooks/swap";
 import constantKeys from "i18n/constant-keys";
 
-import { ChevronRight, CircleCheckBig, Loader, OctagonAlert } from "icons";
+import { ChevronRight, CircleCheckBig, OctagonAlert } from "icons";
 import MiddleTruncate from "components/middle-truncate";
+import { Spin } from "antd";
 
 const Transaction: FC<{ address: string; transaction: TransactionProps }> = ({
   address,
@@ -63,7 +63,7 @@ const Transaction: FC<{ address: string; transaction: TransactionProps }> = ({
       break;
     default:
       statusName = t(constantKeys.PENDING);
-      statusIcon = <Loader />;
+      statusIcon = <Spin size="small" />;
       break;
   }
 
@@ -75,7 +75,11 @@ const Transaction: FC<{ address: string; transaction: TransactionProps }> = ({
           {dayjs(date).format(import.meta.env.VITE_TIME_FORMAT)}
         </span>
       </div>
-      <MiddleTruncate text={hash} />
+      <MiddleTruncate
+        href={`https://etherscan.io/tx/${hash}`}
+        text={hash}
+        targetBlank
+      />
       <div className="swap">
         <div className="token">
           <img
