@@ -344,14 +344,15 @@ const useSwapVult = () => {
       receipt === null
         ? TxStatus.PENDING
         : receipt.status === 1
-        ? TxStatus.SUCCESS
-        : TxStatus.FAILED
+          ? TxStatus.SUCCESS
+          : TxStatus.FAILED
     );
   };
 
   const getTokensValue = async () => {
     const data: Record<TickerKey, number> = {
       [TickerKey.ETH]: 0,
+      [TickerKey.VULT]: 0,
       [TickerKey.UNI]: 0,
       [TickerKey.USDC]: 0,
       [TickerKey.WETH]: 0,
@@ -420,9 +421,8 @@ const useSwapVult = () => {
     if (!address) return false;
 
     try {
-      const isWhitelisted = await launchListContract.isAddressOnLaunchList(
-        address
-      );
+      const isWhitelisted =
+        await launchListContract.isAddressOnLaunchList(address);
       return isWhitelisted;
     } catch (error) {
       console.error("Error checking whitelist status:", error);

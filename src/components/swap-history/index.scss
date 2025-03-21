@@ -5,9 +5,23 @@
   flex-direction: column;
   gap: rem(12);
 
+  .ant-spin {
+    .ant-spin-dot-item {
+      background-color: $alert-warning;
+    }
+  }
+
   .heading {
     font-weight: 600;
     font-size: rem(16);
+  }
+
+  .middle-truncate {
+    color: $text-primary;
+
+    &:hover {
+      color: $text-light;
+    }
   }
 
   .action {

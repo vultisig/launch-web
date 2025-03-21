@@ -99,10 +99,15 @@ export const setStoredTransaction = (
   transaction: TransactionProps
 ): void => {
   const transactions = getStoredTransactions(address);
+  const isUpdate = transactions.some(({ hash }) => hash === transaction.hash);
 
   setStoredTransactions(
     address,
-    transactions.map((tx) => (tx.hash === transaction.hash ? transaction : tx))
+    isUpdate
+      ? transactions.map((tx) =>
+          tx.hash === transaction.hash ? transaction : tx
+        )
+      : [transaction, ...transactions]
   );
 };
 
