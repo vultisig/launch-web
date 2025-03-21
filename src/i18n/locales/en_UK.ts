@@ -50,6 +50,7 @@ export default {
   // P
   [translation.PENDING]: "Pending",
   [translation.PER_HOUR]: "Per Hour",
+  [translation.POOL]: "Pool",
   [translation.PRICE]: "Price",
   [translation.PRICE_IMPACT]: "Price Impact",
   // Q
@@ -62,6 +63,7 @@ export default {
   [translation.SLOW]: "Slow",
   [translation.SLIPPAGE]: "Slippage",
   [translation.STANDARD]: "Standard",
+  [translation.STAKING]: "Staking",
   [translation.SUCCESS]: "Success",
   [translation.SWAP]: "Swap",
   // T

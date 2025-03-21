@@ -50,6 +50,7 @@ export default keyMirror({
   // P
   PENDING: true,
   PER_HOUR: true,
+  POOL: true,
   PRICE: true,
   PRICE_IMPACT: true,
   // Q
@@ -62,6 +63,7 @@ export default keyMirror({
   SLIPPAGE: true,
   SLOW: true,
   STANDARD: true,
+  STAKING: true,
   SUCCESS: true,
   SWAP: true,
   // T

@@ -40,12 +40,16 @@ export enum HashKey {
   CONNECT = "#CONNECT",
   MERGE = "#MERGE",
   WALLET = "#WALLET",
+  STAKING = "#STAKING",
+  POOL = "#POOL",
 }
 
 export enum PageKey {
   MERGE = "1",
   SETTINGS = "2",
   SWAP = "3",
+  POOL = "4",
+  STAKING = "5",
 }
 
 export enum TxStatus {
