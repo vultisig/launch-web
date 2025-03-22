@@ -13,25 +13,16 @@ import {
   Spin,
   Tooltip,
 } from "antd";
+import { DatabaseOutlined } from "@ant-design/icons";
 import { Connector, useAccount, useConnect, useDisconnect } from "wagmi";
 import MediaQuery from "react-responsive";
 
 import { useBaseContext } from "context";
-import { HashKey, PageKey, defaultTokens } from "utils/constants";
-import { TokenProps } from "utils/interfaces";
+import { HashKey, PageKey } from "utils/constants";
 import constantKeys from "i18n/constant-keys";
 import constantPaths from "routes/constant-paths";
-import api from "utils/api";
 
-import {
-  ArrowDownUp,
-  ArrowRightToLine,
-  Copy,
-  Power,
-  RefreshCW,
-} from "icons";
-import { DatabaseOutlined } from '@ant-design/icons';
-
+import { ArrowDownUp, ArrowRightToLine, Copy, Power, RefreshCW } from "icons";
 import MiddleTruncate from "components/middle-truncate";
 
 const { Footer, Header } = Layout;
@@ -91,19 +82,11 @@ const Connect: FC = () => {
 
 const Content: FC = () => {
   const { t } = useTranslation();
-  const initialState: {
-    loading: boolean;
-    open: boolean;
-    tokens: TokenProps[];
-  } = {
-    loading: true,
-    open: false,
-    tokens: Object.values(defaultTokens),
-  };
+  const initialState: { open: boolean } = { open: false };
   const [state, setState] = useState(initialState);
-  const { loading, open, tokens } = state;
+  const { open } = state;
   const { address, isConnected } = useAccount();
-  const { currency } = useBaseContext();
+  const { updateWallet, currency, tokens, updating } = useBaseContext();
   const { disconnect } = useDisconnect();
   const { hash, pathname } = useLocation();
   const [messageApi, messageHolder] = message.useMessage();
@@ -120,49 +103,6 @@ const Content: FC = () => {
       });
   };
 
-  const componentMustUpdate = () => {
-    if (address) {
-      setState((prevState) => ({ ...prevState, loading: true }));
-
-      Promise.all([
-        Promise.all(
-          tokens.map((token) =>
-            api.balance(
-              address,
-              token.decimals,
-              token.contractAddress,
-              token.isNative
-            )
-          )
-        ).then((balances) => {
-          setState((prevState) => ({
-            ...prevState,
-            tokens: prevState.tokens.map((token, index) => ({
-              ...token,
-              balance: balances[index],
-            })),
-          }));
-        }),
-        api
-          .values(
-            tokens.map(({ cmcId }) => cmcId),
-            currency
-          )
-          .then((values) => {
-            setState((prevState) => ({
-              ...prevState,
-              tokens: prevState.tokens.map((token) => ({
-                ...token,
-                value: values[token.cmcId] || token.value,
-              })),
-            }));
-          }),
-      ]).then(() => {
-        setState((prevState) => ({ ...prevState, loading: false }));
-      });
-    }
-  };
-
   const componentDidUpdate = () => {
     if (hash === HashKey.WALLET) {
       if (isConnected) {
@@ -175,7 +115,6 @@ const Content: FC = () => {
     }
   };
 
-  useEffect(componentMustUpdate, [address]);
   useEffect(componentDidUpdate, [hash, isConnected]);
 
   return (
@@ -189,7 +128,7 @@ const Content: FC = () => {
         title={
           <>
             <span className="text">{t(constantKeys.CONNECTED_WALLET)}</span>
-            <RefreshCW className="refresh" onClick={componentMustUpdate} />
+            <RefreshCW className="refresh" onClick={updateWallet} />
             <Popconfirm
               title={t(constantKeys.DISCONNECT)}
               onConfirm={() => disconnect()}
@@ -210,11 +149,11 @@ const Content: FC = () => {
         <Divider />
         <div className="total">
           <span className="label">{t(constantKeys.VAULT_BALANCE)}</span>
-          {loading ? (
+          {updating ? (
             <Spin size="small" />
           ) : (
             <span className="price">
-              {tokens
+              {Object.values(tokens)
                 .reduce(
                   (accumulator, { balance, value }) =>
                     accumulator + balance * value,
@@ -224,7 +163,7 @@ const Content: FC = () => {
             </span>
           )}
         </div>
-        {tokens.map(({ balance, name, ticker, value }) => (
+        {Object.values(tokens).map(({ balance, name, ticker, value }) => (
           <Fragment key={ticker}>
             <Divider />
             <div className="token">
@@ -237,7 +176,7 @@ const Content: FC = () => {
                 <span className="ticker">{ticker}</span>
                 <span className="name">{name}</span>
               </div>
-              {loading ? (
+              {updating ? (
                 <Spin size="small" />
               ) : (
                 <div className="value">
@@ -316,10 +255,7 @@ const Component: FC = () => {
             <ArrowRightToLine />
             {t(constantKeys.STAKING)}
           </Link>
-          <Link
-            to=""
-            className={activePage === PageKey.POOL ? "active" : ""}
-          >
+          <Link to="" className={activePage === PageKey.POOL ? "active" : ""}>
             <DatabaseOutlined />
             {t(constantKeys.POOL)}
           </Link>

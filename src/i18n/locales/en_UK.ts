@@ -3,8 +3,6 @@ import translation from "i18n/constant-keys";
 export default {
   // A
   [translation.ADVANCED]: "Advanced",
-  [translation.ALL_TIME_HIGH]: "All Time High",
-  [translation.ALL_TIME_LOW]: "All Time Low",
   [translation.APPROVE]: "Approve",
   [translation.AVAILABLE]: "Available",
   // B
@@ -29,6 +27,7 @@ export default {
   [translation.GWEI]: "GWEI",
   // H
   // I
+  [translation.INSUFFICIENT_BALANCE]: "Insufficient Balance",
   [translation.I_WANT_TO_ALLOCATE]: "I want to Allocate",
   // J
   // K
