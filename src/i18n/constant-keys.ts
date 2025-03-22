@@ -58,6 +58,7 @@ export default keyMirror({
   ROUTE: true,
   // S
   SAVE: true,
+  SEARCH_ADDRESS: true,
   SETTINGS: true,
   SLIPPAGE: true,
   SLOW: true,

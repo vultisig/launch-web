@@ -58,6 +58,7 @@ export default {
   // R
   // S
   [translation.SAVE]: "Save",
+  [translation.SEARCH_ADDRESS]: "Search Address",
   [translation.SETTINGS]: "Settings",
   [translation.SLOW]: "Slow",
   [translation.SLIPPAGE]: "Slippage",

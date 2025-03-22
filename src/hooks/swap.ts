@@ -411,14 +411,12 @@ const useSwapVult = () => {
     }
   };
 
-  const isAddressWhitelisted = async (): Promise<boolean> => {
+  const isAddressWhitelisted = async (address: string): Promise<boolean> => {
     const launchListContract = new Contract(
       ContractAddress.LAUNCH_LIST,
       LAUNCH_LIST_ABI,
       rpcClient
     );
-
-    if (!address) return false;
 
     try {
       const isWhitelisted =
@@ -479,9 +477,13 @@ const useSwapVult = () => {
   };
 
   useEffect(() => {
-    isAddressWhitelisted().then((isWhitelist) => {
-      setState((prevState) => ({ ...prevState, isWhitelist }));
-    });
+    if (address) {
+      isAddressWhitelisted(address).then((isWhitelist) => {
+        setState((prevState) => ({ ...prevState, isWhitelist }));
+      });
+    } else {
+      setState((prevState) => ({ ...prevState, isWhitelist: false }));
+    }
   }, [address]);
 
   return {

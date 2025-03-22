@@ -200,8 +200,6 @@ const Component: FC = () => {
             reverse ? tokenB.decimals : tokenA.decimals
           ).then(({ needsApproval }) => needsApproval),
         ]).then(([values, poolPrice, priceImpact, needsApproval]) => {
-          console.log("priceImpact: ", priceImpact);
-
           form.setFieldValue(
             reverse ? "allocateAmount" : "buyAmount",
             amountOut

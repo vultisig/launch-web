@@ -13,7 +13,6 @@ import {
   Spin,
   Tooltip,
 } from "antd";
-import { DatabaseOutlined } from "@ant-design/icons";
 import { Connector, useAccount, useConnect, useDisconnect } from "wagmi";
 import MediaQuery from "react-responsive";
 
@@ -22,7 +21,14 @@ import { HashKey, PageKey } from "utils/constants";
 import constantKeys from "i18n/constant-keys";
 import constantPaths from "routes/constant-paths";
 
-import { ArrowDownUp, ArrowRightToLine, Copy, Power, RefreshCW } from "icons";
+import {
+  ArrowDownUp,
+  ArrowRightToLine,
+  Copy,
+  Database,
+  Power,
+  RefreshCW,
+} from "icons";
 import MiddleTruncate from "components/middle-truncate";
 
 const { Footer, Header } = Layout;
@@ -204,7 +210,6 @@ const Component: FC = () => {
   const items: MenuProps["items"] = [
     {
       key: PageKey.SWAP,
-      icon: <ArrowDownUp />,
       label: <Link to={constantPaths.swap}>{t(constantKeys.SWAP)}</Link>,
     },
     {
@@ -256,7 +261,7 @@ const Component: FC = () => {
             {t(constantKeys.STAKING)}
           </Link>
           <Link to="" className={activePage === PageKey.POOL ? "active" : ""}>
-            <DatabaseOutlined />
+            <Database />
             {t(constantKeys.POOL)}
           </Link>
         </Footer>

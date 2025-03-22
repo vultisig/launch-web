@@ -378,6 +378,33 @@ export const Copy: FC<SVGProps<SVGSVGElement>> = ({
   </svg>
 );
 
+export const Database: FC<SVGProps<SVGSVGElement>> = ({
+  fill = "none",
+  height = 24,
+  stroke = "white",
+  strokeLinecap = "round",
+  strokeLinejoin = "round",
+  strokeWidth = 2,
+  width = 24,
+  ...props
+}) => (
+  <svg
+    viewBox="0 0 24 24"
+    {...{
+      ...props,
+      fill,
+      height,
+      stroke,
+      strokeLinecap,
+      strokeLinejoin,
+      strokeWidth,
+      width,
+    }}
+  >
+    <path d="M21 5C21 6.65685 16.9706 8 12 8C7.02944 8 3 6.65685 3 5M21 5C21 3.34315 16.9706 2 12 2C7.02944 2 3 3.34315 3 5M21 5V19C21 19.7956 20.0518 20.5587 18.364 21.1213C16.6761 21.6839 14.3869 22 12 22C9.61305 22 7.32387 21.6839 5.63604 21.1213C3.94821 20.5587 3 19.7956 3 19V5M3 12C3 12.7956 3.94821 13.5587 5.63604 14.1213C7.32387 14.6839 9.61305 15 12 15C14.3869 15 16.6761 14.6839 18.364 14.1213C20.0518 13.5587 21 12.7956 21 12" />
+  </svg>
+);
+
 export const Hourglass: FC<SVGProps<SVGSVGElement>> = ({
   fill = "none",
   height = 24,
@@ -537,6 +564,33 @@ export const RefreshCW: FC<SVGProps<SVGSVGElement>> = ({
     }}
   >
     <path d="M3 12C3 9.61305 3.94821 7.32387 5.63604 5.63604C7.32387 3.94821 9.61305 3 12 3C14.516 3.00947 16.931 3.99122 18.74 5.74L21 8M21 8V3M21 8H16M21 12C21 14.3869 20.0518 16.6761 18.364 18.364C16.6761 20.0518 14.3869 21 12 21C9.48395 20.9905 7.06897 20.0088 5.26 18.26L3 16M3 16H8M3 16V21" />
+  </svg>
+);
+
+export const Search: FC<SVGProps<SVGSVGElement>> = ({
+  fill = "none",
+  height = 24,
+  stroke = "white",
+  strokeLinecap = "round",
+  strokeLinejoin = "round",
+  strokeWidth = 2,
+  width = 24,
+  ...props
+}) => (
+  <svg
+    viewBox="0 0 24 24"
+    {...{
+      ...props,
+      fill,
+      height,
+      stroke,
+      strokeLinecap,
+      strokeLinejoin,
+      strokeWidth,
+      width,
+    }}
+  >
+    <path d="M21 21L16.7 16.7M19 11C19 15.4183 15.4183 19 11 19C6.58172 19 3 15.4183 3 11C3 6.58172 6.58172 3 11 3C15.4183 3 19 6.58172 19 11Z" />
   </svg>
 );
 
