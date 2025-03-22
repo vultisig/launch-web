@@ -3,7 +3,7 @@
 
 .swap-stats {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: rem(12);
 
   .title {
@@ -12,11 +12,6 @@
     display: flex;
     font-size: rem(12);
     font-weight: 500;
-
-    svg {
-      height: rem(16);
-      width: rem(16);
-    }
   }
 
   .value {
@@ -28,52 +23,16 @@
     background-color: $background-secondary;
     border-radius: rem(12);
     display: flex;
+    flex: 1;
     flex-direction: column;
     gap: rem(8);
     padding: rem(12);
-    width: calc(100% / 2 - rem(math.div(12 * 1, 2)));
-
-    &:first-child {
-      width: 100%;
-    }
-  }
-
-  .ascending {
-    .title {
-      svg {
-        stroke: $button-primary;
-      }
-
-      span {
-        color: $button-primary;
-      }
-    }
-  }
-
-  .descending {
-    .title {
-      svg {
-        stroke: $alert-error;
-      }
-
-      span {
-        color: $alert-error;
-      }
-    }
   }
 }
 
 @media (min-width: rem(768)) {
   .swap-stats {
+    flex-direction: row;
     gap: rem(16);
-
-    .item {
-      width: calc(100% / 3 - rem(math.div(16 * 2, 3)));
-
-      &:nth-child(1),
-      &:nth-child(2) {
-        width: calc(100% / 2 - rem(math.div(16 * 1, 2)));
-      }
-    }
   }
 }

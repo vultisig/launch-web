@@ -3,8 +3,6 @@ import keyMirror from "keymirror";
 export default keyMirror({
   // A
   ADVANCED: true,
-  ALL_TIME_HIGH: true,
-  ALL_TIME_LOW: true,
   APPROVE: true,
   AVAILABLE: true,
   // B
@@ -29,6 +27,7 @@ export default keyMirror({
   GWEI: true,
   // H
   // I
+  INSUFFICIENT_BALANCE: true,
   I_WANT_TO_ALLOCATE: true,
   // J
   // K

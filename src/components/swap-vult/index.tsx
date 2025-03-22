@@ -46,7 +46,7 @@ const Component: FC = () => {
     swapping,
     values,
   } = state;
-  const { currency } = useBaseContext();
+  const { currency, tokens } = useBaseContext();
   const { address, isConnected } = useAccount();
   const [form] = Form.useForm<SwapFormProps>();
   const {
@@ -404,7 +404,11 @@ const Component: FC = () => {
                     </div>
                   )}
                   {allocateAmount && buyAmount ? (
-                    approving ? (
+                    allocateAmount > tokens[allocateToken].balance ? (
+                      <span className="secondary-button disabled">
+                        {t(constantKeys.INSUFFICIENT_BALANCE)}
+                      </span>
+                    ) : approving ? (
                       <span className="secondary-button disabled">
                         {t(constantKeys.APPROVE)}
                       </span>
