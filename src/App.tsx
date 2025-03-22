@@ -39,6 +39,13 @@ const Component = () => {
                 colorBgElevated: backgroundSecondary,
                 colorSplit: borderNormal,
               },
+              Input: {
+                activeBorderColor: buttonSecondary,
+                activeShadow: buttonSecondary,
+                colorBgContainer: backgroundSecondary,
+                colorBorder: borderNormal,
+                hoverBorderColor: buttonSecondary,
+              },
               InputNumber: {
                 activeBorderColor: buttonSecondary,
                 activeShadow: buttonSecondary,
