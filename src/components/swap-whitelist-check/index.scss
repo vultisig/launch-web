@@ -1,0 +1,60 @@
+@use "~variables" as *;
+
+.swap-whitelisted {
+  display: flex;
+  flex-direction: column;
+  gap: rem(12);
+
+  .ant-input {
+    height: rem(50);
+  }
+
+  .ant-input-prefix {
+    margin-right: rem(12);
+
+    svg {
+      height: rem(16);
+      width: rem(16);
+    }
+  }
+
+  .ant-input-affix-wrapper {
+    border: none;
+    border-radius: rem(12);
+    padding: 0 rem(16);
+  }
+
+  .whitelist {
+    align-items: center;
+    display: flex;
+    border-radius: rem(12);
+    font-weight: 500;
+    gap: rem(8);
+    height: rem(50);
+    padding: 0 rem(16);
+
+    svg {
+      height: rem(16);
+      width: rem(16);
+    }
+  }
+
+  .islisted {
+    background-color: #042436;
+    color: $button-primary;
+
+    svg {
+      stroke: $button-primary;
+    }
+  }
+
+  .notlisted {
+    background-color: $background-secondary;
+  }
+}
+
+@media (min-width: rem(768)) {
+  .swap-whitelisted {
+    gap: rem(16);
+  }
+}

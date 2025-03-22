@@ -14,6 +14,7 @@ import {
   uniswapTokens,
   TickerKey,
 } from "utils/constants";
+import { getRPCProvider } from "utils/providers";
 import api from "utils/api";
 
 import SwapFees from "components/swap-fees";
@@ -21,7 +22,7 @@ import SwapHistory from "components/swap-history";
 import SwapReports from "components/swap-reports";
 import SwapStats from "components/swap-stats";
 import SwapVult from "components/swap-vult";
-import { getRPCProvider } from "utils/providers";
+import SwapWhitelistCheck from "components/swap-whitelist-check";
 
 const { Content } = Layout;
 
@@ -113,6 +114,7 @@ const Component: FC = () => {
     <Content className="swap-page">
       <MediaQuery minWidth={1400}>
         <div className="aside">
+          <SwapWhitelistCheck />
           <SwapVult />
           <SwapFees />
         </div>
@@ -128,6 +130,7 @@ const Component: FC = () => {
       </MediaQuery>
       <MediaQuery maxWidth={1399}>
         <SwapStats marketCap={marketCap} price={price} volume={volume} />
+        <SwapWhitelistCheck />
         <SwapVult />
         <SwapFees />
         <SwapReports
