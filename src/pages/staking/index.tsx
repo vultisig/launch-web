@@ -61,10 +61,7 @@ const Component: FC = () => {
     );
     return Number(pool.token1Price.toSignificant(6));
   };
-
-  const handlePeriod = (period: Period) => {
-    setState((preState) => ({ ...preState, period }));
-  };
+;
 
   const componentDidUpdate = () => {
     api.historicalPrice(period).then((rawData) => {
