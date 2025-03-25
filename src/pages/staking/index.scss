@@ -1,0 +1,22 @@
+@use "~variables" as *;
+@use "sass:math";
+
+.stacking-page {
+  display: flex;
+  flex-direction: column;
+  gap: rem(16);
+
+  .aside {
+    display: flex;
+    flex-direction: column;
+    gap: rem(16);
+  }
+
+  .main {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: rem(16);
+  }
+}
+

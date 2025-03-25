@@ -43,6 +43,12 @@ const Connect: FC = () => {
   const { hash, pathname } = useLocation();
   const navigate = useNavigate();
 
+  const connectorsConfig = [
+    { name: "WalletConnect", icon: "connectors/walletConnect.jpg", isShow: true },
+    { name: "MetaMask", icon: "connectors/metamask.png", isShow: true },
+    { name: "Safe", icon: "", isShow: false },
+  ];
+
   const handleConnect = (connector: Connector) => {
     connect({ connector });
     navigate(-1);
@@ -62,6 +68,11 @@ const Connect: FC = () => {
 
   useEffect(componentDidUpdate, [hash, isConnected]);
 
+  const getConnectorIcon = (name:string) => {
+    const config = connectorsConfig.find((c) => c.name === name);
+    return config?.icon || "";
+  };
+  
   return (
     <Modal
       className="default-layout-wallet-connect"
@@ -72,18 +83,23 @@ const Connect: FC = () => {
       title={t(constantKeys.CONNECT_WALLET)}
       width={360}
     >
-      {connectors.map((connector) => (
-        <span
-          key={connector.uid}
-          onClick={() => handleConnect(connector)}
-          className="btn"
-        >
-          {connector.icon ? <img src={connector.icon} /> : null}
-          {connector.name}
-        </span>
-      ))}
+      {connectors
+        .filter((connector) => {
+          const config = connectorsConfig.find((c) => c.name === connector.name);
+          return config ? config.isShow : true;
+        })
+        .map((connector) => {
+          const icon = connector.icon || getConnectorIcon(connector.name);
+          return (
+            <span key={connector.uid} onClick={() => handleConnect(connector)} className="btn">
+              {icon ? <img src={icon} alt={connector.name} /> : null}
+              {connector.name}
+            </span>
+          );
+        })}
     </Modal>
   );
+  
 };
 
 const Content: FC = () => {
@@ -214,7 +230,7 @@ const Component: FC = () => {
     },
     {
       key: PageKey.STAKING,
-      label: t(constantKeys.STAKING),
+      label: <Link to={constantPaths.staking}>{t(constantKeys.STAKING)}</Link>,
     },
     {
       key: PageKey.POOL,
@@ -254,7 +270,7 @@ const Component: FC = () => {
             {t(constantKeys.SWAP)}
           </Link>
           <Link
-            to=""
+            to={constantPaths.staking}
             className={activePage === PageKey.STAKING ? "active" : ""}
           >
             <ArrowRightToLine />

@@ -1,0 +1,171 @@
+@use "~variables" as *;
+
+.staking-page {
+  border-radius: rem(20);
+  display: flex;
+  flex-direction: column;
+  gap: rem(16);
+  padding: rem(16);
+
+  .staking-header {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: rem(16);
+    .logo-wrapper {
+      display: flex;
+      width: rem(40);
+      height: rem(40);
+      border-radius: 50%;
+      background-color: $background-secondary;
+      padding: rem(11);
+    }
+    .title {
+      font-size: rem(22);
+    }
+  }
+
+  .staking {
+    padding: rem(18) rem(18);
+    background-color: $background-secondary;
+    border-radius: rem(20);
+    display: flex;
+    flex-direction: column;
+    gap: rem(18);
+
+    .label {
+      font-size: rem(17);
+    }
+
+    .input {
+      padding: rem(0) rem(18);
+      height: rem(78);
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      border: rem(1) solid $border-normal;
+      border-radius: rem(10);
+      .ant-input-number{
+        font-size: rem(24);
+        width: 90% !important;
+        border-style: none !important;
+      }
+
+      .ticker {
+        display: flex;
+        flex-direction: row;
+
+        align-items: center;
+        border-radius: rem(50);
+        padding: rem(10);
+        width: rem(100);
+        height: rem(46);
+        background-color: $background-tertiary;
+        .logo-wrapper {
+          display: flex;
+          width: rem(24);
+          height: rem(24);
+          border-radius: 50%;
+          background-color: $background-primary;
+          justify-content: center;
+          margin-right: rem(5);
+          padding: rem(6);
+        }
+      }
+
+      .rewards-ticker{
+        img{
+          width: rem(24);
+          margin-right: rem(5);
+        }
+      }
+      
+    }
+
+    .result {
+      text-align: center;
+    }
+
+    button {
+      border-radius: rem(50);
+      padding: rem(15);
+      background-color: $button-secondary;
+      border: none;
+      color: $text-primary;
+      cursor: pointer;
+    }
+  }
+
+  .stake-withdraw {
+    display: flex;
+    flex-direction: column;
+    background-color: $background-secondary;
+    border-radius: rem(20);
+    padding: rem(18);
+    .switch {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      justify-items: center;
+      li {
+        font-size: rem(17);
+        width: 100%;
+        text-align: center;
+        padding: rem(10);
+        cursor: pointer;
+      }
+      .active {
+        border-bottom: rem(2) solid $alert-success;
+      }
+    }
+    .amount {
+      display: flex;
+      flex-direction: column;
+      gap: rem(18);
+      padding: rem(18) rem(0);
+      .available {
+        margin-top: -10px;
+      }
+      .ant-input-number{
+        border: rem(1) solid $border-normal;
+        font-size: rem(24);
+        width: 100% !important;
+        .ant-input-number-outlined {
+          color: $text-extra-light;
+          height: 100%;
+        }
+      }
+      .percentage {
+        ul {
+          display: flex;
+          flex-direction: row;
+          gap: rem(10);
+          li {
+            border: rem(1) solid $border-normal;
+            border-radius: rem(10);
+            padding: rem(5) rem(10);
+            cursor: pointer;
+          }
+          .active{
+            background-color: $button-primary;
+            color: $gray-11;
+          }
+        }
+      }
+
+      button {
+        border-radius: rem(50);
+        padding: rem(15);
+        background-color: $button-secondary;
+        border: none;
+        color: $text-primary;
+        cursor: pointer;
+      }
+    }
+  }
+}
+
+@media (min-width: rem(768)) {
+}

@@ -4,5 +4,6 @@ export default {
   merge: "merge",
   settings: "settings",
   swap: "swap",
+  staking: "staking",
   wallet: "wallet",
 };
