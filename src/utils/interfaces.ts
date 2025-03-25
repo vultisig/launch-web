@@ -23,6 +23,11 @@ export interface SwapFormProps {
   buyAmount: number;
   buyToken: TickerKey;
 }
+export interface StakeFormProps {
+  Amount: number;
+  Rewards: number;
+  Stake_Withdraw: number;
+}
 
 export interface TokenProps {
   balance: number;

@@ -160,7 +160,7 @@ const Component: FC<ComponentProps> = ({ onClose }) => {
         >
           <InputNumber
             min={0.1}
-            max={50}
+            max={90}
             step={0.1}
             controls={false}
             suffix={t(constantKeys.CUSTOM)}

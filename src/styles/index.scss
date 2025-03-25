@@ -17,9 +17,11 @@
 @use "../components/swap-settings";
 @use "../components/swap-stats";
 @use "../components/swap-vult";
+@use "../components/stake-vult";
 @use "../components/swap-whitelist-check";
 @use "../components/token-dropdown";
 
 @use "../pages/merge";
 @use "../pages/settings";
 @use "../pages/swap";
+@use "../pages/staking";
