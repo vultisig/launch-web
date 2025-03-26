@@ -59,6 +59,7 @@ export default {
   // S
   [translation.SAVE]: "Save",
   [translation.SEARCH_ADDRESS]: "Search Address",
+  [translation.SEARCH_TITLE]:"Check Whitelist eligibility",
   [translation.SETTINGS]: "Settings",
   [translation.SLOW]: "Slow",
   [translation.SLIPPAGE]: "Slippage",

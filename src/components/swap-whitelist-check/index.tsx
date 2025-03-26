@@ -57,6 +57,7 @@ const Component: FC = () => {
         hasFeedback={loading}
         noStyle
       >
+        <span>{t(constantKeys.SEARCH_TITLE)}</span>
         <Input
           prefix={<Search />}
           placeholder={t(constantKeys.SEARCH_ADDRESS)}

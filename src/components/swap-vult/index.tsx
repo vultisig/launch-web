@@ -113,8 +113,14 @@ const Component: FC = () => {
     800
   );
 
-  const handleMode = (settingsMode: boolean) => {
+  const handleMode = (settingsMode: boolean, updated?: boolean) => {
     setState((prevState) => ({ ...prevState, settingsMode }));
+
+    if (updated)
+      form.setFieldsValue({
+        allocateAmount: undefined,
+        buyAmount: undefined,
+      });
   };
 
   const handleSwap = () => {
@@ -196,8 +202,7 @@ const Component: FC = () => {
           getPriceImpact(tokenA, tokenB, amountIn),
           checkApproval(
             reverse ? amountOut : amountIn,
-            reverse ? tokenB.address : tokenA.address,
-            reverse ? tokenB.decimals : tokenA.decimals
+            reverse ? tokenB : tokenA
           ).then(({ needsApproval }) => needsApproval),
         ]).then(([values, poolPrice, priceImpact, needsApproval]) => {
           form.setFieldValue(
@@ -223,219 +228,221 @@ const Component: FC = () => {
       });
   };
 
-  return settingsMode ? (
-    <Settings onClose={() => handleMode(false)} />
-  ) : (
-    <Form
-      form={form}
-      initialValues={{
-        allocateToken: TickerKey.USDC,
-        buyToken: TickerKey.UNI,
-      }}
-      onFinish={handleSwap}
-      onValuesChange={handleChangeValues}
-      className="swap-vult"
-    >
-      <div className="heading">
-        <span className="text">{t(constantKeys.SWAP)}</span>
-        <SettingsTwo onClick={() => handleMode(true)} className="toggle" />
-      </div>
-      <div className="swap">
-        <div className="item">
-          <span className="title">{t(constantKeys.I_WANT_TO_ALLOCATE)}</span>
-          <Form.Item<SwapFormProps>
-            shouldUpdate={(prevValues, curValues) =>
-              prevValues.allocateToken !== curValues.allocateToken
-            }
-            noStyle
-          >
-            {({ getFieldValue }) => {
-              const amount: number = getFieldValue("allocateAmount") || 0;
-              const ticker: TickerKey = getFieldValue("allocateToken");
-              const value: number = values ? values[ticker] : 0;
-
-              return (
-                <>
-                  <div className="balance">
-                    <Form.Item<SwapFormProps> name="allocateAmount" noStyle>
-                      <InputNumber
-                        controls={false}
-                        formatter={(value) => `${value}`.toNumberFormat()}
-                        min={0}
-                        placeholder="0"
-                        readOnly={loading}
-                      />
-                    </Form.Item>
-                    <TokenDropdown
-                      ticker={ticker}
-                      onChange={(value) => handleChangeToken(value, false)}
-                    />
-                  </div>
-                  <span className="price">
-                    {(amount * value).toPriceFormat(currency)}
-                  </span>
-                </>
-              );
-            }}
-          </Form.Item>
-          <Form.Item<SwapFormProps> name="allocateToken" noStyle>
-            <Input type="hidden" />
-          </Form.Item>
-        </div>
-        <div className="switch" onClick={handleSwitchToken}>
-          {loading ? <Spin /> : <ArrowDownUp />}
-        </div>
-        <div className="item">
-          <span className="title">{t(constantKeys.TO_BUY)}</span>
-          <Form.Item<SwapFormProps>
-            shouldUpdate={(prevValues, curValues) =>
-              prevValues.buyToken !== curValues.buyToken
-            }
-            noStyle
-          >
-            {({ getFieldValue }) => {
-              const amount: number = getFieldValue("buyAmount") || 0;
-              const ticker: TickerKey = getFieldValue("buyToken");
-              const value: number = values ? values[ticker] : 0;
-
-              return (
-                <>
-                  <div className="balance">
-                    <Form.Item<SwapFormProps> name="buyAmount" noStyle>
-                      <InputNumber
-                        controls={false}
-                        formatter={(value) => `${value}`.toNumberFormat()}
-                        min={0}
-                        placeholder="0"
-                        readOnly={loading}
-                      />
-                    </Form.Item>
-                    <TokenDropdown
-                      ticker={ticker}
-                      onChange={(value) => handleChangeToken(value, true)}
-                    />
-                  </div>
-                  <span className="price">
-                    {(amount * value).toPriceFormat(currency)}
-                  </span>
-                </>
-              );
-            }}
-          </Form.Item>
-          <Form.Item<SwapFormProps> name="buyToken" noStyle>
-            <Input type="hidden" />
-          </Form.Item>
-        </div>
-      </div>
-      <Form.Item<SwapFormProps>
-        shouldUpdate={(prevValues, curValues) =>
-          prevValues.allocateAmount !== curValues.allocateAmount ||
-          prevValues.buyAmount !== curValues.buyAmount ||
-          prevValues.allocateToken !== curValues.allocateToken ||
-          prevValues.buyToken !== curValues.buyToken
-        }
-        noStyle
-      >
-        {({ getFieldsValue }) => {
-          const { allocateAmount, allocateToken, buyAmount, buyToken } =
-            getFieldsValue();
-
-          return loading ? (
-            <span className="secondary-button disabled">
-              {t(constantKeys.LOADING)}
-            </span>
-          ) : (
-            <>
-              {allocateAmount && buyAmount ? (
-                <div className="info">
-                  <div className="item">
-                    <span className="label">
-                      {t(constantKeys.MAX_SLIPPAGE)}
-                    </span>
-                    <span className="value success">{`${gasSettings.slippage}%`}</span>
-                  </div>
-                  <div className="item">
-                    <span className="label">
-                      {t(constantKeys.MIN_RECEIVED)}
-                    </span>
-                    <span className="value">
-                      {buyAmount * (1 - gasSettings.slippage / 100)}
-                    </span>
-                  </div>
-                  <div className="item">
-                    <span className="label">
-                      {t(constantKeys.NETWORK_FEE_EST)}
-                    </span>
-                    <span className="value success">{gasSettings.speed}</span>
-                  </div>
-                  <div className="item">
-                    <span className="label">
-                      {t(constantKeys.MAX_NETWORK_FEE)}
-                    </span>
-                    <span className="value">
-                      {maxNetworkFee.toPriceFormat(currency, 6)}
-                    </span>
-                  </div>
-                  <div className="item">
-                    <span className="label">
-                      {t(constantKeys.PRICE_IMPACT)}
-                    </span>
-                    <span className="value error">{`${priceImpact}%`}</span>
-                  </div>
-                  <div className="item">
-                    <span className="label">{t(constantKeys.ROUTE)}</span>
-                    <span className="value success">{`${allocateToken} → ${buyToken}`}</span>
-                  </div>
-                </div>
-              ) : null}
-              {isConnected ? (
-                <>
-                  {isWhitelist ? (
-                    <div className="whitelist islisted">
-                      <Check />
-                      {t(constantKeys.WHITELISTED)}
-                    </div>
-                  ) : (
-                    <div className="whitelist notlisted">
-                      <Info />
-                      {t(constantKeys.NOT_WHITELISTED)}
-                    </div>
-                  )}
-                  {allocateAmount && buyAmount ? (
-                    allocateAmount > tokens[allocateToken].balance ? (
-                      <span className="secondary-button disabled">
-                        {t(constantKeys.INSUFFICIENT_BALANCE)}
-                      </span>
-                    ) : approving ? (
-                      <span className="secondary-button disabled">
-                        {t(constantKeys.APPROVE)}
-                      </span>
-                    ) : (
-                      <span className="secondary-button" onClick={handleSwap}>
-                        {needsApproval
-                          ? t(constantKeys.APPROVE)
-                          : t(constantKeys.SWAP)}
-                      </span>
-                    )
-                  ) : (
-                    <span className="secondary-button disabled">
-                      {t(constantKeys.ENTER_AMOUNT)}
-                    </span>
-                  )}
-                </>
-              ) : (
-                <Link
-                  to={HashKey.CONNECT}
-                  className={`secondary-button${loading ? " disabled" : ""}`}
-                >
-                  {t(constantKeys.CONNECT_WALLET)}
-                </Link>
-              )}
-            </>
-          );
+  return (
+    <>
+      <Settings onClose={handleMode} visible={settingsMode} />
+      <Form
+        form={form}
+        initialValues={{
+          allocateToken: TickerKey.USDC,
+          buyToken: TickerKey.UNI,
         }}
-      </Form.Item>
-    </Form>
+        onFinish={handleSwap}
+        onValuesChange={handleChangeValues}
+        className="swap-vult"
+        style={{ display: settingsMode ? "none" : undefined }}
+      >
+        <div className="heading">
+          <span className="text">{t(constantKeys.SWAP)}</span>
+          <SettingsTwo onClick={() => handleMode(true)} className="toggle" />
+        </div>
+        <div className="swap">
+          <div className="item">
+            <span className="title">{t(constantKeys.I_WANT_TO_ALLOCATE)}</span>
+            <Form.Item<SwapFormProps>
+              shouldUpdate={(prevValues, curValues) =>
+                prevValues.allocateToken !== curValues.allocateToken
+              }
+              noStyle
+            >
+              {({ getFieldValue }) => {
+                const amount: number = getFieldValue("allocateAmount") || 0;
+                const ticker: TickerKey = getFieldValue("allocateToken");
+                const value: number = values ? values[ticker] : 0;
+
+                return (
+                  <>
+                    <div className="balance">
+                      <Form.Item<SwapFormProps> name="allocateAmount" noStyle>
+                        <InputNumber
+                          controls={false}
+                          formatter={(value) => `${value}`.toNumberFormat()}
+                          min={0}
+                          placeholder="0"
+                          readOnly={loading}
+                        />
+                      </Form.Item>
+                      <TokenDropdown
+                        ticker={ticker}
+                        onChange={(value) => handleChangeToken(value, false)}
+                      />
+                    </div>
+                    <span className="price">
+                      {(amount * value).toPriceFormat(currency)}
+                    </span>
+                  </>
+                );
+              }}
+            </Form.Item>
+            <Form.Item<SwapFormProps> name="allocateToken" noStyle>
+              <Input type="hidden" />
+            </Form.Item>
+          </div>
+          <div className="switch" onClick={handleSwitchToken}>
+            {loading ? <Spin /> : <ArrowDownUp />}
+          </div>
+          <div className="item">
+            <span className="title">{t(constantKeys.TO_BUY)}</span>
+            <Form.Item<SwapFormProps>
+              shouldUpdate={(prevValues, curValues) =>
+                prevValues.buyToken !== curValues.buyToken
+              }
+              noStyle
+            >
+              {({ getFieldValue }) => {
+                const amount: number = getFieldValue("buyAmount") || 0;
+                const ticker: TickerKey = getFieldValue("buyToken");
+                const value: number = values ? values[ticker] : 0;
+
+                return (
+                  <>
+                    <div className="balance">
+                      <Form.Item<SwapFormProps> name="buyAmount" noStyle>
+                        <InputNumber
+                          controls={false}
+                          formatter={(value) => `${value}`.toNumberFormat()}
+                          min={0}
+                          placeholder="0"
+                          readOnly={loading}
+                        />
+                      </Form.Item>
+                      <TokenDropdown
+                        ticker={ticker}
+                        onChange={(value) => handleChangeToken(value, true)}
+                      />
+                    </div>
+                    <span className="price">
+                      {(amount * value).toPriceFormat(currency)}
+                    </span>
+                  </>
+                );
+              }}
+            </Form.Item>
+            <Form.Item<SwapFormProps> name="buyToken" noStyle>
+              <Input type="hidden" />
+            </Form.Item>
+          </div>
+        </div>
+        <Form.Item<SwapFormProps>
+          shouldUpdate={(prevValues, curValues) =>
+            prevValues.allocateAmount !== curValues.allocateAmount ||
+            prevValues.buyAmount !== curValues.buyAmount ||
+            prevValues.allocateToken !== curValues.allocateToken ||
+            prevValues.buyToken !== curValues.buyToken
+          }
+          noStyle
+        >
+          {({ getFieldsValue }) => {
+            const { allocateAmount, allocateToken, buyAmount, buyToken } =
+              getFieldsValue();
+
+            return loading ? (
+              <span className="secondary-button disabled">
+                {t(constantKeys.LOADING)}
+              </span>
+            ) : (
+              <>
+                {allocateAmount && buyAmount ? (
+                  <div className="info">
+                    <div className="item">
+                      <span className="label">
+                        {t(constantKeys.MAX_SLIPPAGE)}
+                      </span>
+                      <span className="value success">{`${gasSettings.slippage}%`}</span>
+                    </div>
+                    <div className="item">
+                      <span className="label">
+                        {t(constantKeys.MIN_RECEIVED)}
+                      </span>
+                      <span className="value">
+                        {buyAmount * (1 - gasSettings.slippage / 100)}
+                      </span>
+                    </div>
+                    <div className="item">
+                      <span className="label">
+                        {t(constantKeys.NETWORK_FEE_EST)}
+                      </span>
+                      <span className="value success">{gasSettings.speed}</span>
+                    </div>
+                    <div className="item">
+                      <span className="label">
+                        {t(constantKeys.MAX_NETWORK_FEE)}
+                      </span>
+                      <span className="value">
+                        {maxNetworkFee.toPriceFormat(currency, 6)}
+                      </span>
+                    </div>
+                    <div className="item">
+                      <span className="label">
+                        {t(constantKeys.PRICE_IMPACT)}
+                      </span>
+                      <span className="value error">{`${priceImpact}%`}</span>
+                    </div>
+                    <div className="item">
+                      <span className="label">{t(constantKeys.ROUTE)}</span>
+                      <span className="value success">{`${allocateToken} → ${buyToken}`}</span>
+                    </div>
+                  </div>
+                ) : null}
+                {isConnected ? (
+                  <>
+                    {isWhitelist ? (
+                      <div className="whitelist islisted">
+                        <Check />
+                        {t(constantKeys.WHITELISTED)}
+                      </div>
+                    ) : (
+                      <div className="whitelist notlisted">
+                        <Info />
+                        {t(constantKeys.NOT_WHITELISTED)}
+                      </div>
+                    )}
+                    {allocateAmount && buyAmount ? (
+                      allocateAmount > tokens[allocateToken].balance ? (
+                        <span className="secondary-button disabled">
+                          {t(constantKeys.INSUFFICIENT_BALANCE)}
+                        </span>
+                      ) : approving ? (
+                        <span className="secondary-button disabled">
+                          {t(constantKeys.APPROVE)}
+                        </span>
+                      ) : (
+                        <span className="secondary-button" onClick={handleSwap}>
+                          {needsApproval
+                            ? t(constantKeys.APPROVE)
+                            : t(constantKeys.SWAP)}
+                        </span>
+                      )
+                    ) : (
+                      <span className="secondary-button disabled">
+                        {t(constantKeys.ENTER_AMOUNT)}
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <Link
+                    to={HashKey.CONNECT}
+                    className={`secondary-button${loading ? " disabled" : ""}`}
+                  >
+                    {t(constantKeys.CONNECT_WALLET)}
+                  </Link>
+                )}
+              </>
+            );
+          }}
+        </Form.Item>
+      </Form>
+    </>
   );
 };
 

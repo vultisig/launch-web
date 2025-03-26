@@ -101,14 +101,16 @@ export const setStoredTransaction = (
   const transactions = getStoredTransactions(address);
   const isUpdate = transactions.some(({ hash }) => hash === transaction.hash);
 
-  setStoredTransactions(
-    address,
-    isUpdate
-      ? transactions.map((tx) =>
-          tx.hash === transaction.hash ? transaction : tx
-        )
-      : [transaction, ...transactions]
-  );
+  if (transactions.length > 0) {
+    setStoredTransactions(
+      address,
+      isUpdate
+        ? transactions.map((tx) =>
+            tx.hash === transaction.hash ? transaction : tx
+          )
+        : [transaction, ...transactions]
+    );
+  }
 };
 
 export const getStoredTransactions = (address: string): TransactionProps[] => {

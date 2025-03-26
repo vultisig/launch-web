@@ -42,13 +42,23 @@ const useSwapVult = () => {
 
   const checkApproval = async (
     allocateAmount: number,
-    tokenAddress: string,
-    tokenDecimals: number
+    token: UniswapTokenProps,
   ) => {
     try {
-      if (!address) throw new Error("");
+      if (!address) {
+        return { approvedAmount: 0, needsApproval: true };
+      }
+      
 
-      const tokenContract = new Contract(tokenAddress, erc20Abi, rpcClient);
+      if (isETH(token)) {
+        // ETH doesn't need approval
+        return {
+          approvedAmount: allocateAmount,
+          needsApproval: false,
+        };
+      }
+
+      const tokenContract = new Contract(token.address, erc20Abi, rpcClient);
       const approvedAmount: number = await tokenContract.allowance(
         address,
         ContractAddress.SWAP_ROUTER
@@ -58,7 +68,7 @@ const useSwapVult = () => {
         approvedAmount,
         needsApproval:
           allocateAmount > 0
-            ? Number(formatUnits(approvedAmount, tokenDecimals)) <
+            ? Number(formatUnits(approvedAmount, token.decimals)) <
               allocateAmount
             : false,
       };
@@ -76,7 +86,7 @@ const useSwapVult = () => {
       args: [spender, amount],
     });
   };
-
+  const isETH = (token: UniswapTokenProps) => token.symbol === "ETH";
   const executeSwap = async (
     amountIn: number,
     amountOut: number,
@@ -89,19 +99,28 @@ const useSwapVult = () => {
       const poolConstants = await getPoolConstants(tokenIn, tokenOut);
       const parsedAmountIn = parseUnits(String(amountIn), tokenIn.decimals);
       const amountOutMinimum = parseUnits(
-        String(amountOut * (100 - gasSetting.slippage)),
+        String(amountOut * (1 - gasSetting.slippage / 100)),
         tokenOut.decimals
       );
       const sqrtPriceLimitX96 = 0; // No price limit
-      const swapData = encodeFunctionData({
+      // Always use WETH address for Uniswap
+      const isOutETH = isETH(tokenOut);
+      const isInETH = isETH(tokenIn);
+      const actualTokenIn = isETH(tokenIn)
+      ? ContractAddress.WETH_TOKEN
+      : tokenIn.address;
+      const actualTokenOut = isETH(tokenOut)
+      ? ContractAddress.WETH_TOKEN
+      : tokenOut.address;
+      const swapCallData = encodeFunctionData({
         abi: Router.abi,
         functionName: "exactInputSingle",
         args: [
           {
-            tokenIn: tokenIn.address as `0x${string}`,
-            tokenOut: tokenOut.address as `0x${string}`,
+            tokenIn: actualTokenIn as `0x${string}`,
+            tokenOut: actualTokenOut as `0x${string}`,
             fee: poolConstants.fee,
-            recipient: address,
+            recipient: isOutETH ? ContractAddress.SWAP_ROUTER: address,
             deadline: Math.floor(Date.now() / 1000) + 60 * 10, // 10 min deadline
             amountIn: BigInt(parsedAmountIn),
             amountOutMinimum,
@@ -110,9 +129,21 @@ const useSwapVult = () => {
         ],
       });
 
+      const callData = isOutETH
+      ? encodeFunctionData({
+          abi: Router.abi,
+          functionName: "multicall",
+          args: [[swapCallData, encodeFunctionData({
+            abi: Router.abi,
+            functionName: "unwrapWETH9",
+            args: [amountOutMinimum, address],
+          })]],
+        })
+      : swapCallData;
+
       const tx = await walletClient.sendTransaction({
         to: ContractAddress.SWAP_ROUTER as `0x${string}`,
-        data: swapData,
+        data: callData,
         gas: gasSetting.gasLimit > 0 ? BigInt(gasSetting.gasLimit) : undefined,
         maxPriorityFeePerGas:
           gasSetting.maxPriorityFee > 0
@@ -122,7 +153,7 @@ const useSwapVult = () => {
           gasSetting.maxFee > 0
             ? BigInt(parseUnits(gasSetting.maxFee.toString(), "gwei"))
             : undefined,
-        value: 0n, // No ETH needed unless swapping ETH
+        value:  isETH(tokenIn) ? BigInt(parsedAmountIn) : 0n,
       });
 
       return tx;

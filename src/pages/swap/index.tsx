@@ -10,7 +10,6 @@ import {
   POOLS_ABI,
   ContractAddress,
   PageKey,
-  Period,
   uniswapTokens,
   TickerKey,
 } from "utils/constants";
@@ -26,27 +25,16 @@ import SwapWhitelistCheck from "components/swap-whitelist-check";
 
 const { Content } = Layout;
 
-type DataProps = [number, number][];
-
 interface InitialState {
   marketCap: number;
-  period: Period;
   price: number;
-  reports: DataProps;
   volume: number;
 }
 
 const Component: FC = () => {
-  const initialState: InitialState = {
-    marketCap: 0,
-    period: Period.DAY,
-    price: 0,
-    reports: [],
-    volume: 0,
-  };
-
+  const initialState: InitialState = { marketCap: 0, price: 0, volume: 0 };
   const [state, setState] = useState(initialState);
-  const { marketCap, period, price, reports, volume } = state;
+  const { marketCap, price, volume } = state;
   const { changePage } = useBaseContext();
 
   const fetchPrice = async () => {
@@ -66,21 +54,6 @@ const Component: FC = () => {
       Number(slot0.tick)
     );
     return Number(pool.token1Price.toSignificant(6));
-  };
-
-  const handlePeriod = (period: Period) => {
-    setState((preState) => ({ ...preState, period }));
-  };
-
-  const componentDidUpdate = () => {
-    api.historicalPrice(period).then((rawData) => {
-      const reports: DataProps = rawData.map(({ date, price }) => [
-        date,
-        parseFloat(price.toFixed(2)),
-      ]);
-
-      setState((prevState) => ({ ...prevState, reports }));
-    });
   };
 
   const componentDidMount = () => {
@@ -107,39 +80,25 @@ const Component: FC = () => {
     });
   };
 
-  useEffect(componentDidUpdate, [period]);
   useEffect(componentDidMount, []);
 
   return (
     <Content className="swap-page">
-      <MediaQuery minWidth={1400}>
-        <div className="aside">
-          <SwapWhitelistCheck />
-          <SwapVult />
-          <SwapFees />
-        </div>
-        <div className="main">
+      <div className="aside">
+        <MediaQuery maxWidth={1399}>
           <SwapStats marketCap={marketCap} price={price} volume={volume} />
-          <SwapReports
-            data={reports}
-            period={period}
-            onChangePeriod={handlePeriod}
-          />
-          <SwapHistory />
-        </div>
-      </MediaQuery>
-      <MediaQuery maxWidth={1399}>
-        <SwapStats marketCap={marketCap} price={price} volume={volume} />
+        </MediaQuery>
         <SwapWhitelistCheck />
         <SwapVult />
         <SwapFees />
-        <SwapReports
-          data={reports}
-          period={period}
-          onChangePeriod={handlePeriod}
-        />
+      </div>
+      <div className="main">
+        <MediaQuery minWidth={1400}>
+          <SwapStats marketCap={marketCap} price={price} volume={volume} />
+        </MediaQuery>
+        <SwapReports />
         <SwapHistory />
-      </MediaQuery>
+      </div>
     </Content>
   );
 };

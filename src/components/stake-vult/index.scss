@@ -47,7 +47,7 @@
       justify-content: space-between;
       border: rem(1) solid $border-normal;
       border-radius: rem(10);
-      .ant-input-number{
+      .ant-input-number {
         font-size: rem(24);
         width: 90% !important;
         border-style: none !important;
@@ -75,16 +75,16 @@
         }
       }
 
-      .rewards-ticker{
-        img{
+      .rewards-ticker {
+        img {
           width: rem(24);
           margin-right: rem(5);
         }
       }
-      
     }
 
     .result {
+      display: none;
       text-align: center;
     }
 
@@ -95,6 +95,11 @@
       border: none;
       color: $text-primary;
       cursor: pointer;
+    }
+    button:disabled {
+      background-color: $button-disabled-text;
+      color: lightgray;
+      cursor: not-allowed;
     }
   }
 
@@ -128,7 +133,7 @@
       .available {
         margin-top: -10px;
       }
-      .ant-input-number{
+      .ant-input-number {
         border: rem(1) solid $border-normal;
         font-size: rem(24);
         width: 100% !important;
@@ -148,7 +153,7 @@
             padding: rem(5) rem(10);
             cursor: pointer;
           }
-          .active{
+          .active {
             background-color: $button-primary;
             color: $gray-11;
           }
@@ -162,6 +167,11 @@
         border: none;
         color: $text-primary;
         cursor: pointer;
+      }
+      button:disabled {
+        background-color: $button-disabled-text;
+        color: lightgray;
+        cursor: not-allowed;
       }
     }
   }

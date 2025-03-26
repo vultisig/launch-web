@@ -1,5 +1,6 @@
-import { FC } from "react";
+import { FC, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Spin } from "antd";
 import HighchartsReact, {
   HighchartsReactProps,
 } from "highcharts-react-official";
@@ -7,15 +8,50 @@ import Highcharts from "highcharts";
 
 import { Period } from "utils/constants";
 import constantKeys from "i18n/constant-keys";
+import api from "utils/api";
 
-interface ComponentProps {
-  data: [number, number][];
-  onChangePeriod: (period: Period) => void;
+type DataProps = [number, number][];
+
+interface InitialState {
+  data: DataProps;
+  loading?: Period;
   period: Period;
 }
 
-const Component: FC<ComponentProps> = ({ data, onChangePeriod, period }) => {
+const Component: FC = () => {
   const { t } = useTranslation();
+  const initialState: InitialState = {
+    data: [],
+    period: Period.DAY,
+  };
+  const [state, setState] = useState(initialState);
+  const { data, loading, period } = state;
+
+  const handlePeriod = (period: Period) => {
+    if (!loading) {
+      setState((prevState) => ({ ...prevState, loading: period }));
+
+      api.historicalPrice(period).then((rawData) => {
+        const data: DataProps = rawData.map(({ date, price }) => [
+          date,
+          parseFloat(price.toFixed(2)),
+        ]);
+
+        setState((prevState) => ({
+          ...prevState,
+          data,
+          loading: undefined,
+          period,
+        }));
+      });
+    }
+  };
+
+  const componentDidMount = () => {
+    handlePeriod(period);
+  };
+
+  useEffect(componentDidMount, []);
 
   const options: HighchartsReactProps["options"] = {
     chart: { backgroundColor: "transparent", zooming: { type: "x" } },
@@ -36,7 +72,9 @@ const Component: FC<ComponentProps> = ({ data, onChangePeriod, period }) => {
         threshold: null,
       },
     },
-    series: [{ type: "area", name: t(constantKeys.PRICE), data: data }],
+    series: [
+      { type: "area", name: t(constantKeys.PRICE), data: loading ? [] : data },
+    ],
     title: { text: undefined },
     tooltip: { backgroundColor: "#061b3a", style: { color: "#f0f4fc" } },
     xAxis: {
@@ -59,22 +97,30 @@ const Component: FC<ComponentProps> = ({ data, onChangePeriod, period }) => {
         <span className="title">{t(constantKeys.PRICE)}</span>
         <ul className="period">
           <li
-            className={period === Period.DAY ? "active" : ""}
-            onClick={() => onChangePeriod(Period.DAY)}
+            className={!loading && period === Period.DAY ? "active" : ""}
+            onClick={() => handlePeriod(Period.DAY)}
           >
-            24h
+            {loading === Period.DAY ? <Spin size="small" /> : "24h"}
           </li>
           <li
-            className={period === Period.WEEK ? "active" : ""}
-            onClick={() => onChangePeriod(Period.WEEK)}
+            className={!loading && period === Period.WEEK ? "active" : ""}
+            onClick={() => handlePeriod(Period.WEEK)}
           >
-            {`${Period.WEEK}d`}
+            {loading === Period.WEEK ? (
+              <Spin size="small" />
+            ) : (
+              `${Period.WEEK}d`
+            )}
           </li>
           <li
-            className={period === Period.MONTH ? "active" : ""}
-            onClick={() => onChangePeriod(Period.MONTH)}
+            className={!loading && period === Period.MONTH ? "active" : ""}
+            onClick={() => handlePeriod(Period.MONTH)}
           >
-            {`${Period.MONTH}d`}
+            {loading === Period.MONTH ? (
+              <Spin size="small" />
+            ) : (
+              `${Period.MONTH}d`
+            )}
           </li>
         </ul>
       </div>

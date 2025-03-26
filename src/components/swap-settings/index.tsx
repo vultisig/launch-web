@@ -14,14 +14,15 @@ import { CarFront, ChevronLeft, Hourglass, Timer } from "icons";
 import api, { SuggestedGasFeeData } from "utils/api";
 
 interface ComponentProps {
-  onClose: () => void;
+  onClose: (settingsMode: boolean, updated?: boolean) => void;
+  visible?: boolean;
 }
 
 interface InitialState {
   fees: SuggestedGasFeeData | null;
 }
 
-const Component: FC<ComponentProps> = ({ onClose }) => {
+const Component: FC<ComponentProps> = ({ onClose, visible }) => {
   const initialState: InitialState = { fees: null };
   const { t } = useTranslation();
   const [form] = Form.useForm<GasSettingsProps>();
@@ -75,7 +76,7 @@ const Component: FC<ComponentProps> = ({ onClose }) => {
 
         setStoredGasSettings(values);
 
-        onClose();
+        onClose(false, true);
       })
       .catch(() => {});
   };
@@ -110,13 +111,14 @@ const Component: FC<ComponentProps> = ({ onClose }) => {
       layout="vertical"
       className="swap-settings"
       requiredMark={false}
+      style={{ display: visible ? undefined : "none" }}
     >
       <div className="heading">
         <span className="text">{t(constantKeys.SETTINGS)}</span>
         <span onClick={handleReset} className="reset">
           {t(constantKeys.RESET)}
         </span>
-        <ChevronLeft onClick={onClose} className="toggle" />
+        <ChevronLeft onClick={() => onClose(false)} className="toggle" />
       </div>
       <div className="slippage">
         <span className="label">{t(constantKeys.SLIPPAGE)}</span>
