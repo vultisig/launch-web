@@ -90,7 +90,7 @@ const Component: FC = () => {
           <div className="result">1 USDC = X Vult</div>
 
           {isConnected ? (
-            <button>Reinvest</button>
+            <button disabled>Reinvest</button>
           ) : (
             <Link
               to={HashKey.CONNECT}
@@ -159,7 +159,7 @@ const Component: FC = () => {
               </ul>
             </div>
             {isConnected ? (
-              <button>{state.activeTab}</button>
+              <button disabled>{state.activeTab}</button>
             ) : (
               <Link
                 to={HashKey.CONNECT}

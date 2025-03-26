@@ -10,12 +10,10 @@
     display: flex;
     flex-direction: column;
     gap: rem(16);
-    width: rem(400);
   }
 
   .main {
     display: flex;
-    flex: 1;
     flex-direction: column;
     gap: rem(16);
   }
@@ -25,5 +23,13 @@
   .swap-page {
     flex-direction: row-reverse;
     max-width: rem(1400) !important;
+
+    .aside {
+      width: rem(400);
+    }
+
+    .main {
+      flex: 1;
+    }
   }
 }

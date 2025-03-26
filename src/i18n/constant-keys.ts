@@ -59,6 +59,7 @@ export default keyMirror({
   // S
   SAVE: true,
   SEARCH_ADDRESS: true,
+  SEARCH_TITLE: true,
   SETTINGS: true,
   SLIPPAGE: true,
   SLOW: true,

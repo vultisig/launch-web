@@ -20,13 +20,15 @@
       padding: rem(4);
 
       li {
+        align-items: center;
         border-radius: rem(6);
         cursor: pointer;
+        display: flex;
         font-weight: 600;
         font-size: rem(13);
         height: rem(26);
+        justify-content: center;
         line-height: rem(26);
-        text-align: center;
         transition: all 0.2s;
         width: rem(56);
 
