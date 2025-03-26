@@ -105,7 +105,6 @@ const useSwapVult = () => {
       const sqrtPriceLimitX96 = 0; // No price limit
       // Always use WETH address for Uniswap
       const isOutETH = isETH(tokenOut);
-      const isInETH = isETH(tokenIn);
       const actualTokenIn = isETH(tokenIn)
       ? ContractAddress.WETH_TOKEN
       : tokenIn.address;
