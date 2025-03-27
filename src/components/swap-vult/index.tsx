@@ -3,19 +3,16 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Form, Input, InputNumber, Spin } from "antd";
 import { debounce } from "lodash";
-import { useAccount } from "wagmi";
-
+import { useAccount, useBalance } from "wagmi";
 import { useBaseContext } from "context";
-import { HashKey, TickerKey, TxStatus, uniswapTokens } from "utils/constants";
+import { ContractAddress, HashKey, TickerKey, TxStatus, uniswapTokens } from "utils/constants";
 import { SwapFormProps } from "utils/interfaces";
 import { getStoredGasSettings, setStoredTransaction } from "utils/storage";
 import useSwapVult from "hooks/swap";
 import constantKeys from "i18n/constant-keys";
-
 import { ArrowDownUp, Check, Info, SettingsTwo } from "icons";
 import Settings from "components/swap-settings";
 import TokenDropdown from "components/token-dropdown";
-
 interface InitialState {
   approving?: boolean;
   loading?: boolean;
@@ -27,7 +24,6 @@ interface InitialState {
   swapping?: boolean;
   values?: Record<TickerKey, number>;
 }
-
 const Component: FC = () => {
   const { t } = useTranslation();
   const initialState: InitialState = {
@@ -61,32 +57,35 @@ const Component: FC = () => {
     requestApproval,
   } = useSwapVult();
   const gasSettings = getStoredGasSettings();
-
+  
+  const allocateToken = Form.useWatch('allocateToken', form);
+  const enumKey = allocateToken ? `${allocateToken}_TOKEN` as keyof typeof ContractAddress : undefined;
+  const tokenAddress = enumKey ? ContractAddress[enumKey] : undefined;
+  const { data: tokenBalance } = useBalance({
+    address,
+    token: tokenAddress,
+  });
   const handleChangeToken = (ticker: TickerKey, reverse: boolean) => {
     if (!loading) {
       const values = form.getFieldsValue();
       const allocateAmount = reverse ? values.allocateAmount : undefined;
       const allocateToken = reverse ? values.allocateToken : ticker;
       const buyToken = reverse ? ticker : values.buyToken;
-
       form.setFieldsValue({
         allocateAmount,
         allocateToken,
         buyAmount: undefined,
         buyToken,
       });
-
       if (allocateAmount) {
         handleUpdateQuote(allocateToken, buyToken, allocateAmount, false);
       }
     }
   };
-
   const handleChangeValues = debounce(
     ({ allocateAmount, buyAmount }: SwapFormProps, values: SwapFormProps) => {
       if (allocateAmount !== undefined) {
         form.setFieldValue("buyAmount", undefined);
-
         if (allocateAmount) {
           handleUpdateQuote(
             values.allocateToken,
@@ -96,10 +95,8 @@ const Component: FC = () => {
           );
         }
       }
-
       if (buyAmount !== undefined) {
         form.setFieldValue("allocateAmount", undefined);
-
         if (buyAmount) {
           handleUpdateQuote(
             values.buyToken,
@@ -112,26 +109,21 @@ const Component: FC = () => {
     },
     800
   );
-
   const handleMode = (settingsMode: boolean, updated?: boolean) => {
     setState((prevState) => ({ ...prevState, settingsMode }));
-
     if (updated)
       form.setFieldsValue({
         allocateAmount: undefined,
         buyAmount: undefined,
       });
   };
-
   const handleSwap = () => {
     if (address && !approving && !swapping) {
       const values = form.getFieldsValue();
       const tokenIn = uniswapTokens[values.allocateToken];
       const tokenOut = uniswapTokens[values.buyToken];
-
       if (needsApproval) {
         setState((prevState) => ({ ...prevState, approving: true }));
-
         requestApproval(
           values.allocateAmount,
           tokenIn.address,
@@ -145,12 +137,10 @@ const Component: FC = () => {
           });
       } else {
         setState((prevState) => ({ ...prevState, swapping: true }));
-
         executeSwap(values.allocateAmount, values.buyAmount, tokenIn, tokenOut)
           .then((txHash) => {
             if (txHash) {
               const date = new Date();
-
               setStoredTransaction(address, {
                 ...values,
                 date: date.getTime(),
@@ -165,24 +155,20 @@ const Component: FC = () => {
       }
     }
   };
-
   const handleSwitchToken = () => {
     if (!loading) {
       const { allocateToken, buyAmount, buyToken } = form.getFieldsValue();
-
       form.setFieldsValue({
         allocateAmount: buyAmount,
         allocateToken: buyToken,
         buyAmount: undefined,
         buyToken: allocateToken,
       });
-
       if (buyAmount) {
         handleUpdateQuote(buyToken, allocateToken, buyAmount, false);
       }
     }
   };
-
   const handleUpdateQuote = (
     tickerA: TickerKey,
     tickerB: TickerKey,
@@ -191,9 +177,7 @@ const Component: FC = () => {
   ) => {
     const tokenA = uniswapTokens[tickerA];
     const tokenB = uniswapTokens[tickerB];
-
     setState((prevState) => ({ ...prevState, loading: true }));
-
     getUniswapQuote(tokenA, tokenB, amountIn)
       .then((amountOut) => {
         Promise.all([
@@ -209,7 +193,6 @@ const Component: FC = () => {
             reverse ? "allocateAmount" : "buyAmount",
             amountOut
           );
-
           setState((prevState) => ({
             ...prevState,
             loading: false,
@@ -223,11 +206,9 @@ const Component: FC = () => {
       })
       .catch((error) => {
         console.log(error);
-
         setState((prevState) => ({ ...prevState, loading: false }));
       });
   };
-
   return (
     <>
       <Settings onClose={handleMode} visible={settingsMode} />
@@ -258,7 +239,6 @@ const Component: FC = () => {
                 const amount: number = getFieldValue("allocateAmount") || 0;
                 const ticker: TickerKey = getFieldValue("allocateToken");
                 const value: number = values ? values[ticker] : 0;
-
                 return (
                   <>
                     <div className="balance">
@@ -285,8 +265,9 @@ const Component: FC = () => {
                     </div>
                     <div className="price">
                       <span>{(amount * value).toPriceFormat(currency)}</span>
-
-                      <span>{value.toPriceFormat(currency)}</span>
+                      {isConnected && tokenBalance && (
+                        <span>{tokenBalance.formatted} {tokenBalance.symbol}</span>
+                      )}
                     </div>
                   </>
                 );
@@ -310,7 +291,7 @@ const Component: FC = () => {
                 const amount: number = getFieldValue("buyAmount") || 0;
                 const ticker: TickerKey = getFieldValue("buyToken");
                 const value: number = values ? values[ticker] : 0;
-
+                
                 return (
                   <>
                     <div className="balance">
@@ -335,7 +316,6 @@ const Component: FC = () => {
                     </div>
                     <div className="price">
                       <span>{(amount * value).toPriceFormat(currency)}</span>
-                      <span>{value.toPriceFormat(currency)}</span>
                     </div>
                   </>
                 );
@@ -358,7 +338,6 @@ const Component: FC = () => {
           {({ getFieldsValue }) => {
             const { allocateAmount, allocateToken, buyAmount, buyToken } =
               getFieldsValue();
-
             return loading ? (
               <span className="secondary-button disabled">
                 {t(constantKeys.LOADING)}
@@ -458,5 +437,4 @@ const Component: FC = () => {
     </>
   );
 };
-
 export default Component;
