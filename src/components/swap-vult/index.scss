@@ -111,25 +111,32 @@
         background-color: transparent;
         border: none;
         box-shadow: none;
-        color: $text-light;
+        color: $text-primary;
         font-size: rem(22);
         font-weight: 500;
         outline: none;
         width: 100%;
       }
 
-      .title {
-        font-size: rem(12);
-        font-weight: 500;
-      }
-
       .balance {
         display: flex;
         justify-content: space-between;
         gap: rem(8);
+
+        .py-4 {
+          padding-bottom: rem(4);
+          padding-top: rem(4);
+        }
+        .title {
+          font-size: rem(12);
+          font-weight: 600;
+        }
       }
 
       .price {
+        display: flex;
+        justify-content: space-between;
+        gap: rem(8);
         color: $text-extra-light;
       }
     }

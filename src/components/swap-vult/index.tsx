@@ -248,7 +248,6 @@ const Component: FC = () => {
         </div>
         <div className="swap">
           <div className="item">
-            <span className="title">{t(constantKeys.I_WANT_TO_ALLOCATE)}</span>
             <Form.Item<SwapFormProps>
               shouldUpdate={(prevValues, curValues) =>
                 prevValues.allocateToken !== curValues.allocateToken
@@ -263,23 +262,32 @@ const Component: FC = () => {
                 return (
                   <>
                     <div className="balance">
-                      <Form.Item<SwapFormProps> name="allocateAmount" noStyle>
-                        <InputNumber
-                          controls={false}
-                          formatter={(value) => `${value}`.toNumberFormat()}
-                          min={0}
-                          placeholder="0"
-                          readOnly={loading}
+                      <div>
+                        <span className="title">
+                          {t(constantKeys.I_WANT_TO_ALLOCATE)}
+                        </span>
+                        <Form.Item<SwapFormProps> name="allocateAmount" noStyle>
+                          <InputNumber
+                            controls={false}
+                            formatter={(value) => `${value}`.toNumberFormat()}
+                            min={0}
+                            placeholder="0"
+                            readOnly={loading}
+                          />
+                        </Form.Item>
+                      </div>
+                      <div className="py-4">
+                        <TokenDropdown
+                          ticker={ticker}
+                          onChange={(value) => handleChangeToken(value, false)}
                         />
-                      </Form.Item>
-                      <TokenDropdown
-                        ticker={ticker}
-                        onChange={(value) => handleChangeToken(value, false)}
-                      />
+                      </div>
                     </div>
-                    <span className="price">
-                      {(amount * value).toPriceFormat(currency)}
-                    </span>
+                    <div className="price">
+                      <span>{(amount * value).toPriceFormat(currency)}</span>
+
+                      <span>{value.toPriceFormat(currency)}</span>
+                    </div>
                   </>
                 );
               }}
@@ -292,7 +300,6 @@ const Component: FC = () => {
             {loading ? <Spin /> : <ArrowDownUp />}
           </div>
           <div className="item">
-            <span className="title">{t(constantKeys.TO_BUY)}</span>
             <Form.Item<SwapFormProps>
               shouldUpdate={(prevValues, curValues) =>
                 prevValues.buyToken !== curValues.buyToken
@@ -307,23 +314,29 @@ const Component: FC = () => {
                 return (
                   <>
                     <div className="balance">
-                      <Form.Item<SwapFormProps> name="buyAmount" noStyle>
-                        <InputNumber
-                          controls={false}
-                          formatter={(value) => `${value}`.toNumberFormat()}
-                          min={0}
-                          placeholder="0"
-                          readOnly={loading}
+                      <div>
+                        <span className="title">{t(constantKeys.TO_BUY)}</span>
+                        <Form.Item<SwapFormProps> name="buyAmount" noStyle>
+                          <InputNumber
+                            controls={false}
+                            formatter={(value) => `${value}`.toNumberFormat()}
+                            min={0}
+                            placeholder="0"
+                            readOnly={loading}
+                          />
+                        </Form.Item>
+                      </div>
+                      <div className="py-4">
+                        <TokenDropdown
+                          ticker={ticker}
+                          onChange={(value) => handleChangeToken(value, true)}
                         />
-                      </Form.Item>
-                      <TokenDropdown
-                        ticker={ticker}
-                        onChange={(value) => handleChangeToken(value, true)}
-                      />
+                      </div>
                     </div>
-                    <span className="price">
-                      {(amount * value).toPriceFormat(currency)}
-                    </span>
+                    <div className="price">
+                      <span>{(amount * value).toPriceFormat(currency)}</span>
+                      <span>{value.toPriceFormat(currency)}</span>
+                    </div>
                   </>
                 );
               }}
