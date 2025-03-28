@@ -1,4 +1,5 @@
 @use "~variables" as *;
+@use "../../styles/_animations" as *;
 
 .default-layout {
   min-height: 100vh;
@@ -48,8 +49,48 @@
 
     .ant-menu {
       background-color: transparent;
-      border: none;
+      border: none !important;
       flex: 1;
+      
+      &.ant-menu-horizontal {
+        line-height: rem(64);
+        
+        > .ant-menu-item, 
+        > .ant-menu-submenu {
+          padding: 0 rem(20);
+          margin: 0;
+          
+          &::after {
+            display: none !important;
+          }
+        }
+        
+        > .ant-menu-item {
+          transition: color 0.3s ease;
+          
+          &.ant-menu-item-selected {
+            color: $alert-success;
+          }
+        }
+      }
+    }
+    
+    .menu-container {
+      position: relative;
+      flex: 1;
+      display: flex;
+      
+      .ant-menu {
+        width: 100%;
+        border-bottom: none !important;
+      }
+      
+      .menu-indicator {
+        @include tab-indicator;
+        position: absolute;
+        bottom: 0;
+        z-index: 1;
+      }
     }
 
     .logo {
@@ -307,4 +348,12 @@
       padding: rem(24) rem(16);
     }
   }
+}
+
+@keyframes wiggle {
+  0% { transform: translateX(var(--start-x)); width: var(--start-width); }
+  50% { transform: translateX(calc(var(--end-x) + 3px)); width: calc(var(--end-width) - 6px); }
+  75% { transform: translateX(calc(var(--end-x) - 2px)); width: calc(var(--end-width) + 4px); }
+  90% { transform: translateX(calc(var(--end-x) + 1px)); width: calc(var(--end-width) - 2px); }
+  100% { transform: translateX(var(--end-x)); width: var(--end-width); }
 }

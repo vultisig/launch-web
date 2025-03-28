@@ -1,4 +1,4 @@
-import { FC, Fragment, useEffect, useState } from "react";
+import { FC, Fragment, useEffect, useState, useRef } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -222,6 +222,12 @@ const Component: FC = () => {
   const { t } = useTranslation();
   const { activePage } = useBaseContext();
   const { address = "", isConnected } = useAccount();
+  const [indicatorStyle, setIndicatorStyle] = useState({
+    width: '0px',
+    transform: 'translateX(0)',
+  });
+  const [isAnimating, setIsAnimating] = useState(false);
+  const prevPositionRef = useRef({ width: '0px', left: 0 });
 
   const items: MenuProps["items"] = [
     {
@@ -238,6 +244,53 @@ const Component: FC = () => {
     },
   ];
 
+  useEffect(() => {
+    const menuItems = document.querySelectorAll('.ant-menu-item');
+    if (!menuItems.length) return;
+
+    let activeItem: Element | null = null;
+    
+    menuItems.forEach((item) => {
+      if (item.classList.contains('ant-menu-item-selected')) {
+        activeItem = item;
+      }
+    });
+
+    if (activeItem) {
+      const width = (activeItem as HTMLElement).clientWidth;
+      const offsetLeft = (activeItem as HTMLElement).offsetLeft;
+      
+      const prevWidth = prevPositionRef.current.width;
+      const prevLeft = prevPositionRef.current.left;
+      
+      prevPositionRef.current = { 
+        width: `${width}px`, 
+        left: offsetLeft 
+      };
+      
+      const indicator = document.querySelector('.menu-indicator') as HTMLElement;
+      if (indicator) {
+        indicator.style.setProperty('--start-x', `${prevLeft}px`);
+        indicator.style.setProperty('--start-width', prevWidth);
+        indicator.style.setProperty('--end-x', `${offsetLeft}px`);
+        indicator.style.setProperty('--end-width', `${width}px`);
+      }
+      
+      setIsAnimating(true);
+      
+      setIndicatorStyle({
+        width: `${width}px`,
+        transform: `translateX(${offsetLeft}px)`,
+      });
+      
+      const animationTimeout = setTimeout(() => {
+        setIsAnimating(false);
+      }, 500); // Match the animation duration
+      
+      return () => clearTimeout(animationTimeout);
+    }
+  }, [activePage]);
+
   return (
     <Layout className="default-layout">
       <Header>
@@ -246,7 +299,18 @@ const Component: FC = () => {
           <span className="name">Vultisig</span>
         </div>
         <MediaQuery minWidth={992}>
-          <Menu selectedKeys={[activePage]} items={items} mode="horizontal" />
+          <div className="menu-container">
+            <Menu 
+              selectedKeys={[activePage]} 
+              items={items} 
+              mode="horizontal" 
+              style={{ width: '100%' }}
+            />
+            <div 
+              className={`menu-indicator ${isAnimating ? 'animate' : ''}`}
+              style={indicatorStyle} 
+            />
+          </div>
         </MediaQuery>
         {isConnected ? (
           <Link to={HashKey.WALLET} className="secondary-button">
