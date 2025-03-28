@@ -277,9 +277,12 @@ const Component: FC = () => {
                         onChange={(value) => handleChangeToken(value, false)}
                       />
                     </div>
-                    <span className="price">
-                      {(amount * value).toPriceFormat(currency)}
-                    </span>
+                    <div className="price">
+                      <span>{(amount * value).toPriceFormat(currency)}</span>
+                      {isConnected && (
+                        <span>{tokens[ticker].balance.toBalanceFormat()}</span>
+                      )}
+                    </div>
                   </>
                 );
               }}
@@ -322,7 +325,10 @@ const Component: FC = () => {
                       />
                     </div>
                     <span className="price">
-                      {(amount * value).toPriceFormat(currency)}
+                      <span>{(amount * value).toPriceFormat(currency)}</span>
+                      {isConnected && (
+                        <span>{tokens[ticker].balance.toBalanceFormat()}</span>
+                      )}
                     </span>
                   </>
                 );
