@@ -130,7 +130,14 @@
       }
 
       .price {
-        color: $text-extra-light;
+        display: flex;
+        justify-content: space-between;
+        margin-top: rem(8);
+
+        span {
+          color: $text-extra-light;
+          line-height: rem(14);
+        }
       }
     }
 
