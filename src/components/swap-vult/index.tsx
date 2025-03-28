@@ -325,7 +325,7 @@ const Component: FC = () => {
                       />
                     </div>
                     <span className="price">
-                      {(amount * value).toPriceFormat(currency)}
+                      <span>{(amount * value).toPriceFormat(currency)}</span>
                       {isConnected && (
                         <span>{tokens[ticker].balance.toBalanceFormat()}</span>
                       )}
