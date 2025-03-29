@@ -1,5 +1,5 @@
 @use "~variables" as *;
-@use "../../styles/_animations" as *;
+@use "~animations" as *;
 
 .default-layout {
   min-height: 100vh;
@@ -48,26 +48,32 @@
     }
 
     .ant-menu {
+      /* Menu styling */
       background-color: transparent;
-      border: none !important;
+      border: none; 
       flex: 1;
       
+      /* Horizontal menu styling */
       &.ant-menu-horizontal {
         line-height: rem(64);
         
+        /* Menu items and submenu styling */
         > .ant-menu-item, 
         > .ant-menu-submenu {
           padding: 0 rem(20);
           margin: 0;
           
+          /* Remove the default bottom border */
           &::after {
-            display: none !important;
+            display: none;
           }
         }
         
+        /* Individual menu item styling */
         > .ant-menu-item {
-          transition: color 0.3s ease;
+          transition: color 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
           
+          /* Selected menu item state */
           &.ant-menu-item-selected {
             color: $alert-success;
           }
@@ -82,7 +88,7 @@
       
       .ant-menu {
         width: 100%;
-        border-bottom: none !important;
+        border-bottom: none; /* Removed !important as this can be handled with proper specificity */
       }
       
       .menu-indicator {
@@ -348,12 +354,4 @@
       padding: rem(24) rem(16);
     }
   }
-}
-
-@keyframes wiggle {
-  0% { transform: translateX(var(--start-x)); width: var(--start-width); }
-  50% { transform: translateX(calc(var(--end-x) + 3px)); width: calc(var(--end-width) - 6px); }
-  75% { transform: translateX(calc(var(--end-x) - 2px)); width: calc(var(--end-width) + 4px); }
-  90% { transform: translateX(calc(var(--end-x) + 1px)); width: calc(var(--end-width) - 2px); }
-  100% { transform: translateX(var(--end-x)); width: var(--end-width); }
 }

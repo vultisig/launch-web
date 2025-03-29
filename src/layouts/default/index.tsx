@@ -228,6 +228,8 @@ const Component: FC = () => {
   });
   const [isAnimating, setIsAnimating] = useState(false);
   const prevPositionRef = useRef({ width: '0px', left: 0 });
+  const menuRef = useRef<HTMLDivElement>(null);
+  const indicatorRef = useRef<HTMLDivElement>(null);
 
   const items: MenuProps["items"] = [
     {
@@ -244,8 +246,15 @@ const Component: FC = () => {
     },
   ];
 
+  const ANIMATION_DURATION = 500; // ms
+
   useEffect(() => {
-    const menuItems = document.querySelectorAll('.ant-menu-item');
+    if (!menuRef.current) return;
+    
+    const menuEl = menuRef.current;
+    if (!menuEl) return;
+    
+    const menuItems = menuEl.querySelectorAll('.ant-menu-item');
     if (!menuItems.length) return;
 
     let activeItem: Element | null = null;
@@ -256,7 +265,7 @@ const Component: FC = () => {
       }
     });
 
-    if (activeItem) {
+    if (activeItem && indicatorRef.current) {
       const width = (activeItem as HTMLElement).clientWidth;
       const offsetLeft = (activeItem as HTMLElement).offsetLeft;
       
@@ -268,13 +277,11 @@ const Component: FC = () => {
         left: offsetLeft 
       };
       
-      const indicator = document.querySelector('.menu-indicator') as HTMLElement;
-      if (indicator) {
-        indicator.style.setProperty('--start-x', `${prevLeft}px`);
-        indicator.style.setProperty('--start-width', prevWidth);
-        indicator.style.setProperty('--end-x', `${offsetLeft}px`);
-        indicator.style.setProperty('--end-width', `${width}px`);
-      }
+      const indicator = indicatorRef.current;
+      indicator.style.setProperty('--start-x', `${prevLeft}px`);
+      indicator.style.setProperty('--start-width', prevWidth);
+      indicator.style.setProperty('--end-x', `${offsetLeft}px`);
+      indicator.style.setProperty('--end-width', `${width}px`);
       
       setIsAnimating(true);
       
@@ -285,7 +292,7 @@ const Component: FC = () => {
       
       const animationTimeout = setTimeout(() => {
         setIsAnimating(false);
-      }, 500); // Match the animation duration
+      }, ANIMATION_DURATION);
       
       return () => clearTimeout(animationTimeout);
     }
@@ -299,7 +306,7 @@ const Component: FC = () => {
           <span className="name">Vultisig</span>
         </div>
         <MediaQuery minWidth={992}>
-          <div className="menu-container">
+          <div className="menu-container" ref={menuRef}>
             <Menu 
               selectedKeys={[activePage]} 
               items={items} 
@@ -309,6 +316,7 @@ const Component: FC = () => {
             <div 
               className={`menu-indicator ${isAnimating ? 'animate' : ''}`}
               style={indicatorStyle} 
+              ref={indicatorRef}
             />
           </div>
         </MediaQuery>

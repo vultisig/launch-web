@@ -1,5 +1,5 @@
 @use "~variables" as *;
-@use "../../styles/_animations" as *;
+@use "~animations" as *;
 
 .staking-page {
   border-radius: rem(20);

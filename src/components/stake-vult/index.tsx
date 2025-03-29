@@ -50,7 +50,8 @@ const Component: FC = () => {
   // Format number with commas
   const formatNumber = (value: number | string | undefined) => {
     if (value === undefined) return '';
-    return `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    return new Intl.NumberFormat().format(numValue);
   };
 
   const handleStake = () => {
@@ -101,13 +102,11 @@ const Component: FC = () => {
 
   // Update form when values change
   const handleChangeValues = (values: { Stake_Withdraw?: number }) => {
-    if (values.Stake_Withdraw !== undefined) {
-      setState(prevState => ({
-        ...prevState,
-        stakeWithdrawAmount: values.Stake_Withdraw as number,
-        Percentage: undefined
-      }));
-    }
+    setState(prevState => ({
+      ...prevState,
+      stakeWithdrawAmount: values.Stake_Withdraw ?? null,
+      Percentage: undefined
+    }));
   };
 
   // Render the available balance based on active tab
@@ -142,7 +141,7 @@ const Component: FC = () => {
           <div className="logo-wrapper">
             <img src="logo.svg" alt="staking-header" />
           </div>
-          <span className="title">Stake $VULT</span>
+          
         </div>
 
         <div className="staking">
