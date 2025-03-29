@@ -9,6 +9,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "~variables": path.resolve(__dirname, "src/styles/_variables"),
+      "~animations": path.resolve(__dirname, "src/styles/_animations"),
     },
   },
   css: {

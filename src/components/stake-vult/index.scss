@@ -1,4 +1,5 @@
 @use "~variables" as *;
+@use "~animations" as *;
 
 .staking-page {
   border-radius: rem(20);
@@ -81,6 +82,18 @@
           margin-right: rem(5);
         }
       }
+      
+      .rewards-display {
+        display: flex;
+        width: 100%;
+        justify-content: space-between;
+        align-items: center;
+        
+        .rewards-value {
+          font-size: rem(24);
+          font-weight: 500;
+        }
+      }
     }
 
     .result {
@@ -109,20 +122,36 @@
     background-color: $background-secondary;
     border-radius: rem(20);
     padding: rem(18);
+    
     .switch {
       display: flex;
       flex-direction: row;
       justify-content: space-between;
       justify-items: center;
+      position: relative;
+      margin-bottom: rem(20);
+      
       li {
         font-size: rem(17);
-        width: 100%;
+        width: 50%;
         text-align: center;
         padding: rem(10);
         cursor: pointer;
+        transition: color 0.3s ease;
       }
+      
       .active {
-        border-bottom: rem(2) solid $alert-success;
+        color: $alert-success;
+      }
+      
+      .tab-indicator {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 50%;
+        height: rem(2);
+        background-color: $alert-success;
+        transition: transform 0.3s cubic-bezier(0.25, 1.2, 0.35, 1);
       }
     }
     .amount {
@@ -132,6 +161,22 @@
       padding: rem(18) rem(0);
       .available {
         margin-top: -10px;
+        display: flex;
+        align-items: center;
+        
+        .balance-with-icon {
+          display: inline-flex;
+          align-items: center;
+          vertical-align: middle;
+          position: relative;
+          top: 1px;
+          
+          .vult-icon {
+            width: rem(16);
+            height: rem(16);
+            margin-left: rem(5);
+          }
+        }
       }
       .ant-input-number {
         border: rem(1) solid $border-normal;
