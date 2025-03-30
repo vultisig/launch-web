@@ -1,4 +1,5 @@
 @use "~variables" as *;
+@use "~animations" as *;
 
 .default-layout {
   min-height: 100vh;
@@ -47,9 +48,55 @@
     }
 
     .ant-menu {
+      /* Menu styling */
       background-color: transparent;
-      border: none;
+      border: none; 
       flex: 1;
+      
+      /* Horizontal menu styling */
+      &.ant-menu-horizontal {
+        line-height: rem(64);
+        
+        /* Menu items and submenu styling */
+        > .ant-menu-item, 
+        > .ant-menu-submenu {
+          padding: 0 rem(20);
+          margin: 0;
+          
+          /* Remove the default bottom border */
+          &::after {
+            display: none;
+          }
+        }
+        
+        /* Individual menu item styling */
+        > .ant-menu-item {
+          transition: color 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+          
+          /* Selected menu item state */
+          &.ant-menu-item-selected {
+            color: $alert-success;
+          }
+        }
+      }
+    }
+    
+    .menu-container {
+      position: relative;
+      flex: 1;
+      display: flex;
+      
+      .ant-menu {
+        width: 100%;
+        border-bottom: none; /* Removed !important as this can be handled with proper specificity */
+      }
+      
+      .menu-indicator {
+        @include tab-indicator;
+        position: absolute;
+        bottom: 0;
+        z-index: 1;
+      }
     }
 
     .logo {
