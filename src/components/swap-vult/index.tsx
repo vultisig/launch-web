@@ -183,6 +183,22 @@ const Component: FC = () => {
     }
   };
 
+  const handleUseFullAmount = (ticker: TickerKey) => {
+    if (!loading && isConnected) {
+      const fullAmount = tokens[ticker].balance;
+      
+      form.setFieldValue("allocateAmount", fullAmount);
+      form.setFieldValue("buyAmount", undefined);
+      
+      handleUpdateQuote(
+        ticker,
+        form.getFieldValue("buyToken"),
+        fullAmount,
+        false
+      );
+    }
+  };
+
   const handleUpdateQuote = (
     tickerA: TickerKey,
     tickerB: TickerKey,
@@ -280,7 +296,13 @@ const Component: FC = () => {
                     <div className="price">
                       <span>{(amount * value).toPriceFormat(currency)}</span>
                       {isConnected && (
-                        <span>{tokens[ticker].balance.toBalanceFormat()}</span>
+                        <span 
+                          onClick={() => handleUseFullAmount(ticker)}
+                          style={{ cursor: 'pointer' }}
+                          title="Click to use full amount"
+                        >
+                          Available: <span style={{ fontWeight: 'bold' }}>{tokens[ticker].balance.toBalanceFormat()}</span>
+                        </span>
                       )}
                     </div>
                   </>
@@ -324,12 +346,12 @@ const Component: FC = () => {
                         onChange={(value) => handleChangeToken(value, true)}
                       />
                     </div>
-                    <span className="price">
+                    <div className="price">
                       <span>{(amount * value).toPriceFormat(currency)}</span>
                       {isConnected && (
-                        <span>{tokens[ticker].balance.toBalanceFormat()}</span>
+                        <span>Amount: {tokens[ticker].balance.toBalanceFormat()}</span>
                       )}
-                    </span>
+                    </div>
                   </>
                 );
               }}

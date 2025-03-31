@@ -152,3 +152,21 @@ export const setStoredTransactions = (
 
   localStorage.setItem(storageKey.TRANSACTIONS, JSON.stringify(wallets));
 };
+
+export const clearStoredTransactions = (address: string): void => {
+  const data = localStorage.getItem(storageKey.TRANSACTIONS);
+  let wallets: Record<string, TransactionProps[]>;
+
+  try {
+    if (data) {
+      wallets = JSON.parse(data);
+      
+      if (wallets[address]) {
+        wallets[address] = [];
+        localStorage.setItem(storageKey.TRANSACTIONS, JSON.stringify(wallets));
+      }
+    }
+  } catch {
+    // If there's an error parsing the data, do nothing
+  }
+};
