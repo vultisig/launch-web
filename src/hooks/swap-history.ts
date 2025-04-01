@@ -36,7 +36,7 @@ const useSwapHistory = () => {
     }
   };
 
-  const clearHistory = () => {
+  const clearHistory = (): void => {
     if (address) {
       clearStoredTransactions(address);
       setState((prevState) => ({ ...prevState, transactions: [] }));
