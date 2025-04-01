@@ -44,6 +44,7 @@ export default keyMirror({
   MIN_RECEIVED: true,
   // N
   NETWORK_FEE_EST: true,
+  NO_TRANSACTIONS_FOUND: true,
   NOT_WHITELISTED: true,
   // O
   // P
