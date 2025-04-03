@@ -1,7 +1,7 @@
 import { FC, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Form, Input, InputNumber, Spin } from "antd";
+import { Form, Input, InputNumber, Spin, Tooltip } from "antd";
 import { debounce } from "lodash";
 import { useAccount } from "wagmi";
 
@@ -185,7 +185,31 @@ const Component: FC = () => {
 
   const handleUseFullAmount = (ticker: TickerKey) => {
     if (!loading && isConnected) {
-      const fullAmount = tokens[ticker].balance;
+      let fullAmount = tokens[ticker].balance;
+      
+      // If the token is ETH, we need to reserve some for gas fees
+      if (ticker === TickerKey.ETH) {
+        // Calculate the estimated gas fee in ETH using the same formula as getMaxNetworkFee
+        const maxFeeEth = gasSettings.maxFee * 1e-9; // Convert Gwei to ETH
+        const maxPriorityFeeEth = gasSettings.maxPriorityFee * 1e-9;
+        
+        // Calculate max network fee in ETH (same formula as getMaxNetworkFee)
+        const estimatedGasFeeEth = (maxFeeEth + maxPriorityFeeEth) * gasSettings.gasLimit;
+        
+        // Add a 10% buffer to ensure we have enough for gas fluctuations
+        const gasFeeWithBuffer = estimatedGasFeeEth * 1.1;
+        
+        // Ensure we don't set a negative amount if gas fee is higher than balance
+        if (fullAmount > gasFeeWithBuffer) {
+          fullAmount -= gasFeeWithBuffer;
+        } else {
+          // If balance is too low, use half of the balance to ensure some amount for gas
+          fullAmount = fullAmount * 0.5;
+        }
+      }
+      
+      // Round to 6 decimal places to avoid floating point precision issues
+      fullAmount = Math.floor(fullAmount * 1000000) / 1000000;
       
       form.setFieldValue("allocateAmount", fullAmount);
       form.setFieldValue("buyAmount", undefined);
@@ -296,13 +320,14 @@ const Component: FC = () => {
                     <div className="price">
                       <span>{(amount * value).toPriceFormat(currency)}</span>
                       {isConnected && (
-                        <span 
-                          onClick={() => handleUseFullAmount(ticker)}
-                          style={{ cursor: 'pointer' }}
-                          title="Click to use full amount"
-                        >
-                          Available: <span style={{ fontWeight: 'bold' }}>{tokens[ticker].balance.toBalanceFormat()}</span>
-                        </span>
+                        <Tooltip title={t(constantKeys.CLICK_TO_USE_FULL_AMOUNT)}>
+                          <span 
+                            onClick={() => handleUseFullAmount(ticker)}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            {t(constantKeys.AVAILABLE)}: <span style={{ fontWeight: 'bold' }}>{tokens[ticker].balance.toBalanceFormat()}</span>
+                          </span>
+                        </Tooltip>
                       )}
                     </div>
                   </>

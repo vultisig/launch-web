@@ -9,6 +9,8 @@ export default keyMirror({
   BASIC: true,
   BRIDGE: true,
   // C
+  CLEAR_HISTORY: true,
+  CLICK_TO_USE_FULL_AMOUNT: true,
   CONFIRM: true,
   CONNECT_WALLET: true,
   CONNECTED_WALLET: true,

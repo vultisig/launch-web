@@ -19,13 +19,19 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: $text-primary;
-    border-radius: rem(4);
     transition: all 0.2s ease;
+    
+    svg {
+      width: rem(16);
+      height: rem(16);
+      stroke: $text-extra-light;
+      transition: all 0.2s;
+    }
 
     &:hover {
-      color: $alert-error;
-      background-color: rgba($color: $alert-error, $alpha: 0.1);
+      svg {
+        stroke: $alert-error;
+      }
     }
 
     &:focus {
