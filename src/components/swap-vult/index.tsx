@@ -189,12 +189,8 @@ const Component: FC = () => {
       
       // If the token is ETH, we need to reserve some for gas fees
       if (ticker === TickerKey.ETH) {
-        // Calculate the estimated gas fee in ETH using the same formula as getMaxNetworkFee
-        const maxFeeEth = gasSettings.maxFee * 1e-9; // Convert Gwei to ETH
-        const maxPriorityFeeEth = gasSettings.maxPriorityFee * 1e-9;
-        
-        // Calculate max network fee in ETH (same formula as getMaxNetworkFee)
-        const estimatedGasFeeEth = (maxFeeEth + maxPriorityFeeEth) * gasSettings.gasLimit;
+        // Get max network fee using the existing function
+        const estimatedGasFeeEth = getMaxNetworkFee(1) / (values?.[TickerKey.ETH] || 1);
         
         // Add a 10% buffer to ensure we have enough for gas fluctuations
         const gasFeeWithBuffer = estimatedGasFeeEth * 1.1;
@@ -204,7 +200,8 @@ const Component: FC = () => {
           fullAmount -= gasFeeWithBuffer;
         } else {
           // Show warning message to the user
-          message.warning("Insufficient ETH for gas fees. Please add more ETH to your wallet.");
+          message.warning(t(constantKeys.INSUFFICIENT_BALANCE) + ". " + 
+                         "Please add more ETH to your wallet for gas fees.");
           // Set the amount to 0
           fullAmount = 0;
         }
@@ -324,10 +321,10 @@ const Component: FC = () => {
                       {isConnected && (
                         <Tooltip title={t(constantKeys.CLICK_TO_USE_FULL_AMOUNT)}>
                           <span 
+                            className="available-balance clickable"
                             onClick={() => handleUseFullAmount(ticker)}
-                            style={{ cursor: 'pointer' }}
                           >
-                            {t(constantKeys.AVAILABLE)}: <span style={{ fontWeight: 'bold' }}>{tokens[ticker].balance.toBalanceFormat()}</span>
+                            {t(constantKeys.AVAILABLE)}: <span className="balance-amount">{tokens[ticker].balance.toBalanceFormat()}</span>
                           </span>
                         </Tooltip>
                       )}
