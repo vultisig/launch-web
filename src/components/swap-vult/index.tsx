@@ -1,7 +1,7 @@
 import { FC, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Form, Input, InputNumber, Spin, Tooltip } from "antd";
+import { Form, Input, InputNumber, Spin, Tooltip, message } from "antd";
 import { debounce } from "lodash";
 import { useAccount } from "wagmi";
 
@@ -199,12 +199,14 @@ const Component: FC = () => {
         // Add a 10% buffer to ensure we have enough for gas fluctuations
         const gasFeeWithBuffer = estimatedGasFeeEth * 1.1;
         
-        // Ensure we don't set a negative amount if gas fee is higher than balance
+        // If balance is too low, set amount to 0 and show a warning
         if (fullAmount > gasFeeWithBuffer) {
           fullAmount -= gasFeeWithBuffer;
         } else {
-          // If balance is too low, use half of the balance to ensure some amount for gas
-          fullAmount = fullAmount * 0.5;
+          // Show warning message to the user
+          message.warning("Insufficient ETH for gas fees. Please add more ETH to your wallet.");
+          // Set the amount to 0
+          fullAmount = 0;
         }
       }
       
