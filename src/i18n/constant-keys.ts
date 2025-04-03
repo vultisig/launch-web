@@ -9,6 +9,8 @@ export default keyMirror({
   BASIC: true,
   BRIDGE: true,
   // C
+  CLEAR_HISTORY: true,
+  CLICK_TO_USE_FULL_AMOUNT: true,
   CONFIRM: true,
   CONNECT_WALLET: true,
   CONNECTED_WALLET: true,
@@ -44,6 +46,7 @@ export default keyMirror({
   MIN_RECEIVED: true,
   // N
   NETWORK_FEE_EST: true,
+  NO_TRANSACTIONS_FOUND: true,
   NOT_WHITELISTED: true,
   // O
   // P

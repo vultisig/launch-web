@@ -44,6 +44,7 @@ export default {
   [translation.MIN_RECEIVED]: "Min Received",
   // N
   [translation.NETWORK_FEE_EST]: "Network Fee (est)",
+  [translation.NO_TRANSACTIONS_FOUND]: "No transactions found",
   [translation.NOT_WHITELISTED]: "You are not whitelisted",
   // O
   // P
