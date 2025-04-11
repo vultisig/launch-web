@@ -191,7 +191,9 @@ const Component: FC = () => {
       // If the token is ETH, we need to reserve some for gas fees
       if (ticker === TickerKey.ETH) {
         // Get max network fee using the existing function
-        const estimatedGasFeeEth = getMaxNetworkFee(1) / (values?.[TickerKey.ETH] || 1);
+        const estimatedGasFeeInCurrency = getMaxNetworkFee(1);
+        const ethValuePerUnit = values?.[TickerKey.ETH] || 1;
+        const estimatedGasFeeEth = estimatedGasFeeInCurrency / ethValuePerUnit;
         
         // Add a 10% buffer to ensure we have enough for gas fluctuations
         const gasFeeWithBuffer = estimatedGasFeeEth * 1.1;
@@ -375,7 +377,7 @@ const Component: FC = () => {
                     <div className="price">
                       <span>{(amount * value).toPriceFormat(currency)}</span>
                       {isConnected && (
-                        <span>Amount: {tokens[ticker].balance.toBalanceFormat()}</span>
+                        <span>{t(constantKeys.AMOUNT)}: {tokens[ticker].balance.toBalanceFormat()}</span>
                       )}
                     </div>
                   </>

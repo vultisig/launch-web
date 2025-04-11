@@ -126,15 +126,15 @@ const Component: FC = () => {
               role="button"
               tabIndex={0}
             >
-              <Trash />
+              <Trash height={16} width={16} />
               {t(constantKeys.CLEAR_HISTORY)}
             </span>
           </Tooltip>
         )}
       </div>
       {transactions.length > 0 ? (
-        transactions.map((transaction, index) => (
-          <Transaction key={index} address={address} transaction={transaction} />
+        transactions.map((transaction) => (
+          <Transaction key={transaction.hash} address={address} transaction={transaction} />
         ))
       ) : (
         <div className="no-transactions">

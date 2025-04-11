@@ -3,6 +3,7 @@ import keyMirror from "keymirror";
 export default keyMirror({
   // A
   ADVANCED: true,
+  AMOUNT: true,
   APPROVE: true,
   AVAILABLE: true,
   // B

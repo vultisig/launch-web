@@ -3,12 +3,14 @@ import translation from "i18n/constant-keys";
 export default {
   // A
   [translation.ADVANCED]: "Advanced",
+  [translation.AMOUNT]: "Amount",
   [translation.APPROVE]: "Approve",
   [translation.AVAILABLE]: "Available",
   // B
   [translation.BASIC]: "Basic",
   [translation.BRIDGE]: "Bridge",
   // C
+  [translation.CLICK_TO_USE_FULL_AMOUNT]: "Click to use full amount",
   [translation.CONFIRM]: "Confirm",
   [translation.CONNECT_WALLET]: "Connect Wallet",
   [translation.CONNECTED_WALLET]: "Connected Wallet",
