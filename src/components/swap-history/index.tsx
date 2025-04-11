@@ -11,9 +11,9 @@ import useSwapHistory from "hooks/swap-history";
 import useSwapVult from "hooks/swap";
 import constantKeys from "i18n/constant-keys";
 
-import { ChevronRight, CircleCheckBig, OctagonAlert } from "icons";
+import { ChevronRight, CircleCheckBig, OctagonAlert, Trash } from "icons";
 import MiddleTruncate from "components/middle-truncate";
-import { Spin } from "antd";
+import { Spin, Tooltip } from "antd";
 
 const Transaction: FC<{ address: string; transaction: TransactionProps }> = ({
   address,
@@ -112,14 +112,35 @@ const Transaction: FC<{ address: string; transaction: TransactionProps }> = ({
 const Component: FC = () => {
   const { t } = useTranslation();
   const { address = "", isConnected } = useAccount();
-  const { transactions } = useSwapHistory();
+  const { transactions, clearHistory } = useSwapHistory();
 
   return isConnected ? (
     <div className="swap-history">
-      <span className="heading">{t(constantKeys.TRANSACTIONS)}</span>
-      {transactions.map((transaction, index) => (
-        <Transaction key={index} address={address} transaction={transaction} />
-      ))}
+      <div className="history-header">
+        <span className="heading">{t(constantKeys.TRANSACTIONS)}</span>
+        {transactions.length > 0 && (
+          <Tooltip title={t(constantKeys.CLEAR_HISTORY)}>
+            <span
+              className="clear-history-btn"
+              onClick={clearHistory}
+              role="button"
+              tabIndex={0}
+            >
+              <Trash height={16} width={16} />
+              {t(constantKeys.CLEAR_HISTORY)}
+            </span>
+          </Tooltip>
+        )}
+      </div>
+      {transactions.length > 0 ? (
+        transactions.map((transaction) => (
+          <Transaction key={transaction.hash} address={address} transaction={transaction} />
+        ))
+      ) : (
+        <div className="no-transactions">
+          {t(constantKeys.NO_TRANSACTIONS_FOUND)}
+        </div>
+      )}
     </div>
   ) : null;
 };

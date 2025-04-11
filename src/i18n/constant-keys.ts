@@ -3,12 +3,15 @@ import keyMirror from "keymirror";
 export default keyMirror({
   // A
   ADVANCED: true,
+  AMOUNT: true,
   APPROVE: true,
   AVAILABLE: true,
   // B
   BASIC: true,
   BRIDGE: true,
   // C
+  CLEAR_HISTORY: true,
+  CLICK_TO_USE_FULL_AMOUNT: true,
   CONFIRM: true,
   CONNECT_WALLET: true,
   CONNECTED_WALLET: true,
@@ -44,11 +47,13 @@ export default keyMirror({
   MIN_RECEIVED: true,
   // N
   NETWORK_FEE_EST: true,
+  NO_TRANSACTIONS_FOUND: true,
   NOT_WHITELISTED: true,
   // O
   // P
   PENDING: true,
   PER_HOUR: true,
+  PLEASE_ADD_MORE_ETH_FOR_GAS: true,
   POOL: true,
   PRICE: true,
   PRICE_IMPACT: true,

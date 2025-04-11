@@ -138,6 +138,18 @@
           color: $text-extra-light;
           line-height: rem(14);
         }
+        
+        .available-balance {
+          cursor: pointer;
+          
+          &.clickable:hover {
+            color: $text-light;
+          }
+          
+          .balance-amount {
+            font-weight: bold;
+          }
+        }
       }
     }
 
