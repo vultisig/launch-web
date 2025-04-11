@@ -30,6 +30,7 @@ interface InitialState {
 
 const Component: FC = () => {
   const { t } = useTranslation();
+  const [messageApi, contextHolder] = message.useMessage();
   const initialState: InitialState = {
     maxNetworkFee: 0,
     poolPrice: 0,
@@ -200,8 +201,8 @@ const Component: FC = () => {
           fullAmount -= gasFeeWithBuffer;
         } else {
           // Show warning message to the user
-          message.warning(t(constantKeys.INSUFFICIENT_BALANCE) + ". " + 
-                         "Please add more ETH to your wallet for gas fees.");
+          messageApi.warning(t(constantKeys.INSUFFICIENT_BALANCE) + ". " + 
+                         t(constantKeys.PLEASE_ADD_MORE_ETH_FOR_GAS));
           // Set the amount to 0
           fullAmount = 0;
         }
@@ -269,6 +270,7 @@ const Component: FC = () => {
 
   return (
     <>
+      {contextHolder}
       <Settings onClose={handleMode} visible={settingsMode} />
       <Form
         form={form}

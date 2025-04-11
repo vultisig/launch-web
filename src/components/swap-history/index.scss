@@ -27,13 +27,6 @@
       stroke: $text-extra-light;
       transition: all 0.2s;
     }
-
-    &:hover {
-      svg {
-        stroke: $alert-error;
-      }
-    }
-
     &:focus {
       outline: none;
       box-shadow: 0 0 0 rem(2) rgba($color: $alert-error, $alpha: 0.3);

@@ -50,6 +50,7 @@ export default {
   // P
   [translation.PENDING]: "Pending",
   [translation.PER_HOUR]: "Per Hour",
+  [translation.PLEASE_ADD_MORE_ETH_FOR_GAS]: "Please add more ETH to your wallet for gas fees",
   [translation.POOL]: "Pool",
   [translation.PRICE]: "Price",
   [translation.PRICE_IMPACT]: "Price Impact",

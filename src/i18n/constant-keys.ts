@@ -52,6 +52,7 @@ export default keyMirror({
   // P
   PENDING: true,
   PER_HOUR: true,
+  PLEASE_ADD_MORE_ETH_FOR_GAS: true,
   POOL: true,
   PRICE: true,
   PRICE_IMPACT: true,

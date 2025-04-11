@@ -13,7 +13,7 @@ import constantKeys from "i18n/constant-keys";
 
 import { ChevronRight, CircleCheckBig, OctagonAlert, Trash } from "icons";
 import MiddleTruncate from "components/middle-truncate";
-import { Spin, Button, Tooltip } from "antd";
+import { Spin, Tooltip } from "antd";
 
 const Transaction: FC<{ address: string; transaction: TransactionProps }> = ({
   address,
@@ -120,13 +120,15 @@ const Component: FC = () => {
         <span className="heading">{t(constantKeys.TRANSACTIONS)}</span>
         {transactions.length > 0 && (
           <Tooltip title={t(constantKeys.CLEAR_HISTORY)}>
-            <Button
+            <span
               className="clear-history-btn"
               onClick={clearHistory}
-              icon={<Trash />}
+              role="button"
+              tabIndex={0}
             >
+              <Trash />
               {t(constantKeys.CLEAR_HISTORY)}
-            </Button>
+            </span>
           </Tooltip>
         )}
       </div>
