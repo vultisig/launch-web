@@ -3,12 +3,15 @@ import translation from "i18n/constant-keys";
 export default {
   // A
   [translation.ADVANCED]: "Advanced",
+  [translation.AMOUNT]: "Amount",
   [translation.APPROVE]: "Approve",
   [translation.AVAILABLE]: "Available",
   // B
   [translation.BASIC]: "Basic",
   [translation.BRIDGE]: "Bridge",
   // C
+  [translation.CLICK_TO_USE_FULL_AMOUNT]: "Click to use full amount",
+  [translation.CLEAR_HISTORY]: "Clear history",
   [translation.CONFIRM]: "Confirm",
   [translation.CONNECT_WALLET]: "Connect Wallet",
   [translation.CONNECTED_WALLET]: "Connected Wallet",
@@ -44,11 +47,14 @@ export default {
   [translation.MIN_RECEIVED]: "Min Received",
   // N
   [translation.NETWORK_FEE_EST]: "Network Fee (est)",
+  [translation.NO_TRANSACTIONS_FOUND]: "No transactions found",
   [translation.NOT_WHITELISTED]: "You are not whitelisted",
   // O
   // P
   [translation.PENDING]: "Pending",
   [translation.PER_HOUR]: "Per Hour",
+  [translation.PLEASE_ADD_MORE_ETH_FOR_GAS]:
+    "Please add more ETH to your wallet for gas fees",
   [translation.POOL]: "Pool",
   [translation.PRICE]: "Price",
   [translation.PRICE_IMPACT]: "Price Impact",
@@ -59,7 +65,7 @@ export default {
   // S
   [translation.SAVE]: "Save",
   [translation.SEARCH_ADDRESS]: "Search Address",
-  [translation.SEARCH_TITLE]:"Check Whitelist eligibility",
+  [translation.SEARCH_TITLE]: "Check Whitelist eligibility",
   [translation.SETTINGS]: "Settings",
   [translation.SLOW]: "Slow",
   [translation.SLIPPAGE]: "Slippage",
