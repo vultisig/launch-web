@@ -13,7 +13,7 @@ import constantKeys from "i18n/constant-keys";
 
 import { ChevronRight, CircleCheckBig, OctagonAlert, Trash } from "icons";
 import MiddleTruncate from "components/middle-truncate";
-import { Spin, Tooltip } from "antd";
+import { Empty, Spin, Tooltip } from "antd";
 
 const Transaction: FC<{ address: string; transaction: TransactionProps }> = ({
   address,
@@ -116,30 +116,26 @@ const Component: FC = () => {
 
   return isConnected ? (
     <div className="swap-history">
-      <div className="history-header">
+      <div className="header">
         <span className="heading">{t(constantKeys.TRANSACTIONS)}</span>
         {transactions.length > 0 && (
           <Tooltip title={t(constantKeys.CLEAR_HISTORY)}>
-            <span
-              className="clear-history-btn"
-              onClick={clearHistory}
-              role="button"
-              tabIndex={0}
-            >
-              <Trash height={16} width={16} />
-              {t(constantKeys.CLEAR_HISTORY)}
+            <span className="button" onClick={clearHistory}>
+              <Trash />
             </span>
           </Tooltip>
         )}
       </div>
       {transactions.length > 0 ? (
         transactions.map((transaction) => (
-          <Transaction key={transaction.hash} address={address} transaction={transaction} />
+          <Transaction
+            key={transaction.hash}
+            address={address}
+            transaction={transaction}
+          />
         ))
       ) : (
-        <div className="no-transactions">
-          {t(constantKeys.NO_TRANSACTIONS_FOUND)}
-        </div>
+        <Empty description={t(constantKeys.NO_TRANSACTIONS_FOUND)} />
       )}
     </div>
   ) : null;

@@ -152,26 +152,3 @@ export const setStoredTransactions = (
 
   localStorage.setItem(storageKey.TRANSACTIONS, JSON.stringify(wallets));
 };
-
-/**
- * Clears all stored transactions for a specific wallet address
- * @param address The wallet address whose transactions should be cleared
- */
-export const clearStoredTransactions = (address: string): void => {
-  const data = localStorage.getItem(storageKey.TRANSACTIONS);
-  let wallets: Record<string, TransactionProps[]>;
-
-  try {
-    if (data) {
-      wallets = JSON.parse(data);
-      
-      if (wallets[address] && wallets[address].length > 0) {
-        wallets[address] = [];
-        localStorage.setItem(storageKey.TRANSACTIONS, JSON.stringify(wallets));
-      }
-    }
-  } catch (error) {
-    // If there's an error parsing the data, do nothing
-    console.error("Error clearing stored transactions:", error);
-  }
-};

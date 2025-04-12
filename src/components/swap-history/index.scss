@@ -5,39 +5,28 @@
   flex-direction: column;
   gap: rem(12);
 
-  .history-header {
+  .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
 
-  .clear-history-btn {
-    background: none;
-    border: none;
+  .button {
     cursor: pointer;
-    padding: rem(4) rem(8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    
-    svg {
-      width: rem(16);
-      height: rem(16);
-      stroke: $text-extra-light;
-      transition: all 0.2s;
-    }
-    &:focus {
-      outline: none;
-      box-shadow: 0 0 0 rem(2) rgba($color: $alert-error, $alpha: 0.3);
-    }
-  }
+    display: block;
 
-  .no-transactions {
-    color: $text-extra-light;
-    text-align: center;
-    padding: rem(20) 0;
-    font-size: rem(14);
+    svg {
+      stroke: $text-primary;
+      transition: all 0.2s;
+      height: rem(16);
+      width: rem(16);
+    }
+
+    &:hover {
+      svg {
+        stroke: $alert-error;
+      }
+    }
   }
 
   .ant-spin {
