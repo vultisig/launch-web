@@ -69,6 +69,8 @@ export default {
   [translation.SETTINGS]: "Settings",
   [translation.SLOW]: "Slow",
   [translation.SLIPPAGE]: "Slippage",
+  [translation.STAKE]: "Stake",
+  [translation.STAKE_VULT]: "Stake $Vult",
   [translation.STANDARD]: "Standard",
   [translation.STAKING]: "Staking",
   [translation.SUCCESS]: "Success",
@@ -87,4 +89,5 @@ export default {
   // W
   [translation.WALLET]: "Wallet",
   [translation.WHITELISTED]: "You are whitelisted",
+  [translation.WITHDRAW]: "Withdraw",
 };

@@ -1,111 +1,60 @@
 import { FC, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Layout } from "antd";
-import { FeeAmount, Pool } from "@uniswap/v3-sdk";
-import { Contract, formatEther } from "ethers";
-import { erc20Abi } from "viem";
 
 import { useBaseContext } from "context";
-import {
-  POOLS_ABI,
-  ContractAddress,
-  PageKey,
-  Period,
-  uniswapTokens,
-  TickerKey,
-} from "utils/constants";
-import { getRPCProvider } from "utils/providers";
-import api from "utils/api";
+import { PageKey } from "utils/constants";
+import constantKeys from "i18n/constant-keys";
 
-import Staking from "components/stake-vult";
+import { ChartPie, Layers } from "icons";
+import StakeWithdraw from "components/stake-and-withdraw";
+import InvestClaim from "components/stake-invest-claim";
 
 const { Content } = Layout;
 
-type DataProps = [number, number][];
-
 interface InitialState {
-  marketCap: number;
-  period: Period;
-  price: number;
-  reports: DataProps;
-  volume: number;
+  loading: boolean;
 }
 
 const Component: FC = () => {
-  const initialState: InitialState = {
-    marketCap: 0,
-    period: Period.DAY,
-    price: 0,
-    reports: [],
-    volume: 0,
-  };
-
-  const [state, setState] = useState(initialState);
-  const {  period } = state;
+  const { t } = useTranslation();
+  const initialState: InitialState = { loading: false };
+  const [_state, _setState] = useState(initialState);
   const { changePage } = useBaseContext();
-
-  const fetchPrice = async () => {
-    const contract = new Contract(
-      ContractAddress.WETH_USDC_POOL,
-      POOLS_ABI,
-      getRPCProvider()
-    );
-    const slot0 = await contract.slot0();
-    const poolLiquidity = String(await contract.liquidity());
-    const pool = new Pool(
-      uniswapTokens[TickerKey.WETH],
-      uniswapTokens[TickerKey.USDC],
-      FeeAmount.HIGH,
-      String(slot0.sqrtPriceX96),
-      poolLiquidity,
-      Number(slot0.tick)
-    );
-    return Number(pool.token1Price.toSignificant(6));
-  };
-;
-
-  const componentDidUpdate = () => {
-    api.historicalPrice(period).then((rawData) => {
-      const reports: DataProps = rawData.map(({ date, price }) => [
-        date,
-        parseFloat(price.toFixed(2)),
-      ]);
-
-      setState((prevState) => ({ ...prevState, reports }));
-    });
-  };
 
   const componentDidMount = () => {
     changePage(PageKey.STAKING);
-
-    api.volume(1).then((volume) => {
-      setState((prevState) => ({ ...prevState, volume }));
-    });
-
-    fetchPrice().then((price) => {
-      const contract = new Contract(
-        ContractAddress.WETH_TOKEN,
-        erc20Abi,
-        getRPCProvider()
-      );
-
-      contract.totalSupply().then((totalSupply) => {
-        setState((prevState) => ({
-          ...prevState,
-          marketCap: Number(formatEther(totalSupply)) * price,
-          price,
-        }));
-      });
-    });
   };
 
-  useEffect(componentDidUpdate, [period]);
   useEffect(componentDidMount, []);
 
   return (
-    <Content className="stacking">
-      <div className="aside">
-        <Staking />
+    <Content className="stacking-page">
+      <div className="heading">
+        <img src="/tokens/vult.svg" alt="staking-header" />
+        {t(constantKeys.STAKE_VULT)}
       </div>
+      <div className="stats">
+        <div className="item">
+          <Layers className="icon" />
+          <span className="label">Revenue to distribute</span>
+          <span className="value">$250,000 USDC</span>
+        </div>
+        <div className="divider" />
+        <div className="item">
+          <Layers className="icon" />
+          <span className="label">Total VULT Staked</span>
+          <span className="value">1,250,000 VULT</span>
+        </div>
+        <div className="divider" />
+        <div className="item">
+          <ChartPie className="icon" />
+          <span className="label">Staked Supply</span>
+          <span className="value">25.4%</span>
+        </div>
+      </div>
+      <InvestClaim />
+      <StakeWithdraw />
     </Content>
   );
 };

@@ -10,6 +10,7 @@ export default keyMirror({
   BASIC: true,
   BRIDGE: true,
   // C
+  CLAIM: true,
   CLEAR_HISTORY: true,
   CLICK_TO_USE_FULL_AMOUNT: true,
   CONFIRM: true,
@@ -59,7 +60,9 @@ export default keyMirror({
   PRICE_IMPACT: true,
   // Q
   // R
+  REINVEST: true,
   RESET: true,
+  REWARDS: true,
   ROUTE: true,
   // S
   SAVE: true,
@@ -69,6 +72,8 @@ export default keyMirror({
   SLIPPAGE: true,
   SLOW: true,
   STANDARD: true,
+  STAKE: true,
+  STAKE_VULT: true,
   STAKING: true,
   SUCCESS: true,
   SWAP: true,
@@ -86,6 +91,7 @@ export default keyMirror({
   // W
   WALLET: true,
   WHITELISTED: true,
+  WITHDRAW: true,
   // Y
   // Z
 });

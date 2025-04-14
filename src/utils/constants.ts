@@ -39,9 +39,11 @@ export enum HashKey {
   BRIDGE = "#BRIDGE",
   CONNECT = "#CONNECT",
   MERGE = "#MERGE",
-  WALLET = "#WALLET",
-  STAKING = "#STAKING",
   POOL = "#POOL",
+  STAKE = "#STAKE",
+  STAKING = "#STAKING",
+  WALLET = "#WALLET",
+  WITHDRAW = "#WITHDRAW",
 }
 
 export enum PageKey {

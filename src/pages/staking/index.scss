@@ -4,19 +4,84 @@
 .stacking-page {
   display: flex;
   flex-direction: column;
-  gap: rem(16);
+  gap: rem(24);
 
-  .aside {
+  .heading {
+    align-items: center;
     display: flex;
-    flex-direction: column;
-    gap: rem(16);
+    font-size: rem(17);
+    font-weight: 500;
+    gap: rem(8);
+
+    img {
+      height: rem(36);
+      width: rem(36);
+    }
   }
 
-  .main {
+  .stats {
     display: flex;
-    flex: 1;
     flex-direction: column;
     gap: rem(16);
+
+    .icon {
+      left: 0;
+      position: absolute;
+      stroke: $button-secondary;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .label {
+      font-weight: 500;
+      font-size: rem(13);
+      line-height: rem(18);
+      white-space: nowrap;
+    }
+
+    .value {
+      font-weight: 500;
+      font-size: rem(17);
+      line-height: rem(20);
+      white-space: nowrap;
+    }
+
+    .divider {
+      background-color: $border-normal;
+      height: rem(1);
+      width: 100%;
+    }
+
+    .item {
+      display: flex;
+      flex-direction: column;
+      gap: rem(6);
+      padding-left: rem(36);
+      position: relative;
+      width: 100%;
+    }
   }
 }
 
+@media (min-width: rem(768)) {
+  .stacking-page {
+    .heading {
+      font-size: rem(22);
+
+      img {
+        height: rem(46);
+        width: rem(46);
+      }
+    }
+
+    .stats {
+      flex-direction: row;
+      gap: rem(36);
+
+      .divider {
+        height: rem(44);
+        width: rem(1);
+      }
+    }
+  }
+}

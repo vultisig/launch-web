@@ -12,13 +12,14 @@
 @use "../layouts/default";
 
 @use "../components/middle-truncate";
+@use "../components/stake-and-withdraw";
+@use "../components/stake-invest-claim";
 @use "../components/swap-fees";
 @use "../components/swap-history";
 @use "../components/swap-reports";
 @use "../components/swap-settings";
 @use "../components/swap-stats";
 @use "../components/swap-vult";
-@use "../components/stake-vult";
 @use "../components/swap-whitelist-check";
 @use "../components/token-dropdown";
 
