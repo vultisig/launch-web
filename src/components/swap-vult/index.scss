@@ -1,5 +1,14 @@
 @use "~variables" as *;
 
+@keyframes rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
 .swap-vult {
   background-color: $background-secondary;
   border-radius: rem(20);
@@ -7,7 +16,14 @@
   flex-direction: column;
   gap: rem(16);
   padding: rem(16);
+  .refresh {
+    margin-left: auto;
+    cursor: pointer;
 
+    &.spinning {
+      animation: rotate 1s linear infinite;
+    }
+  }
   .heading {
     align-items: center;
     display: flex;
@@ -138,14 +154,14 @@
           color: $text-extra-light;
           line-height: rem(14);
         }
-        
+
         .available-balance {
           cursor: pointer;
-          
+
           &.clickable:hover {
             color: $text-light;
           }
-          
+
           .balance-amount {
             font-weight: bold;
           }

@@ -12,7 +12,7 @@ import { getStoredGasSettings, setStoredTransaction } from "utils/storage";
 import useSwapVult from "hooks/swap";
 import constantKeys from "i18n/constant-keys";
 
-import { ArrowDownUp, Check, Info, SettingsTwo } from "icons";
+import { ArrowDownUp, Check, Info, RefreshCW, SettingsTwo } from "icons";
 import Settings from "components/swap-settings";
 import TokenDropdown from "components/token-dropdown";
 
@@ -187,35 +187,38 @@ const Component: FC = () => {
   const handleUseFullAmount = (ticker: TickerKey) => {
     if (!loading && isConnected) {
       let fullAmount = tokens[ticker].balance;
-      
+
       // If the token is ETH, we need to reserve some for gas fees
       if (ticker === TickerKey.ETH) {
         // Get max network fee using the existing function
         const estimatedGasFeeInCurrency = getMaxNetworkFee(1);
         const ethValuePerUnit = values?.[TickerKey.ETH] || 1;
         const estimatedGasFeeEth = estimatedGasFeeInCurrency / ethValuePerUnit;
-        
+
         // Add a 10% buffer to ensure we have enough for gas fluctuations
         const gasFeeWithBuffer = estimatedGasFeeEth * 1.1;
-        
+
         // If balance is too low, set amount to 0 and show a warning
         if (fullAmount > gasFeeWithBuffer) {
           fullAmount -= gasFeeWithBuffer;
         } else {
           // Show warning message to the user
-          messageApi.warning(t(constantKeys.INSUFFICIENT_BALANCE) + ". " + 
-                         t(constantKeys.PLEASE_ADD_MORE_ETH_FOR_GAS));
+          messageApi.warning(
+            t(constantKeys.INSUFFICIENT_BALANCE) +
+              ". " +
+              t(constantKeys.PLEASE_ADD_MORE_ETH_FOR_GAS)
+          );
           // Set the amount to 0
           fullAmount = 0;
         }
       }
-      
+
       // Round to 6 decimal places to avoid floating point precision issues
       fullAmount = Math.floor(fullAmount * 1000000) / 1000000;
-      
+
       form.setFieldValue("allocateAmount", fullAmount);
       form.setFieldValue("buyAmount", undefined);
-      
+
       handleUpdateQuote(
         ticker,
         form.getFieldValue("buyToken"),
@@ -270,6 +273,13 @@ const Component: FC = () => {
       });
   };
 
+  const handleRefresh = () => {
+    if (!loading) {
+      const { allocateToken, buyAmount, buyToken } = form.getFieldsValue();
+      handleUpdateQuote(buyToken, allocateToken, buyAmount, false);
+    }
+  };
+
   return (
     <>
       {contextHolder}
@@ -285,6 +295,10 @@ const Component: FC = () => {
         className="swap-vult"
         style={{ display: settingsMode ? "none" : undefined }}
       >
+        <RefreshCW
+          className={`refresh ${loading ? "spinning" : ""}`}
+          onClick={handleRefresh}
+        />
         <div className="heading">
           <span className="text">{t(constantKeys.SWAP)}</span>
           <SettingsTwo onClick={() => handleMode(true)} className="toggle" />
@@ -323,12 +337,17 @@ const Component: FC = () => {
                     <div className="price">
                       <span>{(amount * value).toPriceFormat(currency)}</span>
                       {isConnected && (
-                        <Tooltip title={t(constantKeys.CLICK_TO_USE_FULL_AMOUNT)}>
-                          <span 
+                        <Tooltip
+                          title={t(constantKeys.CLICK_TO_USE_FULL_AMOUNT)}
+                        >
+                          <span
                             className="available-balance clickable"
                             onClick={() => handleUseFullAmount(ticker)}
                           >
-                            {t(constantKeys.AVAILABLE)}: <span className="balance-amount">{tokens[ticker].balance.toBalanceFormat()}</span>
+                            {t(constantKeys.AVAILABLE)}:{" "}
+                            <span className="balance-amount">
+                              {tokens[ticker].balance.toBalanceFormat()}
+                            </span>
                           </span>
                         </Tooltip>
                       )}
@@ -377,7 +396,10 @@ const Component: FC = () => {
                     <div className="price">
                       <span>{(amount * value).toPriceFormat(currency)}</span>
                       {isConnected && (
-                        <span>{t(constantKeys.AMOUNT)}: {tokens[ticker].balance.toBalanceFormat()}</span>
+                        <span>
+                          {t(constantKeys.AMOUNT)}:{" "}
+                          {tokens[ticker].balance.toBalanceFormat()}
+                        </span>
                       )}
                     </div>
                   </>
