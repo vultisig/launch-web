@@ -12,7 +12,7 @@ import { getStoredGasSettings, setStoredTransaction } from "utils/storage";
 import useSwapVult from "hooks/swap";
 import constantKeys from "i18n/constant-keys";
 
-import { ArrowDownUp, Check, Info, SettingsTwo } from "icons";
+import { ArrowDownUp, Check, Info, RefreshCW, SettingsTwo } from "icons";
 import Settings from "components/swap-settings";
 import TokenDropdown from "components/token-dropdown";
 
@@ -276,6 +276,13 @@ const Component: FC = () => {
       });
   };
 
+  const handleRefresh = () => {
+    if (!loading) {
+      const { allocateToken, buyAmount, buyToken } = form.getFieldsValue();
+      handleUpdateQuote(buyToken, allocateToken, buyAmount, false);
+    }
+  };
+
   return (
     <>
       {contextHolder}
@@ -291,6 +298,10 @@ const Component: FC = () => {
         className="swap-vult"
         style={{ display: settingsMode ? "none" : undefined }}
       >
+        <RefreshCW
+          className={`refresh ${loading ? "spinning" : ""}`}
+          onClick={handleRefresh}
+        />
         <div className="heading">
           <span className="text">{t(constantKeys.SWAP)}</span>
           <SettingsTwo onClick={() => handleMode(true)} className="toggle" />

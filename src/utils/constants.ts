@@ -256,9 +256,9 @@ export const uniswapTokens: Record<TickerKey, Token> = {
 };
 
 export const DEFAULT_GAS_SETTING: GasSettingsProps = {
-  gasLimit: 120000,
-  maxFee: 0,
-  maxPriorityFee: 0,
+  gasLimit: 200000,
+  maxFee: 4,
+  maxPriorityFee: 1,
   mode: GasSettingsMode.BASIC,
   slippage: 0.5,
   speed: GasSettingsSpeed.STANDARD,

@@ -6,7 +6,7 @@ import { GasSettingsProps, TransactionProps } from "utils/interfaces";
 export const storageKey = KeyMirror({
   CURRENCY: true,
   LANGUAGE: true,
-  GAS_SETTINGS: true,
+  GAS_SETTINGS_V1: true,
   TRANSACTIONS: true,
 });
 
@@ -67,7 +67,7 @@ export const setStoredLanguage = (language: Language): void => {
 export const getStoredGasSettings = (): GasSettingsProps => {
   let settings = DEFAULT_GAS_SETTING;
   try {
-    const data = localStorage.getItem(storageKey.GAS_SETTINGS);
+    const data = localStorage.getItem(storageKey.GAS_SETTINGS_V1);
 
     if (data) settings = JSON.parse(data);
 
@@ -78,7 +78,7 @@ export const getStoredGasSettings = (): GasSettingsProps => {
 };
 
 export const setStoredGasSettings = (settings: GasSettingsProps): void => {
-  localStorage.setItem(storageKey.GAS_SETTINGS, JSON.stringify(settings));
+  localStorage.setItem(storageKey.GAS_SETTINGS_V1, JSON.stringify(settings));
 };
 
 export const getStoredTransaction = (

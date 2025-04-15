@@ -30,11 +30,12 @@ const Component: FC<ComponentProps> = ({ onClose, visible }) => {
   const { fees } = state;
 
   const handleReset = () => {
-    form.resetFields();
     form.setFieldsValue({
-      mode: GasSettingsMode.BASIC,
-      slippage: 0.5,
-      speed: GasSettingsSpeed.STANDARD,
+      slippage: DEFAULT_GAS_SETTING.slippage,
+      speed: DEFAULT_GAS_SETTING.speed,
+      gasLimit: DEFAULT_GAS_SETTING.gasLimit,
+      maxFee: DEFAULT_GAS_SETTING.maxFee,
+      maxPriorityFee: DEFAULT_GAS_SETTING.maxPriorityFee,
     });
   };
 
