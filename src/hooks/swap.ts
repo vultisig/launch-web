@@ -42,13 +42,12 @@ const useSwapVult = () => {
 
   const checkApproval = async (
     allocateAmount: number,
-    token: UniswapTokenProps,
+    token: UniswapTokenProps
   ) => {
     try {
       if (!address) {
         return { approvedAmount: 0, needsApproval: true };
       }
-      
 
       if (isETH(token)) {
         // ETH doesn't need approval
@@ -106,11 +105,11 @@ const useSwapVult = () => {
       // Always use WETH address for Uniswap
       const isOutETH = isETH(tokenOut);
       const actualTokenIn = isETH(tokenIn)
-      ? ContractAddress.WETH_TOKEN
-      : tokenIn.address;
+        ? ContractAddress.WETH_TOKEN
+        : tokenIn.address;
       const actualTokenOut = isETH(tokenOut)
-      ? ContractAddress.WETH_TOKEN
-      : tokenOut.address;
+        ? ContractAddress.WETH_TOKEN
+        : tokenOut.address;
       const swapCallData = encodeFunctionData({
         abi: Router.abi,
         functionName: "exactInputSingle",
@@ -119,7 +118,7 @@ const useSwapVult = () => {
             tokenIn: actualTokenIn as `0x${string}`,
             tokenOut: actualTokenOut as `0x${string}`,
             fee: poolConstants.fee,
-            recipient: isOutETH ? ContractAddress.SWAP_ROUTER: address,
+            recipient: isOutETH ? ContractAddress.SWAP_ROUTER : address,
             deadline: Math.floor(Date.now() / 1000) + 60 * 10, // 10 min deadline
             amountIn: BigInt(parsedAmountIn),
             amountOutMinimum,
@@ -129,16 +128,21 @@ const useSwapVult = () => {
       });
 
       const callData = isOutETH
-      ? encodeFunctionData({
-          abi: Router.abi,
-          functionName: "multicall",
-          args: [[swapCallData, encodeFunctionData({
+        ? encodeFunctionData({
             abi: Router.abi,
-            functionName: "unwrapWETH9",
-            args: [amountOutMinimum, address],
-          })]],
-        })
-      : swapCallData;
+            functionName: "multicall",
+            args: [
+              [
+                swapCallData,
+                encodeFunctionData({
+                  abi: Router.abi,
+                  functionName: "unwrapWETH9",
+                  args: [amountOutMinimum, address],
+                }),
+              ],
+            ],
+          })
+        : swapCallData;
 
       const tx = await walletClient.sendTransaction({
         to: ContractAddress.SWAP_ROUTER as `0x${string}`,
@@ -152,7 +156,7 @@ const useSwapVult = () => {
           gasSetting.maxFee > 0
             ? BigInt(parseUnits(gasSetting.maxFee.toString(), "gwei"))
             : undefined,
-        value:  isETH(tokenIn) ? BigInt(parsedAmountIn) : 0n,
+        value: isETH(tokenIn) ? BigInt(parsedAmountIn) : 0n,
       });
 
       return tx;
@@ -374,8 +378,8 @@ const useSwapVult = () => {
       receipt === null
         ? TxStatus.PENDING
         : receipt.status === 1
-          ? TxStatus.SUCCESS
-          : TxStatus.FAILED
+        ? TxStatus.SUCCESS
+        : TxStatus.FAILED
     );
   };
 
@@ -449,8 +453,9 @@ const useSwapVult = () => {
     );
 
     try {
-      const isWhitelisted =
-        await launchListContract.isAddressOnLaunchList(address);
+      const isWhitelisted = await launchListContract.isAddressOnLaunchList(
+        address
+      );
       return isWhitelisted;
     } catch (error) {
       console.error("Error checking whitelist status:", error);
@@ -488,6 +493,7 @@ const useSwapVult = () => {
       return tx;
     } catch (error) {
       console.error("Approval failed:", error);
+      throw new Error("Approval failed:");
     }
   };
 
