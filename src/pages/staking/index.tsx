@@ -1,10 +1,11 @@
 import { FC, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Layout } from "antd";
+import { Layout, Spin } from "antd";
 
 import { useBaseContext } from "context";
 import { PageKey } from "utils/constants";
 import constantKeys from "i18n/constant-keys";
+import api from "utils/api";
 
 import { ChartPie, Layers } from "icons";
 import StakeWithdraw from "components/stake-and-withdraw";
@@ -13,17 +14,35 @@ import InvestClaim from "components/stake-invest-claim";
 const { Content } = Layout;
 
 interface InitialState {
-  loading: boolean;
+  lastRewardBalance: number;
+  loaded: boolean;
+  totalStaked: number;
 }
 
 const Component: FC = () => {
   const { t } = useTranslation();
-  const initialState: InitialState = { loading: false };
-  const [_state, _setState] = useState(initialState);
-  const { changePage } = useBaseContext();
+  const initialState: InitialState = {
+    lastRewardBalance: 0,
+    loaded: false,
+    totalStaked: 0,
+  };
+  const [state, setState] = useState(initialState);
+  const { lastRewardBalance, loaded, totalStaked } = state;
+  const { changePage, currency } = useBaseContext();
 
   const componentDidMount = () => {
     changePage(PageKey.STAKING);
+
+    Promise.all([api.lastRewardBalance(), api.totalStaked()]).then(
+      ([lastRewardBalance, totalStaked]) => {
+        setState((prevState) => ({
+          ...prevState,
+          lastRewardBalance,
+          loaded: true,
+          totalStaked,
+        }));
+      }
+    );
   };
 
   useEffect(componentDidMount, []);
@@ -38,13 +57,27 @@ const Component: FC = () => {
         <div className="item">
           <Layers className="icon" />
           <span className="label">Revenue to distribute</span>
-          <span className="value">$250,000 USDC</span>
+          <span className="value">
+            {" "}
+            {loaded ? (
+              `${lastRewardBalance.toPriceFormat(currency)} USDC`
+            ) : (
+              <Spin size="small" />
+            )}
+          </span>
         </div>
         <div className="divider" />
         <div className="item">
           <Layers className="icon" />
           <span className="label">Total VULT Staked</span>
-          <span className="value">1,250,000 VULT</span>
+          <span className="value">
+            {" "}
+            {loaded ? (
+              `${totalStaked.toNumberFormat()} VULT`
+            ) : (
+              <Spin size="small" />
+            )}
+          </span>
         </div>
         <div className="divider" />
         <div className="item">
