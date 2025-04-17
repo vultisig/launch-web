@@ -58,7 +58,6 @@ const Component: FC = () => {
           <Layers className="icon" />
           <span className="label">Revenue to distribute</span>
           <span className="value">
-            {" "}
             {loaded ? (
               `${lastRewardBalance.toPriceFormat(currency)} USDC`
             ) : (
@@ -71,7 +70,6 @@ const Component: FC = () => {
           <Layers className="icon" />
           <span className="label">Total VULT Staked</span>
           <span className="value">
-            {" "}
             {loaded ? (
               `${totalStaked.toNumberFormat()} VULT`
             ) : (
