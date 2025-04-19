@@ -22,10 +22,6 @@ body {
   }
 }
 
-.ant-btn {
-  font-weight: 600;
-}
-
 .ant-modal {
   .ant-modal-title {
     font-size: rem(16);
@@ -51,9 +47,8 @@ body {
   }
 }
 
-.primary-button {
+.button {
   align-items: center;
-  background-color: $button-primary;
   cursor: pointer;
   color: $text-primary;
   border-radius: rem(30);
@@ -65,8 +60,23 @@ body {
   transition: all 0.2s;
 
   &:hover {
-    background-color: $button-primary-hover;
     color: $text-primary;
+  }
+
+  &-primary {
+    background-color: $button-primary;
+
+    &:hover {
+      background-color: $button-primary-hover;
+    }
+  }
+
+  &-secondary {
+    background-color: $button-secondary;
+
+    &:hover {
+      background-color: $button-secondary-hover;
+    }
   }
 
   &.disabled {
@@ -76,28 +86,13 @@ body {
   }
 }
 
-.secondary-button {
-  align-items: center;
-  background-color: $button-secondary;
-  cursor: pointer;
-  color: $text-primary;
-  border-radius: rem(30);
+.button-group {
   display: flex;
-  font-weight: 600;
-  justify-content: center;
-  height: rem(48);
-  padding: 0 rem(16);
-  transition: all 0.2s;
+  flex-direction: column;
+  gap: rem(16);
 
-  &:hover {
-    background-color: $button-secondary-hover;
-    color: $text-primary;
-  }
-
-  &.disabled {
-    background-color: $button-disabled;
-    color: $button-disabled-text;
-    cursor: default;
+  .button {
+    width: 100%;
   }
 }
 
@@ -124,5 +119,11 @@ body {
 
   .ant-modal-wrap {
     overflow: hidden !important;
+  }
+}
+
+@media (min-width: rem(768)) {
+  .button-group {
+    flex-direction: row;
   }
 }

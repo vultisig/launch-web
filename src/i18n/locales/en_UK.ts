@@ -3,15 +3,18 @@ import translation from "i18n/constant-keys";
 export default {
   // A
   [translation.ADVANCED]: "Advanced",
+  [translation.ALLOCATION_FIRST_HOUR]: "Allocation in the 1st hour",
   [translation.AMOUNT]: "Amount",
+  [translation.AMOUNT_STAKED]: "Amount Staked",
   [translation.APPROVE]: "Approve",
   [translation.AVAILABLE]: "Available",
   // B
   [translation.BASIC]: "Basic",
   [translation.BRIDGE]: "Bridge",
   // C
-  [translation.CLICK_TO_USE_FULL_AMOUNT]: "Click to use full amount",
+  [translation.CLAIM]: "Claim",
   [translation.CLEAR_HISTORY]: "Clear history",
+  [translation.CLICK_TO_USE_FULL_AMOUNT]: "Click to use full amount",
   [translation.CONFIRM]: "Confirm",
   [translation.CONNECT_WALLET]: "Connect Wallet",
   [translation.CONNECTED_WALLET]: "Connected Wallet",
@@ -60,6 +63,9 @@ export default {
   [translation.PRICE_IMPACT]: "Price Impact",
   // Q
   [translation.RESET]: "Reset",
+  [translation.REINVEST]: "Reinvest",
+  [translation.REVENUE_TO_DISTRIBUTE]: "Revenue to distribute",
+  [translation.REWARDS]: "Rewards",
   [translation.ROUTE]: "Route",
   // R
   // S
@@ -69,15 +75,18 @@ export default {
   [translation.SETTINGS]: "Settings",
   [translation.SLOW]: "Slow",
   [translation.SLIPPAGE]: "Slippage",
+  [translation.STAKE]: "Stake",
+  [translation.STAKED_SUPPLY]: "Staked Supply",
+  [translation.STAKE_VULT]: "Stake $Vult",
   [translation.STANDARD]: "Standard",
   [translation.STAKING]: "Staking",
   [translation.SUCCESS]: "Success",
   [translation.SWAP]: "Swap",
   // T
   [translation.TO]: "To",
-  [translation.ALLOCATION_FIRST_HOUR]: "Allocation in the 1st hour",
   [translation.TO_BUY]: "To buy",
   [translation.TOKEN]: "Token",
+  [translation.TOTAL_VULT_STAKED]: "Total VULT Staked",
   [translation.TOTAL_WL_ALLOCATION]: "Total WL allocation",
   [translation.TRANSACTION_SETTINGS]: "Transaction Settings",
   [translation.TRANSACTIONS]: "Transactions",
@@ -87,4 +96,5 @@ export default {
   // W
   [translation.WALLET]: "Wallet",
   [translation.WHITELISTED]: "You are whitelisted",
+  [translation.WITHDRAW]: "Withdraw",
 };

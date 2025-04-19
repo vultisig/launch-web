@@ -86,27 +86,6 @@ const api = {
       })
       .catch(() => 0);
   },
-  values: async (ids: number[], currency: Currency) => {
-    const modifedData: Record<string, number> = {};
-
-    return fetch
-      .get<{
-        data: Record<string, { quote: Record<string, { price: number }> }>;
-      }>(
-        `/cmc/v2/cryptocurrency/quotes/latest?id=${ids.join(
-          ","
-        )}&skip_invalid=true&aux=is_active&convert=${currency}`
-      )
-      .then(({ data }) => {
-        Object.entries(data.data).forEach(([key, value]) => {
-          modifedData[key] =
-            (value.quote[currency] && value.quote[currency].price) || 0;
-        });
-
-        return modifedData;
-      })
-      .catch(() => modifedData);
-  },
   historicalPriceByDay: async (
     endpoint: string,
     contract: string,
@@ -200,6 +179,23 @@ const api = {
       return allData;
     }
   },
+  lastRewardBalance: async () => {
+    return fetch
+      .post<{ result: string }>("/eth/", {
+        id: uuidv4(),
+        jsonrpc: "2.0",
+        method: "eth_call",
+        params: [
+          {
+            to: ContractAddress.VULT_STAKE,
+            data: "0xfa4caa74",
+          },
+          "latest",
+        ],
+      })
+      .then(({ data }) => parseInt(data?.result, 16) || 0)
+      .catch(() => 0);
+  },
   suggestedFees: async (): Promise<SuggestedGasFeeData> => {
     const endpoint =
       "https://gas.api.cx.metamask.io/networks/1/suggestedGasFees";
@@ -209,6 +205,44 @@ const api = {
       },
     });
     return response.data;
+  },
+  totalStaked: async () => {
+    return fetch
+      .post<{ result: string }>("/eth/", {
+        id: uuidv4(),
+        jsonrpc: "2.0",
+        method: "eth_call",
+        params: [
+          {
+            to: ContractAddress.VULT_STAKE,
+            data: "0x817b1cd2",
+          },
+          "latest",
+        ],
+      })
+      .then(({ data }) => parseInt(data?.result, 16) || 0)
+      .catch(() => 0);
+  },
+  values: async (ids: number[], currency: Currency) => {
+    const modifedData: Record<string, number> = {};
+
+    return fetch
+      .get<{
+        data: Record<string, { quote: Record<string, { price: number }> }>;
+      }>(
+        `/cmc/v2/cryptocurrency/quotes/latest?id=${ids.join(
+          ","
+        )}&skip_invalid=true&aux=is_active&convert=${currency}`
+      )
+      .then(({ data }) => {
+        Object.entries(data.data).forEach(([key, value]) => {
+          modifedData[key] =
+            (value.quote[currency] && value.quote[currency].price) || 0;
+        });
+
+        return modifedData;
+      })
+      .catch(() => modifedData);
   },
   volume: async (days: number): Promise<number> => {
     const endpoint = `https://gateway.thegraph.com/api/${
@@ -227,6 +261,48 @@ const api = {
       .then(({ tokenDayData }) =>
         tokenDayData?.volumeUSD ? parseFloat(tokenDayData.volumeUSD) : 0
       )
+      .catch(() => 0);
+  },
+  pendingRewards: async (address: string) => {
+    return fetch
+      .post<{ result: string }>("/eth/", {
+        id: uuidv4(),
+        jsonrpc: "2.0",
+        method: "eth_call",
+        params: [
+          {
+            data: `0x31d7a262000000000000000000000000${address.replace(
+              "0x",
+              ""
+            )}`,
+            from: "0x0000000000000000000000000000000000000000",
+            to: ContractAddress.VULT_STAKE,
+          },
+          "latest",
+        ],
+      })
+      .then(({ data }) => parseInt(data?.result, 16) || 0)
+      .catch(() => 0);
+  },
+  userAmount: async (address: string) => {
+    return fetch
+      .post<{ result: string }>("/eth/", {
+        id: uuidv4(),
+        jsonrpc: "2.0",
+        method: "eth_call",
+        params: [
+          {
+            data: `0xe1ad418e000000000000000000000000${address.replace(
+              "0x",
+              ""
+            )}`,
+            from: "0x0000000000000000000000000000000000000000",
+            to: ContractAddress.VULT_STAKE,
+          },
+          "latest",
+        ],
+      })
+      .then(({ data }) => parseInt(data?.result, 16) || 0)
       .catch(() => 0);
   },
 };

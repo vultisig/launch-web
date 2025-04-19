@@ -3,13 +3,16 @@ import keyMirror from "keymirror";
 export default keyMirror({
   // A
   ADVANCED: true,
+  ALLOCATION_FIRST_HOUR: true,
   AMOUNT: true,
+  AMOUNT_STAKED: true,
   APPROVE: true,
   AVAILABLE: true,
   // B
   BASIC: true,
   BRIDGE: true,
   // C
+  CLAIM: true,
   CLEAR_HISTORY: true,
   CLICK_TO_USE_FULL_AMOUNT: true,
   CONFIRM: true,
@@ -59,7 +62,10 @@ export default keyMirror({
   PRICE_IMPACT: true,
   // Q
   // R
+  REINVEST: true,
+  REVENUE_TO_DISTRIBUTE: true,
   RESET: true,
+  REWARDS: true,
   ROUTE: true,
   // S
   SAVE: true,
@@ -69,14 +75,17 @@ export default keyMirror({
   SLIPPAGE: true,
   SLOW: true,
   STANDARD: true,
+  STAKE: true,
+  STAKED_SUPPLY: true,
+  STAKE_VULT: true,
   STAKING: true,
   SUCCESS: true,
   SWAP: true,
   // T
   TO: true,
-  ALLOCATION_FIRST_HOUR: true,
   TO_BUY: true,
   TOKEN: true,
+  TOTAL_VULT_STAKED: true,
   TOTAL_WL_ALLOCATION: true,
   TRANSACTIONS: true,
   TRANSACTION_SETTINGS: true,
@@ -86,6 +95,7 @@ export default keyMirror({
   // W
   WALLET: true,
   WHITELISTED: true,
+  WITHDRAW: true,
   // Y
   // Z
 });

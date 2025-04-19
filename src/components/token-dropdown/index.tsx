@@ -12,7 +12,7 @@ interface ComponentProps {
 
 const Component: FC<ComponentProps> = ({ ticker, onChange }) => {
   const items: MenuProps["items"] = Object.values(defaultTokens)
-    .filter((token) => !token.isAirdropToken && token.ticker !== ticker)
+    .filter((token) => !token?.isAirdropToken && token.ticker !== ticker)
     .map(({ ticker }) => ({
       key: ticker,
       icon: <img src={`/tokens/${ticker.toLowerCase()}.svg`} alt={ticker} />,
@@ -20,10 +20,10 @@ const Component: FC<ComponentProps> = ({ ticker, onChange }) => {
       onClick: () => onChange(ticker),
     }));
 
-  return defaultTokens[ticker].isAirdropToken ? (
+  return defaultTokens[ticker]?.isAirdropToken ? (
     <span className="token-dropdown">
       <img
-        src={`/tokens/${ticker.toLowerCase()}.svg`}
+        src={`/tokens/${ticker?.toLowerCase()}.svg`}
         alt={ticker}
         className="logo"
       />
@@ -33,7 +33,7 @@ const Component: FC<ComponentProps> = ({ ticker, onChange }) => {
     <Dropdown menu={{ items }} rootClassName="token-dropdown-menu">
       <span className="token-dropdown">
         <img
-          src={`/tokens/${ticker.toLowerCase()}.svg`}
+          src={`/tokens/${ticker?.toLowerCase()}.svg`}
           alt={ticker}
           className="logo"
         />
