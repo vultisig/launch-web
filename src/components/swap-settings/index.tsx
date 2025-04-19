@@ -299,7 +299,7 @@ const Component: FC<ComponentProps> = ({ onClose, visible }) => {
           );
         }}
       </Form.Item>
-      <span onClick={handleSubmit} className="secondary-button">
+      <span onClick={handleSubmit} className="button button-secondary">
         {t(constantKeys.SAVE)}
       </span>
     </Form>

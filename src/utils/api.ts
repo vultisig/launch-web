@@ -263,6 +263,48 @@ const api = {
       )
       .catch(() => 0);
   },
+  pendingRewards: async (address: string) => {
+    return fetch
+      .post<{ result: string }>("/eth/", {
+        id: uuidv4(),
+        jsonrpc: "2.0",
+        method: "eth_call",
+        params: [
+          {
+            data: `0x31d7a262000000000000000000000000${address.replace(
+              "0x",
+              ""
+            )}`,
+            from: "0x0000000000000000000000000000000000000000",
+            to: ContractAddress.VULT_STAKE,
+          },
+          "latest",
+        ],
+      })
+      .then(({ data }) => parseInt(data?.result, 16) || 0)
+      .catch(() => 0);
+  },
+  userAmount: async (address: string) => {
+    return fetch
+      .post<{ result: string }>("/eth/", {
+        id: uuidv4(),
+        jsonrpc: "2.0",
+        method: "eth_call",
+        params: [
+          {
+            data: `0xe1ad418e000000000000000000000000${address.replace(
+              "0x",
+              ""
+            )}`,
+            from: "0x0000000000000000000000000000000000000000",
+            to: ContractAddress.VULT_STAKE,
+          },
+          "latest",
+        ],
+      })
+      .then(({ data }) => parseInt(data?.result, 16) || 0)
+      .catch(() => 0);
+  },
 };
 
 export default api;
