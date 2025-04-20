@@ -6,7 +6,13 @@ import { useAccount, useWriteContract } from "wagmi";
 
 import { useBaseContext } from "context";
 import { STAKE_ABI } from "utils/abis/stake";
-import { ContractAddress, HashKey, PageKey, TickerKey } from "utils/constants";
+import {
+  ContractAddress,
+  defaultTokens,
+  HashKey,
+  PageKey,
+  TickerKey,
+} from "utils/constants";
 import { config } from "utils/wagmi-config";
 import constantKeys from "i18n/constant-keys";
 import constantPaths from "routes/constant-paths";
@@ -14,6 +20,7 @@ import constantPaths from "routes/constant-paths";
 import { ChartPie, Layers } from "icons";
 import TabContent from "components/staking-tab-content";
 import { useStakeContractData } from "hooks/stake";
+import { formatUnits } from "ethers";
 
 const { Content } = Layout;
 
@@ -101,7 +108,9 @@ const Component: FC = () => {
           <span className="label">{t(constantKeys.REVENUE_TO_DISTRIBUTE)}</span>
           <span className="value">
             {!loading ? (
-              `${lastRewardBalance.toPriceFormat(currency)} USDC`
+              `${Number(
+                formatUnits(lastRewardBalance, defaultTokens.USDC.decimals)
+              ).toPriceFormat(currency)} USDC`
             ) : (
               <Spin size="small" />
             )}
@@ -113,7 +122,10 @@ const Component: FC = () => {
           <span className="label">{t(constantKeys.TOTAL_VULT_STAKED)}</span>
           <span className="value">
             {!loading ? (
-              `${totalStaked.toNumberFormat()} VULT`
+              `${formatUnits(
+                totalStaked,
+                defaultTokens.VULT.decimals
+              ).toNumberFormat()} VULT`
             ) : (
               <Spin size="small" />
             )}
@@ -138,7 +150,12 @@ const Component: FC = () => {
           {loading ? (
             <Spin size="small" />
           ) : (
-            <span className="value">{userAmount.toNumberFormat()}</span>
+            <span className="value">
+              {formatUnits(
+                userAmount,
+                defaultTokens.VULT.decimals
+              ).toNumberFormat()}
+            </span>
           )}
           <span className="token-dropdown">
             <img
@@ -156,7 +173,12 @@ const Component: FC = () => {
           {loading ? (
             <Spin size="small" />
           ) : (
-            <span className="value">{pendingRewards.toNumberFormat()}</span>
+            <span className="value">
+              {formatUnits(
+                pendingRewards,
+                defaultTokens.USDC.decimals
+              ).toNumberFormat()}
+            </span>
           )}
           <span className="token-dropdown">
             <img

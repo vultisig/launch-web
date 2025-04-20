@@ -46,10 +46,18 @@ export const useStakeContractData = (address?: string) => {
     },
   });
 
-  const lastRewardBalance = Number(contractData?.[0]?.result || 0);
-  const totalStaked = Number(contractData?.[1]?.result || 0);
-  const pendingRewards = Number(userData?.[0]?.result || 0);
-  const userAmount = Number(userData?.[1]?.result || 0);
+  const lastRewardBalance = contractData?.[0]?.result
+    ? BigInt(contractData[0].result.toString())
+    : 0n;
+  const totalStaked = contractData?.[1]?.result
+    ? BigInt(contractData[1].result.toString())
+    : 0n;
+  const pendingRewards = userData?.[0]?.result
+    ? BigInt(userData[0].result.toString())
+    : 0n;
+  const userAmount = userData?.[1]?.result
+    ? BigInt(userData[1].result.toString())
+    : 0n;
 
   const loading = loadingContractData || loadingUserData;
 
