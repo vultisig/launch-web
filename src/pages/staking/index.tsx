@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from "react";
+import { FC, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Layout, Spin, Tabs, TabsProps } from "antd";
@@ -10,81 +10,44 @@ import { ContractAddress, HashKey, PageKey, TickerKey } from "utils/constants";
 import { config } from "utils/wagmi-config";
 import constantKeys from "i18n/constant-keys";
 import constantPaths from "routes/constant-paths";
-import api from "utils/api";
 
 import { ChartPie, Layers } from "icons";
 import TabContent from "components/staking-tab-content";
+import { useStakeContractData } from "hooks/stake";
 
 const { Content } = Layout;
 
-interface InitialState {
-  lastRewardBalance: number;
-  loaded: boolean;
-  loading: boolean;
-  pendingRewards: number;
-  totalStaked: number;
-  userAmount: number;
-}
-
 const Component: FC = () => {
   const { t } = useTranslation();
-  const initialState: InitialState = {
-    lastRewardBalance: 0,
-    loaded: false,
-    loading: false,
-    pendingRewards: 0,
-    totalStaked: 0,
-    userAmount: 0,
-  };
-  const [state, setState] = useState(initialState);
-  const {
-    lastRewardBalance,
-    loaded,
-    loading,
-    pendingRewards,
-    totalStaked,
-    userAmount,
-  } = state;
   const { changePage, updateWallet, currency } = useBaseContext();
   const { address, isConnected } = useAccount();
   const { writeContractAsync } = useWriteContract({ config });
+  const {
+    lastRewardBalance,
+    totalStaked,
+    pendingRewards,
+    userAmount,
+    loading,
+    refetch,
+  } = useStakeContractData(address);
+
   const { pathname } = useLocation();
   const navigate = useNavigate();
 
-  const handleClaim = () => {
-    if (address && !loading && pendingRewards) {
-      setState((prevState) => ({ ...prevState, loading: true }));
+  const handleClaimOrReinvest = async (method: "claim" | "reinvest") => {
+    if (!address || loading || !pendingRewards) return;
 
-      writeContractAsync({
+    try {
+      await writeContractAsync({
         abi: STAKE_ABI,
         address: ContractAddress.VULT_STAKE,
-        functionName: "claim",
+        functionName: method,
         account: address,
-      }).finally(() => {
-        setState((prevState) => ({ ...prevState, loading: false }));
       });
+    } finally {
+      refetch();
+      updateWallet();
     }
-  };
-
-  const handleReinvest = () => {
-    if (address && !loading && pendingRewards) {
-      setState((prevState) => ({ ...prevState, loading: true }));
-
-      writeContractAsync({
-        abi: STAKE_ABI,
-        address: ContractAddress.VULT_STAKE,
-        functionName: "reinvest",
-        account: address,
-      }).finally(() => {
-        setState((prevState) => ({ ...prevState, loading: false }));
-      });
-    }
-  };
-
-  const handleUpdate = () => {
-    componentDidMount();
-    componentDidUpdate();
-    updateWallet();
   };
 
   const handleTab: TabsProps["onTabClick"] = (tab) => {
@@ -99,7 +62,10 @@ const Component: FC = () => {
         <TabContent
           buttonName={t(constantKeys.STAKE)}
           functionName="deposit"
-          onUpdate={handleUpdate}
+          onUpdate={() => {
+            refetch();
+            updateWallet();
+          }}
         />
       ),
     },
@@ -110,52 +76,18 @@ const Component: FC = () => {
         <TabContent
           buttonName={t(constantKeys.WITHDRAW)}
           functionName="withdraw"
-          onUpdate={handleUpdate}
+          onUpdate={() => {
+            refetch();
+            updateWallet();
+          }}
         />
       ),
     },
   ];
 
-  const componentDidUpdate = () => {
-    if (address) {
-      setState((prevState) => ({ ...prevState, loading: true }));
-
-      Promise.all([api.pendingRewards(address), api.userAmount(address)]).then(
-        ([pendingRewards, userAmount]) => {
-          setState((prevState) => ({
-            ...prevState,
-            userAmount,
-            loading: false,
-            pendingRewards,
-          }));
-        }
-      );
-    } else {
-      setState((prevState) => ({
-        ...prevState,
-        userAmount: 0,
-        pendingRewards: 0,
-      }));
-    }
-  };
-
-  const componentDidMount = () => {
+  useEffect(() => {
     changePage(PageKey.STAKING);
-
-    Promise.all([api.lastRewardBalance(), api.totalStaked()]).then(
-      ([lastRewardBalance, totalStaked]) => {
-        setState((prevState) => ({
-          ...prevState,
-          lastRewardBalance,
-          loaded: true,
-          totalStaked,
-        }));
-      }
-    );
-  };
-
-  useEffect(componentDidUpdate, [address]);
-  useEffect(componentDidMount, []);
+  }, []);
 
   return (
     <Content className="stacking-page">
@@ -168,7 +100,7 @@ const Component: FC = () => {
           <Layers className="icon" />
           <span className="label">{t(constantKeys.REVENUE_TO_DISTRIBUTE)}</span>
           <span className="value">
-            {loaded ? (
+            {!loading ? (
               `${lastRewardBalance.toPriceFormat(currency)} USDC`
             ) : (
               <Spin size="small" />
@@ -180,7 +112,7 @@ const Component: FC = () => {
           <Layers className="icon" />
           <span className="label">{t(constantKeys.TOTAL_VULT_STAKED)}</span>
           <span className="value">
-            {loaded ? (
+            {!loading ? (
               `${totalStaked.toNumberFormat()} VULT`
             ) : (
               <Spin size="small" />
@@ -243,7 +175,7 @@ const Component: FC = () => {
                 className={`button button-secondary${
                   loading || !pendingRewards ? " disabled" : ""
                 }`}
-                onClick={handleReinvest}
+                onClick={() => handleClaimOrReinvest("reinvest")}
               >
                 {t(constantKeys.REINVEST)}
               </span>
@@ -251,7 +183,7 @@ const Component: FC = () => {
                 className={`button button-secondary${
                   loading || !pendingRewards ? " disabled" : ""
                 }`}
-                onClick={handleClaim}
+                onClick={() => handleClaimOrReinvest("claim")}
               >
                 {t(constantKeys.CLAIM)}
               </span>
