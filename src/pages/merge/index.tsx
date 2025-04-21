@@ -131,9 +131,11 @@ const BridgeTab: FC = () => {
         <li onClick={() => handlePrice(100)}>{t(constantKeys.MAX)}</li>
       </ul>
       {isConnected ? (
-        <span className="secondary-button">{t(constantKeys.BRIDGE)}</span>
+        <span className="button button-secondary">
+          {t(constantKeys.BRIDGE)}
+        </span>
       ) : (
-        <Link to={HashKey.CONNECT} className="secondary-button">
+        <Link to={HashKey.CONNECT} className="button button-secondary">
           {t(constantKeys.CONNECT_WALLET)}
         </Link>
       )}
@@ -187,9 +189,9 @@ const MergeTab: FC = () => {
         <li onClick={() => handlePrice(100)}>{t(constantKeys.MAX)}</li>
       </ul>
       {isConnected ? (
-        <span className="secondary-button">{t(constantKeys.MERGE)}</span>
+        <span className="button button-secondary">{t(constantKeys.MERGE)}</span>
       ) : (
-        <Link to={HashKey.CONNECT} className="secondary-button">
+        <Link to={HashKey.CONNECT} className="button button-secondary">
           {t(constantKeys.CONNECT_WALLET)}
         </Link>
       )}

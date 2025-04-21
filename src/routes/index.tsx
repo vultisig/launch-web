@@ -70,6 +70,18 @@ const Component = () => {
         },
         {
           path: constantPaths.staking,
+          redirect: constantPaths.stakingStake,
+        },
+        {
+          path: constantPaths.stakingStake,
+          element: (
+            <Suspense>
+              <Staking />
+            </Suspense>
+          ),
+        },
+        {
+          path: constantPaths.stakingWithdraw,
           element: (
             <Suspense>
               <Staking />

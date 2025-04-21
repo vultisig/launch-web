@@ -44,7 +44,11 @@ const Connect: FC = () => {
   const navigate = useNavigate();
 
   const connectorsConfig = [
-    { name: "WalletConnect", icon: "connectors/walletConnect.jpg", isShow: true },
+    {
+      name: "WalletConnect",
+      icon: "connectors/walletConnect.jpg",
+      isShow: true,
+    },
     { name: "MetaMask", icon: "connectors/metamask.png", isShow: true },
     { name: "Safe", icon: "", isShow: false },
   ];
@@ -68,11 +72,11 @@ const Connect: FC = () => {
 
   useEffect(componentDidUpdate, [hash, isConnected]);
 
-  const getConnectorIcon = (name:string) => {
+  const getConnectorIcon = (name: string) => {
     const config = connectorsConfig.find((c) => c.name === name);
     return config?.icon || "";
   };
-  
+
   return (
     <Modal
       className="default-layout-wallet-connect"
@@ -85,13 +89,19 @@ const Connect: FC = () => {
     >
       {connectors
         .filter((connector) => {
-          const config = connectorsConfig.find((c) => c.name === connector.name);
+          const config = connectorsConfig.find(
+            (c) => c.name === connector.name
+          );
           return config ? config.isShow : true;
         })
         .map((connector) => {
           const icon = connector.icon || getConnectorIcon(connector.name);
           return (
-            <span key={connector.uid} onClick={() => handleConnect(connector)} className="btn">
+            <span
+              key={connector.uid}
+              onClick={() => handleConnect(connector)}
+              className="btn"
+            >
               {icon ? <img src={icon} alt={connector.name} /> : null}
               {connector.name}
             </span>
@@ -99,7 +109,6 @@ const Connect: FC = () => {
         })}
     </Modal>
   );
-  
 };
 
 const Content: FC = () => {
@@ -223,11 +232,11 @@ const Component: FC = () => {
   const { activePage } = useBaseContext();
   const { address = "", isConnected } = useAccount();
   const [indicatorStyle, setIndicatorStyle] = useState({
-    width: '0px',
-    transform: 'translateX(0)',
+    width: "0px",
+    transform: "translateX(0)",
   });
   const [isAnimating, setIsAnimating] = useState(false);
-  const prevPositionRef = useRef({ width: '0px', left: 0 });
+  const prevPositionRef = useRef({ width: "0px", left: 0 });
   const menuRef = useRef<HTMLDivElement>(null);
   const indicatorRef = useRef<HTMLDivElement>(null);
 
@@ -238,7 +247,9 @@ const Component: FC = () => {
     },
     {
       key: PageKey.STAKING,
-      label: <Link to={constantPaths.staking}>{t(constantKeys.STAKING)}</Link>,
+      label: (
+        <Link to={constantPaths.stakingStake}>{t(constantKeys.STAKING)}</Link>
+      ),
     },
     {
       key: PageKey.POOL,
@@ -250,17 +261,17 @@ const Component: FC = () => {
 
   useEffect(() => {
     if (!menuRef.current) return;
-    
+
     const menuEl = menuRef.current;
     if (!menuEl) return;
-    
-    const menuItems = menuEl.querySelectorAll('.ant-menu-item');
+
+    const menuItems = menuEl.querySelectorAll(".ant-menu-item");
     if (!menuItems.length) return;
 
     let activeItem: Element | null = null;
-    
+
     menuItems.forEach((item) => {
-      if (item.classList.contains('ant-menu-item-selected')) {
+      if (item.classList.contains("ant-menu-item-selected")) {
         activeItem = item;
       }
     });
@@ -268,32 +279,32 @@ const Component: FC = () => {
     if (activeItem && indicatorRef.current) {
       const width = (activeItem as HTMLElement).clientWidth;
       const offsetLeft = (activeItem as HTMLElement).offsetLeft;
-      
+
       const prevWidth = prevPositionRef.current.width;
       const prevLeft = prevPositionRef.current.left;
-      
-      prevPositionRef.current = { 
-        width: `${width}px`, 
-        left: offsetLeft 
+
+      prevPositionRef.current = {
+        width: `${width}px`,
+        left: offsetLeft,
       };
-      
+
       const indicator = indicatorRef.current;
-      indicator.style.setProperty('--start-x', `${prevLeft}px`);
-      indicator.style.setProperty('--start-width', prevWidth);
-      indicator.style.setProperty('--end-x', `${offsetLeft}px`);
-      indicator.style.setProperty('--end-width', `${width}px`);
-      
+      indicator.style.setProperty("--start-x", `${prevLeft}px`);
+      indicator.style.setProperty("--start-width", prevWidth);
+      indicator.style.setProperty("--end-x", `${offsetLeft}px`);
+      indicator.style.setProperty("--end-width", `${width}px`);
+
       setIsAnimating(true);
-      
+
       setIndicatorStyle({
         width: `${width}px`,
         transform: `translateX(${offsetLeft}px)`,
       });
-      
+
       const animationTimeout = setTimeout(() => {
         setIsAnimating(false);
       }, ANIMATION_DURATION);
-      
+
       return () => clearTimeout(animationTimeout);
     }
   }, [activePage]);
@@ -307,25 +318,25 @@ const Component: FC = () => {
         </div>
         <MediaQuery minWidth={992}>
           <div className="menu-container" ref={menuRef}>
-            <Menu 
-              selectedKeys={[activePage]} 
-              items={items} 
-              mode="horizontal" 
-              style={{ width: '100%' }}
+            <Menu
+              selectedKeys={[activePage]}
+              items={items}
+              mode="horizontal"
+              style={{ width: "100%" }}
             />
-            <div 
-              className={`menu-indicator ${isAnimating ? 'animate' : ''}`}
-              style={indicatorStyle} 
+            <div
+              className={`menu-indicator ${isAnimating ? "animate" : ""}`}
+              style={indicatorStyle}
               ref={indicatorRef}
             />
           </div>
         </MediaQuery>
         {isConnected ? (
-          <Link to={HashKey.WALLET} className="secondary-button">
+          <Link to={HashKey.WALLET} className="button button-secondary">
             <MiddleTruncate text={address ?? ""} />
           </Link>
         ) : (
-          <Link to={HashKey.CONNECT} className="secondary-button">
+          <Link to={HashKey.CONNECT} className="button button-secondary">
             {t(constantKeys.CONNECT_WALLET)}
           </Link>
         )}
@@ -342,7 +353,7 @@ const Component: FC = () => {
             {t(constantKeys.SWAP)}
           </Link>
           <Link
-            to={constantPaths.staking}
+            to={constantPaths.stakingStake}
             className={activePage === PageKey.STAKING ? "active" : ""}
           >
             <ArrowRightToLine />

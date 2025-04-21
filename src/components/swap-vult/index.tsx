@@ -428,7 +428,7 @@ const Component: FC = () => {
               getFieldsValue();
 
             return loading ? (
-              <span className="secondary-button disabled">
+              <span className="button button-secondary disabled">
                 {t(constantKeys.LOADING)}
               </span>
             ) : (
@@ -490,22 +490,25 @@ const Component: FC = () => {
                     )}
                     {allocateAmount && buyAmount ? (
                       allocateAmount > tokens[allocateToken].balance ? (
-                        <span className="secondary-button disabled">
+                        <span className="button button-secondary disabled">
                           {t(constantKeys.INSUFFICIENT_BALANCE)}
                         </span>
                       ) : approving ? (
-                        <span className="secondary-button disabled">
+                        <span className="button button-secondary disabled">
                           {t(constantKeys.APPROVE)}
                         </span>
                       ) : (
-                        <span className="secondary-button" onClick={handleSwap}>
+                        <span
+                          className="button button-secondary"
+                          onClick={handleSwap}
+                        >
                           {needsApproval
                             ? t(constantKeys.APPROVE)
                             : t(constantKeys.SWAP)}
                         </span>
                       )
                     ) : (
-                      <span className="secondary-button disabled">
+                      <span className="button button-secondary disabled">
                         {t(constantKeys.ENTER_AMOUNT)}
                       </span>
                     )}
@@ -513,7 +516,9 @@ const Component: FC = () => {
                 ) : (
                   <Link
                     to={HashKey.CONNECT}
-                    className={`secondary-button${loading ? " disabled" : ""}`}
+                    className={`button button-secondary${
+                      loading ? " disabled" : ""
+                    }`}
                   >
                     {t(constantKeys.CONNECT_WALLET)}
                   </Link>

@@ -86,27 +86,6 @@ const api = {
       })
       .catch(() => 0);
   },
-  values: async (ids: number[], currency: Currency) => {
-    const modifedData: Record<string, number> = {};
-
-    return fetch
-      .get<{
-        data: Record<string, { quote: Record<string, { price: number }> }>;
-      }>(
-        `/cmc/v2/cryptocurrency/quotes/latest?id=${ids.join(
-          ","
-        )}&skip_invalid=true&aux=is_active&convert=${currency}`
-      )
-      .then(({ data }) => {
-        Object.entries(data.data).forEach(([key, value]) => {
-          modifedData[key] =
-            (value.quote[currency] && value.quote[currency].price) || 0;
-        });
-
-        return modifedData;
-      })
-      .catch(() => modifedData);
-  },
   historicalPriceByDay: async (
     endpoint: string,
     contract: string,
@@ -209,6 +188,27 @@ const api = {
       },
     });
     return response.data;
+  },
+  values: async (ids: number[], currency: Currency) => {
+    const modifedData: Record<string, number> = {};
+
+    return fetch
+      .get<{
+        data: Record<string, { quote: Record<string, { price: number }> }>;
+      }>(
+        `/cmc/v2/cryptocurrency/quotes/latest?id=${ids.join(
+          ","
+        )}&skip_invalid=true&aux=is_active&convert=${currency}`
+      )
+      .then(({ data }) => {
+        Object.entries(data.data).forEach(([key, value]) => {
+          modifedData[key] =
+            (value.quote[currency] && value.quote[currency].price) || 0;
+        });
+
+        return modifedData;
+      })
+      .catch(() => modifedData);
   },
   volume: async (days: number): Promise<number> => {
     const endpoint = `https://gateway.thegraph.com/api/${
