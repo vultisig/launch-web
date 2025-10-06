@@ -1,6 +1,3 @@
-import { FC, useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import {
   Dropdown,
   InputNumber,
@@ -9,19 +6,20 @@ import {
   Tabs,
   TabsProps,
 } from "antd";
+import { FC, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAccount } from "wagmi";
 
-import { useBaseContext } from "context";
-import { HashKey, PageKey, TickerKey, defaultTokens } from "utils/constants";
-import constantKeys from "i18n/constant-keys";
-
-import { ArrowDown, ChevronDown, RefreshCW } from "icons";
+import { useCore } from "@/hooks/useCore";
+import { ArrowDown, ChevronDown, RefreshCW } from "@/icons";
+import { defaultTokens, modalHash } from "@/utils/constants";
 
 const { Content } = Layout;
 
 const BridgeTab: FC = () => {
   const { t } = useTranslation();
-  const { currency } = useBaseContext();
+  const { currency } = useCore();
   const { isConnected } = useAccount();
 
   const handlePrice = (percentage: number) => {
@@ -31,24 +29,20 @@ const BridgeTab: FC = () => {
   const items: MenuProps["items"] = [
     {
       key: "1",
-      label: defaultTokens[TickerKey.USDC].ticker,
+      label: defaultTokens.USDC.ticker,
       icon: (
         <img
-          src={`/tokens/${defaultTokens[
-            TickerKey.USDC
-          ].ticker.toLowerCase()}.svg`}
+          src={`/tokens/${defaultTokens.USDC.ticker.toLowerCase()}.svg`}
           alt="Ethereum"
         />
       ),
     },
     {
       key: "2",
-      label: defaultTokens[TickerKey.WETH].ticker,
+      label: defaultTokens.WETH.ticker,
       icon: (
         <img
-          src={`/tokens/${defaultTokens[
-            TickerKey.WETH
-          ].ticker.toLowerCase()}.svg`}
+          src={`/tokens/${defaultTokens.WETH.ticker.toLowerCase()}.svg`}
           alt="Ethereum"
         />
       ),
@@ -60,26 +54,22 @@ const BridgeTab: FC = () => {
       <div className="coins">
         <div className="group">
           <div className="item">
-            <span className="label">{t(constantKeys.TOKEN)}</span>
+            <span className="label">{t("token")}</span>
             <span className="dropdown">
               <img src="/tokens/vult.svg" alt="VULT" className="logo" />
               <span className="ticker">VULT</span>
             </span>
           </div>
           <div className="item">
-            <span className="label">{t(constantKeys.FROM)}</span>
+            <span className="label">{t("from")}</span>
             <Dropdown menu={{ items }} rootClassName="token-dropdown-menu">
               <span className="dropdown">
                 <img
-                  src={`/tokens/${defaultTokens[
-                    TickerKey.USDC
-                  ].ticker.toLowerCase()}.svg`}
-                  alt={defaultTokens[TickerKey.USDC].ticker}
+                  src={`/tokens/${defaultTokens.USDC.ticker.toLowerCase()}.svg`}
+                  alt={defaultTokens.USDC.ticker}
                   className="logo"
                 />
-                <span className="ticker">
-                  {defaultTokens[TickerKey.USDC].ticker}
-                </span>
+                <span className="ticker">{defaultTokens.USDC.ticker}</span>
                 <ChevronDown className="arrow" />
               </span>
             </Dropdown>
@@ -90,26 +80,22 @@ const BridgeTab: FC = () => {
         </div>
         <div className="group">
           <div className="item">
-            <span className="label">{t(constantKeys.TOKEN)}</span>
+            <span className="label">{t("token")}</span>
             <span className="dropdown">
               <img src="/tokens/vult.svg" alt="VULT" className="logo" />
               <span className="ticker">VULT</span>
             </span>
           </div>
           <div className="item">
-            <span className="label">{t(constantKeys.TO)}</span>
+            <span className="label">{t("to")}</span>
             <Dropdown menu={{ items }} rootClassName="token-dropdown-menu">
               <span className="dropdown">
                 <img
-                  src={`/tokens/${defaultTokens[
-                    TickerKey.WETH
-                  ].ticker.toLowerCase()}.svg`}
-                  alt={defaultTokens[TickerKey.WETH].ticker}
+                  src={`/tokens/${defaultTokens.WETH.ticker.toLowerCase()}.svg`}
+                  alt={defaultTokens.WETH.ticker}
                   className="logo"
                 />
-                <span className="ticker">
-                  {defaultTokens[TickerKey.WETH].ticker}
-                </span>
+                <span className="ticker">{defaultTokens.WETH.ticker}</span>
                 <ChevronDown className="arrow" />
               </span>
             </Dropdown>
@@ -122,21 +108,19 @@ const BridgeTab: FC = () => {
         min={0}
         placeholder="0.00"
       />
-      <span className="price">{`${t(
-        constantKeys.AVAILABLE
-      )}: ${(0).toPriceFormat(currency)}`}</span>
+      <span className="price">{`${t("available")}: ${(0).toPriceFormat(
+        currency
+      )}`}</span>
       <ul className="percentage">
         <li onClick={() => handlePrice(25)}>25%</li>
         <li onClick={() => handlePrice(50)}>50%</li>
-        <li onClick={() => handlePrice(100)}>{t(constantKeys.MAX)}</li>
+        <li onClick={() => handlePrice(100)}>{t("max")}</li>
       </ul>
       {isConnected ? (
-        <span className="button button-secondary">
-          {t(constantKeys.BRIDGE)}
-        </span>
+        <span className="button button-secondary">{t("bridge")}</span>
       ) : (
-        <Link to={HashKey.CONNECT} className="button button-secondary">
-          {t(constantKeys.CONNECT_WALLET)}
+        <Link to={modalHash.connect} className="button button-secondary">
+          {t("connectWallet")}
         </Link>
       )}
     </>
@@ -145,7 +129,7 @@ const BridgeTab: FC = () => {
 
 const MergeTab: FC = () => {
   const { t } = useTranslation();
-  const { currency } = useBaseContext();
+  const { currency } = useCore();
   const { isConnected } = useAccount();
 
   const handlePrice = (percentage: number) => {
@@ -180,28 +164,28 @@ const MergeTab: FC = () => {
         />
         <span className="result">{`${(0).toBalanceFormat()} VULT`}</span>
       </div>
-      <span className="price">{`${t(
-        constantKeys.AVAILABLE
-      )}: ${(0).toPriceFormat(currency)}`}</span>
+      <span className="price">{`${t("available")}: ${(0).toPriceFormat(
+        currency
+      )}`}</span>
       <ul className="percentage">
         <li onClick={() => handlePrice(25)}>25%</li>
         <li onClick={() => handlePrice(50)}>50%</li>
-        <li onClick={() => handlePrice(100)}>{t(constantKeys.MAX)}</li>
+        <li onClick={() => handlePrice(100)}>{t("max")}</li>
       </ul>
       {isConnected ? (
-        <span className="button button-secondary">{t(constantKeys.MERGE)}</span>
+        <span className="button button-secondary">{t("merge")}</span>
       ) : (
-        <Link to={HashKey.CONNECT} className="button button-secondary">
-          {t(constantKeys.CONNECT_WALLET)}
+        <Link to={modalHash.connect} className="button button-secondary">
+          {t("connectWallet")}
         </Link>
       )}
     </>
   );
 };
 
-const Component: FC = () => {
+export const MergePage: FC = () => {
   const { t } = useTranslation();
-  const { changePage } = useBaseContext();
+  const { setCurrentPage } = useCore();
   const { hash } = useLocation();
   const navigate = useNavigate();
 
@@ -210,21 +194,21 @@ const Component: FC = () => {
   };
 
   const componentDidMount = () => {
-    changePage(PageKey.MERGE);
+    setCurrentPage("merge");
   };
 
   useEffect(componentDidMount, []);
 
   const items: TabsProps["items"] = [
     {
-      key: HashKey.MERGE,
-      label: t(constantKeys.MERGE),
+      key: modalHash.merge,
+      label: t("merge"),
       className: "merge-tab",
       children: <MergeTab />,
     },
     {
-      key: HashKey.BRIDGE,
-      label: t(constantKeys.BRIDGE),
+      key: modalHash.bridge,
+      label: t("bridge"),
       className: "bridge-tab",
       children: <BridgeTab />,
     },
@@ -233,12 +217,12 @@ const Component: FC = () => {
   return (
     <Content className="merge-page">
       <Tabs
-        activeKey={hash === HashKey.BRIDGE ? HashKey.BRIDGE : HashKey.MERGE}
+        activeKey={
+          hash === modalHash.bridge ? modalHash.bridge : modalHash.merge
+        }
         items={items}
         onTabClick={handleTab}
       />
     </Content>
   );
 };
-
-export default Component;

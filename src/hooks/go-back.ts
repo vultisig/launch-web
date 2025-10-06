@@ -1,18 +1,22 @@
+import { useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-const useGoBack = (): ((path?: string) => void) => {
+export const useGoBack = (): ((path?: string) => void) => {
   const { pathname, state } = useLocation();
   const navigate = useNavigate();
 
-  const goBack = (path?: string) => {
-    state
-      ? navigate(-1)
-      : path
-      ? navigate(path)
-      : navigate(pathname, { replace: true });
-  };
+  const goBack = useCallback(
+    (path?: string) => {
+      if (state) {
+        navigate(-1);
+      } else if (path) {
+        navigate(path);
+      } else {
+        navigate(pathname);
+      }
+    },
+    [navigate, pathname, state]
+  );
 
   return goBack;
 };
-
-export default useGoBack;

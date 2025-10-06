@@ -1,6 +1,3 @@
-import { FC, Fragment, useEffect, useState, useRef } from "react";
-import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import {
   Divider,
   Drawer,
@@ -13,14 +10,14 @@ import {
   Spin,
   Tooltip,
 } from "antd";
-import { Connector, useAccount, useConnect, useDisconnect } from "wagmi";
+import { FC, Fragment, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import MediaQuery from "react-responsive";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Connector, useAccount, useConnect, useDisconnect } from "wagmi";
 
-import { useBaseContext } from "context";
-import { HashKey, PageKey } from "utils/constants";
-import constantKeys from "i18n/constant-keys";
-import constantPaths from "routes/constant-paths";
-
+import { MiddleTruncate } from "@/components/middle-truncate";
+import { useCore } from "@/hooks/useCore";
 import {
   ArrowDownUp,
   ArrowRightToLine,
@@ -28,8 +25,9 @@ import {
   Database,
   Power,
   RefreshCW,
-} from "icons";
-import MiddleTruncate from "components/middle-truncate";
+} from "@/icons";
+import { modalHash } from "@/utils/constants";
+import { routeTree } from "@/utils/routes";
 
 const { Footer, Header } = Layout;
 
@@ -59,7 +57,7 @@ const Connect: FC = () => {
   };
 
   const componentDidUpdate = () => {
-    if (hash === HashKey.CONNECT) {
+    if (hash === modalHash.connect) {
       if (isConnected) {
         navigate(pathname, { replace: true });
       } else {
@@ -84,7 +82,7 @@ const Connect: FC = () => {
       footer={false}
       onCancel={() => navigate(-1)}
       open={open}
-      title={t(constantKeys.CONNECT_WALLET)}
+      title={t("connectWallet")}
       width={360}
     >
       {connectors
@@ -117,7 +115,7 @@ const Content: FC = () => {
   const [state, setState] = useState(initialState);
   const { open } = state;
   const { address, isConnected } = useAccount();
-  const { updateWallet, currency, tokens, updating } = useBaseContext();
+  const { updateWallet, currency, tokens, updating } = useCore();
   const { disconnect } = useDisconnect();
   const { hash, pathname } = useLocation();
   const [messageApi, messageHolder] = message.useMessage();
@@ -134,8 +132,8 @@ const Content: FC = () => {
       });
   };
 
-  const componentDidUpdate = () => {
-    if (hash === HashKey.WALLET) {
+  useEffect(() => {
+    if (hash === modalHash.wallet) {
       if (isConnected) {
         setState((prevState) => ({ ...prevState, open: true }));
       } else {
@@ -144,9 +142,7 @@ const Content: FC = () => {
     } else {
       setState((prevState) => ({ ...prevState, open: false }));
     }
-  };
-
-  useEffect(componentDidUpdate, [hash, isConnected]);
+  }, [hash, isConnected]);
 
   return (
     <>
@@ -158,12 +154,9 @@ const Content: FC = () => {
         open={open}
         title={
           <>
-            <span className="text">{t(constantKeys.CONNECTED_WALLET)}</span>
+            <span className="text">{t("connectedWallet")}</span>
             <RefreshCW className="refresh" onClick={updateWallet} />
-            <Popconfirm
-              title={t(constantKeys.DISCONNECT)}
-              onConfirm={() => disconnect()}
-            >
+            <Popconfirm title={t("disconnect")} onConfirm={() => disconnect()}>
               <Power className="disconnect" />
             </Popconfirm>
           </>
@@ -173,13 +166,13 @@ const Content: FC = () => {
         <div className="address">
           <img src="/avatars/1.png" alt="Avatar" />
           <MiddleTruncate text={address ?? ""} />
-          <Tooltip title={t(constantKeys.COPY)}>
+          <Tooltip title={t("copy")}>
             <Copy onClick={handleCopy} />
           </Tooltip>
         </div>
         <Divider />
         <div className="total">
-          <span className="label">{t(constantKeys.VAULT_BALANCE)}</span>
+          <span className="label">{t("vaultBalance")}</span>
           {updating ? (
             <Spin size="small" />
           ) : (
@@ -227,9 +220,9 @@ const Content: FC = () => {
   );
 };
 
-const Component: FC = () => {
+export const DefaultLayout: FC = () => {
   const { t } = useTranslation();
-  const { activePage } = useBaseContext();
+  const { currentPage } = useCore();
   const { address = "", isConnected } = useAccount();
   const [indicatorStyle, setIndicatorStyle] = useState({
     width: "0px",
@@ -242,22 +235,18 @@ const Component: FC = () => {
 
   const items: MenuProps["items"] = [
     {
-      key: PageKey.SWAP,
-      label: <Link to={constantPaths.swap}>{t(constantKeys.SWAP)}</Link>,
+      key: "swap",
+      label: <Link to={routeTree.swap.path}>{t("swap")}</Link>,
     },
     {
-      key: PageKey.STAKING,
-      label: (
-        <Link to={constantPaths.stakingStake}>{t(constantKeys.STAKING)}</Link>
-      ),
+      key: "staking",
+      label: <Link to={routeTree.stakingStake.path}>{t("staking")}</Link>,
     },
     {
-      key: PageKey.POOL,
-      label: t(constantKeys.POOL),
+      key: "pool",
+      label: t("pool"),
     },
   ];
-
-  const ANIMATION_DURATION = 500; // ms
 
   useEffect(() => {
     if (!menuRef.current) return;
@@ -303,11 +292,11 @@ const Component: FC = () => {
 
       const animationTimeout = setTimeout(() => {
         setIsAnimating(false);
-      }, ANIMATION_DURATION);
+      }, 500);
 
       return () => clearTimeout(animationTimeout);
     }
-  }, [activePage]);
+  }, [currentPage]);
 
   return (
     <Layout className="default-layout">
@@ -319,7 +308,7 @@ const Component: FC = () => {
         <MediaQuery minWidth={992}>
           <div className="menu-container" ref={menuRef}>
             <Menu
-              selectedKeys={[activePage]}
+              selectedKeys={[currentPage]}
               items={items}
               mode="horizontal"
               style={{ width: "100%" }}
@@ -332,12 +321,12 @@ const Component: FC = () => {
           </div>
         </MediaQuery>
         {isConnected ? (
-          <Link to={HashKey.WALLET} className="button button-secondary">
+          <Link to={modalHash.wallet} className="button button-secondary">
             <MiddleTruncate text={address ?? ""} />
           </Link>
         ) : (
-          <Link to={HashKey.CONNECT} className="button button-secondary">
-            {t(constantKeys.CONNECT_WALLET)}
+          <Link to={modalHash.connect} className="button button-secondary">
+            {t("connectWallet")}
           </Link>
         )}
       </Header>
@@ -346,22 +335,22 @@ const Component: FC = () => {
       <MediaQuery maxWidth={991}>
         <Footer>
           <Link
-            to={constantPaths.swap}
-            className={activePage === PageKey.SWAP ? "active" : ""}
+            to={routeTree.swap.path}
+            className={currentPage === "swap" ? "active" : ""}
           >
             <ArrowDownUp />
-            {t(constantKeys.SWAP)}
+            {t("swap")}
           </Link>
           <Link
-            to={constantPaths.stakingStake}
-            className={activePage === PageKey.STAKING ? "active" : ""}
+            to={routeTree.stakingStake.path}
+            className={currentPage === "staking" ? "active" : ""}
           >
             <ArrowRightToLine />
-            {t(constantKeys.STAKING)}
+            {t("staking")}
           </Link>
-          <Link to="" className={activePage === PageKey.POOL ? "active" : ""}>
+          <Link to="" className={currentPage === "pool" ? "active" : ""}>
             <Database />
-            {t(constantKeys.POOL)}
+            {t("pool")}
           </Link>
         </Footer>
       </MediaQuery>
@@ -369,5 +358,3 @@ const Component: FC = () => {
     </Layout>
   );
 };
-
-export default Component;

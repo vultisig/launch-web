@@ -1,16 +1,15 @@
-import { FC } from "react";
 import { Dropdown, MenuProps } from "antd";
+import { FC } from "react";
 
-import { defaultTokens, TickerKey } from "utils/constants";
+import { ChevronDown } from "@/icons";
+import { defaultTokens, TickerKey } from "@/utils/constants";
 
-import { ChevronDown } from "icons";
-
-interface ComponentProps {
+interface TokenDropdownProps {
   ticker: TickerKey;
   onChange: (ticker: TickerKey) => void;
 }
 
-const Component: FC<ComponentProps> = ({ ticker, onChange }) => {
+export const TokenDropdown: FC<TokenDropdownProps> = ({ ticker, onChange }) => {
   const items: MenuProps["items"] = Object.values(defaultTokens)
     .filter((token) => !token?.isAirdropToken && token.ticker !== ticker)
     .map(({ ticker }) => ({
@@ -43,5 +42,3 @@ const Component: FC<ComponentProps> = ({ ticker, onChange }) => {
     </Dropdown>
   );
 };
-
-export default Component;

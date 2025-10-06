@@ -1,35 +1,29 @@
-import { Contract, formatEther, formatUnits, parseUnits } from "ethers";
-import { encodeFunctionData, erc20Abi } from "viem";
-import { useAccount, useWalletClient } from "wagmi";
+import IUniswapV3PoolABI from "@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json";
+import Quoter from "@uniswap/v3-periphery/artifacts/contracts/lens/Quoter.sol/Quoter.json";
+import Router from "@uniswap/v3-periphery/artifacts/contracts/SwapRouter.sol/SwapRouter.json";
 import {
+  computePoolAddress,
   FeeAmount,
   Pool,
   TICK_SPACINGS,
-  computePoolAddress,
 } from "@uniswap/v3-sdk";
-import Quoter from "@uniswap/v3-periphery/artifacts/contracts/lens/Quoter.sol/Quoter.json";
-import Router from "@uniswap/v3-periphery/artifacts/contracts/SwapRouter.sol/SwapRouter.json";
-import IUniswapV3PoolABI from "@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json";
-
-import { LAUNCH_LIST_ABI } from "utils/abis/launchList";
-import {
-  ContractAddress,
-  Currency,
-  TickerKey,
-  TxStatus,
-  defaultTokens,
-} from "utils/constants";
-import { UniswapTokenProps } from "utils/interfaces";
-import { getBrowserProvider, getRPCProvider } from "utils/providers";
-import { getStoredGasSettings } from "utils/storage";
-import api from "utils/api";
+import { Contract, formatEther, formatUnits, parseUnits } from "ethers";
 import { useEffect, useState } from "react";
+import { encodeFunctionData, erc20Abi } from "viem";
+import { useAccount, useWalletClient } from "wagmi";
+
+import { LAUNCH_LIST_ABI } from "@/utils/abis/launchList";
+import { api } from "@/utils/api";
+import { contractAddress, defaultTokens } from "@/utils/constants";
+import { getBrowserProvider, getRPCProvider } from "@/utils/providers";
+import { getStoredGasSettings } from "@/utils/storage";
+import { TickerKey, TxStatus, UniswapTokenProps } from "@/utils/types";
 
 interface InitialState {
   isWhitelist: boolean;
 }
 
-const useSwapVult = () => {
+export const useSwapVult = () => {
   const initialState: InitialState = {
     isWhitelist: false,
   };
@@ -60,7 +54,7 @@ const useSwapVult = () => {
       const tokenContract = new Contract(token.address, erc20Abi, rpcClient);
       const approvedAmount: number = await tokenContract.allowance(
         address,
-        ContractAddress.SWAP_ROUTER
+        contractAddress.swapRouter
       );
 
       return {
@@ -105,10 +99,10 @@ const useSwapVult = () => {
       // Always use WETH address for Uniswap
       const isOutETH = isETH(tokenOut);
       const actualTokenIn = isETH(tokenIn)
-        ? ContractAddress.WETH_TOKEN
+        ? contractAddress.wethToken
         : tokenIn.address;
       const actualTokenOut = isETH(tokenOut)
-        ? ContractAddress.WETH_TOKEN
+        ? contractAddress.wethToken
         : tokenOut.address;
       const swapCallData = encodeFunctionData({
         abi: Router.abi,
@@ -118,7 +112,7 @@ const useSwapVult = () => {
             tokenIn: actualTokenIn as `0x${string}`,
             tokenOut: actualTokenOut as `0x${string}`,
             fee: poolConstants.fee,
-            recipient: isOutETH ? ContractAddress.SWAP_ROUTER : address,
+            recipient: isOutETH ? contractAddress.swapRouter : address,
             deadline: Math.floor(Date.now() / 1000) + 60 * 10, // 10 min deadline
             amountIn: BigInt(parsedAmountIn),
             amountOutMinimum,
@@ -145,7 +139,7 @@ const useSwapVult = () => {
         : swapCallData;
 
       const tx = await walletClient.sendTransaction({
-        to: ContractAddress.SWAP_ROUTER as `0x${string}`,
+        to: contractAddress.swapRouter as `0x${string}`,
         data: callData,
         gas: gasSetting.gasLimit > 0 ? BigInt(gasSetting.gasLimit) : undefined,
         maxPriorityFeePerGas:
@@ -167,7 +161,7 @@ const useSwapVult = () => {
 
   const getAddressSpentETH = async (address: string): Promise<number> => {
     const launchListContract = new Contract(
-      ContractAddress.LAUNCH_LIST,
+      contractAddress.launchList,
       LAUNCH_LIST_ABI,
       rpcClient
     );
@@ -197,7 +191,7 @@ const useSwapVult = () => {
 
   const getPhase1ETHAllocation = async (): Promise<number> => {
     const launchListContract = new Contract(
-      ContractAddress.LAUNCH_LIST,
+      contractAddress.launchList,
       LAUNCH_LIST_ABI,
       rpcClient
     );
@@ -212,7 +206,7 @@ const useSwapVult = () => {
 
   const getPhase2ETHAllocation = async (): Promise<number> => {
     const launchListContract = new Contract(
-      ContractAddress.LAUNCH_LIST,
+      contractAddress.launchList,
       LAUNCH_LIST_ABI,
       rpcClient
     );
@@ -230,7 +224,7 @@ const useSwapVult = () => {
     tokenB: UniswapTokenProps
   ) => {
     const currentPoolAddress = computePoolAddress({
-      factoryAddress: ContractAddress.POOL_FACTORY,
+      factoryAddress: contractAddress.poolFactory,
       tokenA,
       tokenB,
       fee: FeeAmount.MEDIUM,
@@ -266,7 +260,7 @@ const useSwapVult = () => {
   ): Promise<number> => {
     try {
       const poolContract = await getPoolConstant(tokenA, tokenB);
-      const [sqrtPriceX96]: BigInt[] = await poolContract.slot0();
+      const [sqrtPriceX96]: bigint[] = await poolContract.slot0();
 
       if (sqrtPriceX96) {
         const price = (Number(sqrtPriceX96) / Number(2n ** 96n)) ** 2;
@@ -357,10 +351,10 @@ const useSwapVult = () => {
     const receipt = await provider.getTransactionReceipt(txHash);
 
     if (!receipt) {
-      return TxStatus.PENDING;
+      return "pending";
     }
 
-    return receipt.status === 1 ? TxStatus.SUCCESS : TxStatus.FAILED;
+    return receipt.status === 1 ? "success" : "failed";
   };
 
   const getTxStatuses = async (txHashes: string[]): Promise<TxStatus[]> => {
@@ -375,27 +369,23 @@ const useSwapVult = () => {
     );
 
     return receipts.map((receipt) =>
-      receipt === null
-        ? TxStatus.PENDING
-        : receipt.status === 1
-        ? TxStatus.SUCCESS
-        : TxStatus.FAILED
+      receipt === null ? "pending" : receipt.status === 1 ? "success" : "failed"
     );
   };
 
   const getTokensValue = async () => {
     const data: Record<TickerKey, number> = {
-      [TickerKey.ETH]: 0,
-      [TickerKey.VULT]: 0,
-      [TickerKey.UNI]: 0,
-      [TickerKey.USDC]: 0,
-      [TickerKey.WETH]: 0,
+      ETH: 0,
+      VULT: 0,
+      UNI: 0,
+      USDC: 0,
+      WETH: 0,
     };
 
     return api
       .values(
         Object.values(defaultTokens).map(({ cmcId }) => cmcId),
-        Currency.USD
+        "usd"
       )
       .then((values) => {
         Object.values(defaultTokens).forEach(({ cmcId, ticker }) => {
@@ -414,7 +404,7 @@ const useSwapVult = () => {
   ) => {
     try {
       const quoterContract = new Contract(
-        ContractAddress.QUOTER,
+        contractAddress.quoter,
         Quoter.abi,
         rpcClient
       );
@@ -447,7 +437,7 @@ const useSwapVult = () => {
 
   const isAddressWhitelisted = async (address: string): Promise<boolean> => {
     const launchListContract = new Contract(
-      ContractAddress.LAUNCH_LIST,
+      contractAddress.launchList,
       LAUNCH_LIST_ABI,
       rpcClient
     );
@@ -472,7 +462,7 @@ const useSwapVult = () => {
       if (!walletClient) throw new Error("");
 
       const approvalData = encodeApproval(
-        ContractAddress.SWAP_ROUTER as `0x${string}`,
+        contractAddress.swapRouter as `0x${string}`,
         parseUnits(String(allocateAmount), tokenDecimals)
       );
 
@@ -503,13 +493,13 @@ const useSwapVult = () => {
     try {
       const receipt = await provider.waitForTransaction(txHash);
       if (receipt) {
-        return receipt.status === 1 ? TxStatus.SUCCESS : TxStatus.FAILED;
+        return receipt.status === 1 ? "success" : "failed";
       }
     } catch (error) {
       console.error("Error waiting for transaction:", error);
     }
 
-    return TxStatus.PENDING; // If an error occurs or receipt is null, assume pending
+    return "pending"; // If an error occurs or receipt is null, assume pending
   };
 
   useEffect(() => {
@@ -542,5 +532,3 @@ const useSwapVult = () => {
     waitForTxConfirmation,
   };
 };
-
-export default useSwapVult;

@@ -1,22 +1,20 @@
-import { FC, useState } from "react";
-import { Link } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import { Form, Input, InputNumber, Spin, Tooltip, message } from "antd";
+import { Form, Input, InputNumber, message, Spin, Tooltip } from "antd";
 import { debounce } from "lodash";
+import { FC, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import { useAccount } from "wagmi";
 
-import { useBaseContext } from "context";
-import { HashKey, TickerKey, TxStatus, uniswapTokens } from "utils/constants";
-import { SwapFormProps } from "utils/interfaces";
-import { getStoredGasSettings, setStoredTransaction } from "utils/storage";
-import useSwapVult from "hooks/swap";
-import constantKeys from "i18n/constant-keys";
+import { SwapSettings } from "@/components/swap-settings";
+import { TokenDropdown } from "@/components/token-dropdown";
+import { useSwapVult } from "@/hooks/swap";
+import { useCore } from "@/hooks/useCore";
+import { ArrowDownUp, Check, Info, RefreshCW, SettingsTwo } from "@/icons";
+import { modalHash, uniswapTokens } from "@/utils/constants";
+import { getStoredGasSettings, setStoredTransaction } from "@/utils/storage";
+import { SwapFormProps, TickerKey } from "@/utils/types";
 
-import { ArrowDownUp, Check, Info, RefreshCW, SettingsTwo } from "icons";
-import Settings from "components/swap-settings";
-import TokenDropdown from "components/token-dropdown";
-
-interface InitialState {
+type InitialState = {
   approving?: boolean;
   loading?: boolean;
   maxNetworkFee: number;
@@ -26,11 +24,10 @@ interface InitialState {
   settingsMode?: boolean;
   swapping?: boolean;
   values?: Record<TickerKey, number>;
-}
+};
 
-const Component: FC = () => {
+export const SwapVult: FC = () => {
   const { t } = useTranslation();
-  const [messageApi, contextHolder] = message.useMessage();
   const initialState: InitialState = {
     maxNetworkFee: 0,
     poolPrice: 0,
@@ -47,7 +44,8 @@ const Component: FC = () => {
     swapping,
     values,
   } = state;
-  const { currency, tokens } = useBaseContext();
+  const [messageApi, contextHolder] = message.useMessage();
+  const { currency, tokens } = useCore();
   const { address, isConnected } = useAccount();
   const [form] = Form.useForm<SwapFormProps>();
   const {
@@ -159,7 +157,7 @@ const Component: FC = () => {
                 ...values,
                 date: date.getTime(),
                 hash: txHash,
-                status: TxStatus.PENDING,
+                status: "pending",
               });
             }
           })
@@ -192,10 +190,10 @@ const Component: FC = () => {
       let fullAmount = tokens[ticker].balance;
 
       // If the token is ETH, we need to reserve some for gas fees
-      if (ticker === TickerKey.ETH) {
+      if (ticker === "ETH") {
         // Get max network fee using the existing function
         const estimatedGasFeeInCurrency = getMaxNetworkFee(1);
-        const ethValuePerUnit = values?.[TickerKey.ETH] || 1;
+        const ethValuePerUnit = values?.ETH || 1;
         const estimatedGasFeeEth = estimatedGasFeeInCurrency / ethValuePerUnit;
 
         // Add a 10% buffer to ensure we have enough for gas fluctuations
@@ -207,9 +205,7 @@ const Component: FC = () => {
         } else {
           // Show warning message to the user
           messageApi.warning(
-            t(constantKeys.INSUFFICIENT_BALANCE) +
-              ". " +
-              t(constantKeys.PLEASE_ADD_MORE_ETH_FOR_GAS)
+            t("insufficientBalance") + ". " + t("pleaseAddMoreEthForGas")
           );
           // Set the amount to 0
           fullAmount = 0;
@@ -261,7 +257,7 @@ const Component: FC = () => {
           setState((prevState) => ({
             ...prevState,
             loading: false,
-            maxNetworkFee: getMaxNetworkFee(values[TickerKey.ETH]),
+            maxNetworkFee: getMaxNetworkFee(values.ETH),
             needsApproval,
             poolPrice,
             priceImpact,
@@ -286,13 +282,10 @@ const Component: FC = () => {
   return (
     <>
       {contextHolder}
-      <Settings onClose={handleMode} visible={settingsMode} />
+      <SwapSettings onClose={handleMode} visible={settingsMode} />
       <Form
         form={form}
-        initialValues={{
-          allocateToken: TickerKey.USDC,
-          buyToken: TickerKey.UNI,
-        }}
+        initialValues={{ allocateToken: "USDC", buyToken: "UNI" }}
         onFinish={handleSwap}
         onValuesChange={handleChangeValues}
         className="swap-vult"
@@ -303,12 +296,12 @@ const Component: FC = () => {
           onClick={handleRefresh}
         />
         <div className="heading">
-          <span className="text">{t(constantKeys.SWAP)}</span>
+          <span className="text">{t("swap")}</span>
           <SettingsTwo onClick={() => handleMode(true)} className="toggle" />
         </div>
         <div className="swap">
           <div className="item">
-            <span className="title">{t(constantKeys.I_WANT_TO_ALLOCATE)}</span>
+            <span className="title">{t("iWantToAllocate")}</span>
             <Form.Item<SwapFormProps>
               shouldUpdate={(prevValues, curValues) =>
                 prevValues.allocateToken !== curValues.allocateToken
@@ -340,14 +333,12 @@ const Component: FC = () => {
                     <div className="price">
                       <span>{(amount * value).toPriceFormat(currency)}</span>
                       {isConnected && (
-                        <Tooltip
-                          title={t(constantKeys.CLICK_TO_USE_FULL_AMOUNT)}
-                        >
+                        <Tooltip title={t("clickToUseFullAmount")}>
                           <span
                             className="available-balance clickable"
                             onClick={() => handleUseFullAmount(ticker)}
                           >
-                            {t(constantKeys.AVAILABLE)}:{" "}
+                            {t("available")}:{" "}
                             <span className="balance-amount">
                               {tokens[ticker].balance.toBalanceFormat()}
                             </span>
@@ -367,7 +358,7 @@ const Component: FC = () => {
             {loading ? <Spin /> : <ArrowDownUp />}
           </div>
           <div className="item">
-            <span className="title">{t(constantKeys.TO_BUY)}</span>
+            <span className="title">{t("toBuy")}</span>
             <Form.Item<SwapFormProps>
               shouldUpdate={(prevValues, curValues) =>
                 prevValues.buyToken !== curValues.buyToken
@@ -400,7 +391,7 @@ const Component: FC = () => {
                       <span>{(amount * value).toPriceFormat(currency)}</span>
                       {isConnected && (
                         <span>
-                          {t(constantKeys.AMOUNT)}:{" "}
+                          {t("amount")}:{" "}
                           {tokens[ticker].balance.toBalanceFormat()}
                         </span>
                       )}
@@ -429,48 +420,38 @@ const Component: FC = () => {
 
             return loading ? (
               <span className="button button-secondary disabled">
-                {t(constantKeys.LOADING)}
+                {t("loading")}
               </span>
             ) : (
               <>
                 {allocateAmount && buyAmount ? (
                   <div className="info">
                     <div className="item">
-                      <span className="label">
-                        {t(constantKeys.MAX_SLIPPAGE)}
-                      </span>
+                      <span className="label">{t("maxSlippage")}</span>
                       <span className="value success">{`${gasSettings.slippage}%`}</span>
                     </div>
                     <div className="item">
-                      <span className="label">
-                        {t(constantKeys.MIN_RECEIVED)}
-                      </span>
+                      <span className="label">{t("minReceived")}</span>
                       <span className="value">
                         {buyAmount * (1 - gasSettings.slippage / 100)}
                       </span>
                     </div>
                     <div className="item">
-                      <span className="label">
-                        {t(constantKeys.NETWORK_FEE_EST)}
-                      </span>
+                      <span className="label">{t("networkFeeEst")}</span>
                       <span className="value success">{gasSettings.speed}</span>
                     </div>
                     <div className="item">
-                      <span className="label">
-                        {t(constantKeys.MAX_NETWORK_FEE)}
-                      </span>
+                      <span className="label">{t("maxNetworkFee")}</span>
                       <span className="value">
                         {maxNetworkFee.toPriceFormat(currency, 6)}
                       </span>
                     </div>
                     <div className="item">
-                      <span className="label">
-                        {t(constantKeys.PRICE_IMPACT)}
-                      </span>
+                      <span className="label">{t("priceImpact")}</span>
                       <span className="value error">{`${priceImpact}%`}</span>
                     </div>
                     <div className="item">
-                      <span className="label">{t(constantKeys.ROUTE)}</span>
+                      <span className="label">{t("route")}</span>
                       <span className="value success">{`${allocateToken} → ${buyToken}`}</span>
                     </div>
                   </div>
@@ -480,47 +461,45 @@ const Component: FC = () => {
                     {isWhitelist ? (
                       <div className="whitelist islisted">
                         <Check />
-                        {t(constantKeys.WHITELISTED)}
+                        {t("whitelisted")}
                       </div>
                     ) : (
                       <div className="whitelist notlisted">
                         <Info />
-                        {t(constantKeys.NOT_WHITELISTED)}
+                        {t("notWhitelisted")}
                       </div>
                     )}
                     {allocateAmount && buyAmount ? (
                       allocateAmount > tokens[allocateToken].balance ? (
                         <span className="button button-secondary disabled">
-                          {t(constantKeys.INSUFFICIENT_BALANCE)}
+                          {t("insufficientBalance")}
                         </span>
                       ) : approving ? (
                         <span className="button button-secondary disabled">
-                          {t(constantKeys.APPROVE)}
+                          {t("approve")}
                         </span>
                       ) : (
                         <span
                           className="button button-secondary"
                           onClick={handleSwap}
                         >
-                          {needsApproval
-                            ? t(constantKeys.APPROVE)
-                            : t(constantKeys.SWAP)}
+                          {needsApproval ? t("approve") : t("swap")}
                         </span>
                       )
                     ) : (
                       <span className="button button-secondary disabled">
-                        {t(constantKeys.ENTER_AMOUNT)}
+                        {t("enterAmount")}
                       </span>
                     )}
                   </>
                 ) : (
                   <Link
-                    to={HashKey.CONNECT}
+                    to={modalHash.connect}
                     className={`button button-secondary${
                       loading ? " disabled" : ""
                     }`}
                   >
-                    {t(constantKeys.CONNECT_WALLET)}
+                    {t("connectWallet")}
                   </Link>
                 )}
               </>
@@ -531,5 +510,3 @@ const Component: FC = () => {
     </>
   );
 };
-
-export default Component;

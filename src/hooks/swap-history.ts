@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 
-import { TransactionProps } from "utils/interfaces";
-import { getStoredTransactions, setStoredTransactions } from "utils/storage";
+import { getStoredTransactions, setStoredTransactions } from "@/utils/storage";
+import { TransactionProps } from "@/utils/types";
 
 let interval: NodeJS.Timeout;
 
@@ -10,7 +10,7 @@ interface InitialState {
   transactions: TransactionProps[];
 }
 
-const useSwapHistory = () => {
+export const useSwapHistory = () => {
   const initialState: InitialState = { transactions: [] };
   const [state, setState] = useState(initialState);
   const { transactions } = state;
@@ -47,5 +47,3 @@ const useSwapHistory = () => {
 
   return { transactions, clearHistory };
 };
-
-export default useSwapHistory;

@@ -1,24 +1,23 @@
+import { Spin } from "antd";
 import { FC } from "react";
 import { useTranslation } from "react-i18next";
-import { Spin } from "antd";
 
-import { useBaseContext } from "context";
-import constantKeys from "i18n/constant-keys";
+import { useCore } from "@/hooks/useCore";
 
-interface ComponentProps {
+type SwapStatsProps = {
   marketCap: number;
   price: number;
   volume: number;
-}
+};
 
-const Component: FC<ComponentProps> = ({ marketCap, price, volume }) => {
+export const SwapStats: FC<SwapStatsProps> = ({ marketCap, price, volume }) => {
   const { t } = useTranslation();
-  const { currency } = useBaseContext();
+  const { currency } = useCore();
 
   return (
     <div className="swap-stats">
       <div className="item">
-        <span className="title">{t(constantKeys.MARKET_CAP)}</span>
+        <span className="title">{t("marketCap")}</span>
         <span className="value">
           {marketCap ? (
             marketCap.toPriceFormat(currency)
@@ -34,7 +33,7 @@ const Component: FC<ComponentProps> = ({ marketCap, price, volume }) => {
         </span>
       </div>
       <div className="item ascending">
-        <span className="title">{t(constantKeys.PRICE)}</span>
+        <span className="title">{t("price")}</span>
         <span className="value">
           {price ? price.toPriceFormat(currency) : <Spin size="small" />}
         </span>
@@ -42,5 +41,3 @@ const Component: FC<ComponentProps> = ({ marketCap, price, volume }) => {
     </div>
   );
 };
-
-export default Component;

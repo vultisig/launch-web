@@ -1,28 +1,23 @@
+import { Form, InputNumber, Radio } from "antd";
 import { FC, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Form, InputNumber, Radio } from "antd";
-import {
-  DEFAULT_GAS_SETTING,
-  GasSettingsMode,
-  GasSettingsSpeed,
-} from "utils/constants";
-import { GasSettingsProps } from "utils/interfaces";
-import { getStoredGasSettings, setStoredGasSettings } from "utils/storage";
-import constantKeys from "i18n/constant-keys";
 
-import { CarFront, ChevronLeft, Hourglass, Timer } from "icons";
-import api, { SuggestedGasFeeData } from "utils/api";
+import { CarFront, ChevronLeft, Hourglass, Timer } from "@/icons";
+import { api, SuggestedGasFeeData } from "@/utils/api";
+import { defaultGasSettings } from "@/utils/constants";
+import { getStoredGasSettings, setStoredGasSettings } from "@/utils/storage";
+import { GasSettingsMode, GasSettingsProps } from "@/utils/types";
 
-interface ComponentProps {
+type SwapSettingsProps = {
   onClose: (settingsMode: boolean, updated?: boolean) => void;
   visible?: boolean;
-}
+};
 
-interface InitialState {
+type InitialState = {
   fees: SuggestedGasFeeData | null;
-}
+};
 
-const Component: FC<ComponentProps> = ({ onClose, visible }) => {
+export const SwapSettings: FC<SwapSettingsProps> = ({ onClose, visible }) => {
   const initialState: InitialState = { fees: null };
   const { t } = useTranslation();
   const [form] = Form.useForm<GasSettingsProps>();
@@ -31,11 +26,11 @@ const Component: FC<ComponentProps> = ({ onClose, visible }) => {
 
   const handleReset = () => {
     form.setFieldsValue({
-      slippage: DEFAULT_GAS_SETTING.slippage,
-      speed: DEFAULT_GAS_SETTING.speed,
-      gasLimit: DEFAULT_GAS_SETTING.gasLimit,
-      maxFee: DEFAULT_GAS_SETTING.maxFee,
-      maxPriorityFee: DEFAULT_GAS_SETTING.maxPriorityFee,
+      slippage: defaultGasSettings.slippage,
+      speed: defaultGasSettings.speed,
+      gasLimit: defaultGasSettings.gasLimit,
+      maxFee: defaultGasSettings.maxFee,
+      maxPriorityFee: defaultGasSettings.maxPriorityFee,
     });
   };
 
@@ -47,23 +42,23 @@ const Component: FC<ComponentProps> = ({ onClose, visible }) => {
     form
       .validateFields()
       .then((values) => {
-        if (values.mode === GasSettingsMode.BASIC) {
+        if (values.mode === "BASIC") {
           switch (values.speed) {
-            case GasSettingsSpeed.FAST: {
+            case "Fast": {
               values.maxFee = Number(fees?.high.suggestedMaxFeePerGas);
               values.maxPriorityFee = Number(
                 fees?.high.suggestedMaxPriorityFeePerGas
               );
               break;
             }
-            case GasSettingsSpeed.STANDARD: {
+            case "Standard": {
               values.maxFee = Number(fees?.medium.suggestedMaxFeePerGas);
               values.maxPriorityFee = Number(
                 fees?.medium.suggestedMaxPriorityFeePerGas
               );
               break;
             }
-            case GasSettingsSpeed.SLOW: {
+            case "Slow": {
               values.maxFee = Number(fees?.low.suggestedMaxFeePerGas);
               values.maxPriorityFee = Number(
                 fees?.low.suggestedMaxPriorityFeePerGas
@@ -72,7 +67,7 @@ const Component: FC<ComponentProps> = ({ onClose, visible }) => {
             }
           }
         } else {
-          values.speed = GasSettingsSpeed.CUSTOM;
+          values.speed = "Custom";
         }
 
         setStoredGasSettings(values);
@@ -89,7 +84,7 @@ const Component: FC<ComponentProps> = ({ onClose, visible }) => {
       .suggestedFees()
       .then((fees) => {
         setState((preState) => ({ ...preState, fees }));
-        if (JSON.stringify(settings) === JSON.stringify(DEFAULT_GAS_SETTING)) {
+        if (JSON.stringify(settings) === JSON.stringify(defaultGasSettings)) {
           settings = {
             ...settings,
             maxFee: Number(fees.medium.suggestedMaxFeePerGas),
@@ -115,14 +110,14 @@ const Component: FC<ComponentProps> = ({ onClose, visible }) => {
       style={{ display: visible ? undefined : "none" }}
     >
       <div className="heading">
-        <span className="text">{t(constantKeys.SETTINGS)}</span>
+        <span className="text">{t("settings")}</span>
         <span onClick={handleReset} className="reset">
-          {t(constantKeys.RESET)}
+          {t("reset")}
         </span>
         <ChevronLeft onClick={() => onClose(false)} className="toggle" />
       </div>
       <div className="slippage">
-        <span className="label">{t(constantKeys.SLIPPAGE)}</span>
+        <span className="label">{t("slippage")}</span>
         <Form.Item<GasSettingsProps>
           shouldUpdate={(prevValues, curValues) =>
             prevValues.slippage !== curValues.slippage
@@ -166,22 +161,20 @@ const Component: FC<ComponentProps> = ({ onClose, visible }) => {
             max={90}
             step={0.1}
             controls={false}
-            suffix={t(constantKeys.CUSTOM)}
+            suffix={t("custom")}
           />
         </Form.Item>
       </div>
       <div className="modes">
-        <span className="label">{t(constantKeys.TRANSACTION_SETTINGS)}</span>
+        <span className="label">{t("transactionSettings")}</span>
         <Form.Item<GasSettingsProps>
           name="mode"
           rules={[{ required: true }]}
           noStyle
         >
           <Radio.Group>
-            <Radio value={GasSettingsMode.BASIC}>{t(constantKeys.BASIC)}</Radio>
-            <Radio value={GasSettingsMode.ADVANCED}>
-              {t(constantKeys.ADVANCED)}
-            </Radio>
+            <Radio value={"BASIC"}>{t("basic")}</Radio>
+            <Radio value={"ADVANCED"}>{t("advanced")}</Radio>
           </Radio.Group>
         </Form.Item>
       </div>
@@ -196,21 +189,17 @@ const Component: FC<ComponentProps> = ({ onClose, visible }) => {
 
           return (
             <>
-              <div
-                className={`basic-mode${
-                  mode === GasSettingsMode.BASIC ? " active" : ""
-                }`}
-              >
+              <div className={`basic-mode${mode === "BASIC" ? " active" : ""}`}>
                 <Form.Item<GasSettingsProps>
                   name="speed"
                   rules={[{ required: true }]}
                   noStyle
                 >
                   <Radio.Group>
-                    <Radio value={GasSettingsSpeed.FAST}>
+                    <Radio value="Fast">
                       <Timer className="icon" />
                       <span className="title">
-                        <span className="text">{t(constantKeys.FAST)}</span>
+                        <span className="text">{t("fast")}</span>
                         <span className="speed">
                           ~{Number(fees?.high.minWaitTimeEstimate) / 1000}s
                         </span>
@@ -224,10 +213,10 @@ const Component: FC<ComponentProps> = ({ onClose, visible }) => {
                         Gwei
                       </span>
                     </Radio>
-                    <Radio value={GasSettingsSpeed.STANDARD}>
+                    <Radio value="Standard">
                       <CarFront className="icon" />
                       <span className="title">
-                        <span className="text">{t(constantKeys.STANDARD)}</span>
+                        <span className="text">{t("standard")}</span>
                         <span className="speed">
                           ~{Number(fees?.medium.maxWaitTimeEstimate) / 1000}s
                         </span>
@@ -241,10 +230,10 @@ const Component: FC<ComponentProps> = ({ onClose, visible }) => {
                         Gwei
                       </span>
                     </Radio>
-                    <Radio value={GasSettingsSpeed.SLOW}>
+                    <Radio value="Slow">
                       <Hourglass className="icon" />
                       <span className="title">
-                        <span className="text">{t(constantKeys.SLOW)}</span>
+                        <span className="text">{t("slow")}</span>
                         <span className="speed">
                           ~{Number(fees?.low.maxWaitTimeEstimate) / 1000}s
                         </span>
@@ -263,35 +252,27 @@ const Component: FC<ComponentProps> = ({ onClose, visible }) => {
               </div>
               <div
                 className={`advanced-mode${
-                  mode === GasSettingsMode.ADVANCED ? " active" : ""
+                  mode === "ADVANCED" ? " active" : ""
                 }`}
               >
                 <Form.Item<GasSettingsProps>
                   name="maxPriorityFee"
-                  label={t(constantKeys.MAX_PRIORITY_FEE)}
-                  rules={[{ required: mode === GasSettingsMode.ADVANCED }]}
+                  label={t("maxPriorityFee")}
+                  rules={[{ required: mode === "ADVANCED" }]}
                 >
-                  <InputNumber
-                    min={0}
-                    suffix={t(constantKeys.GWEI)}
-                    controls={false}
-                  />
+                  <InputNumber min={0} suffix={t("gwei")} controls={false} />
                 </Form.Item>
                 <Form.Item<GasSettingsProps>
                   name="maxFee"
-                  label={t(constantKeys.MAX_FEE)}
-                  rules={[{ required: mode === GasSettingsMode.ADVANCED }]}
+                  label={t("maxFee")}
+                  rules={[{ required: mode === "ADVANCED" }]}
                 >
-                  <InputNumber
-                    min={0}
-                    suffix={t(constantKeys.GWEI)}
-                    controls={false}
-                  />
+                  <InputNumber min={0} suffix={t("gwei")} controls={false} />
                 </Form.Item>
                 <Form.Item<GasSettingsProps>
                   name="gasLimit"
-                  label={t(constantKeys.GAS_LIMIT)}
-                  rules={[{ required: mode === GasSettingsMode.ADVANCED }]}
+                  label={t("gasLimit")}
+                  rules={[{ required: mode === "ADVANCED" }]}
                 >
                   <InputNumber min={0} controls={false} />
                 </Form.Item>
@@ -301,10 +282,8 @@ const Component: FC<ComponentProps> = ({ onClose, visible }) => {
         }}
       </Form.Item>
       <span onClick={handleSubmit} className="button button-secondary">
-        {t(constantKeys.SAVE)}
+        {t("save")}
       </span>
     </Form>
   );
 };
-
-export default Component;

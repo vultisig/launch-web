@@ -1,29 +1,25 @@
-import { FC, useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { Spin } from "antd";
+import Highcharts from "highcharts";
 import HighchartsReact, {
   HighchartsReactProps,
 } from "highcharts-react-official";
-import Highcharts from "highcharts";
+import { FC, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
-import { Period } from "utils/constants";
-import constantKeys from "i18n/constant-keys";
-import api from "utils/api";
+import { api } from "@/utils/api";
 
 type DataProps = [number, number][];
+type Period = 1 | 7 | 30;
 
-interface InitialState {
+type InitialState = {
   data: DataProps;
   loading?: Period;
   period: Period;
-}
+};
 
-const Component: FC = () => {
+export const SwapReports: FC = () => {
   const { t } = useTranslation();
-  const initialState: InitialState = {
-    data: [],
-    period: Period.DAY,
-  };
+  const initialState: InitialState = { data: [], period: 1 };
   const [state, setState] = useState(initialState);
   const { data, loading, period } = state;
 
@@ -72,9 +68,7 @@ const Component: FC = () => {
         threshold: null,
       },
     },
-    series: [
-      { type: "area", name: t(constantKeys.PRICE), data: loading ? [] : data },
-    ],
+    series: [{ type: "area", name: t("price"), data: loading ? [] : data }],
     title: { text: undefined },
     tooltip: { backgroundColor: "#061b3a", style: { color: "#f0f4fc" } },
     xAxis: {
@@ -94,33 +88,25 @@ const Component: FC = () => {
   return (
     <div className="swap-reports">
       <div className="heading">
-        <span className="title">{t(constantKeys.PRICE)}</span>
+        <span className="title">{t("price")}</span>
         <ul className="period">
           <li
-            className={!loading && period === Period.DAY ? "active" : ""}
-            onClick={() => handlePeriod(Period.DAY)}
+            className={!loading && period === 1 ? "active" : ""}
+            onClick={() => handlePeriod(1)}
           >
-            {loading === Period.DAY ? <Spin size="small" /> : "24h"}
+            {loading === 1 ? <Spin size="small" /> : "24h"}
           </li>
           <li
-            className={!loading && period === Period.WEEK ? "active" : ""}
-            onClick={() => handlePeriod(Period.WEEK)}
+            className={!loading && period === 7 ? "active" : ""}
+            onClick={() => handlePeriod(7)}
           >
-            {loading === Period.WEEK ? (
-              <Spin size="small" />
-            ) : (
-              `${Period.WEEK}d`
-            )}
+            {loading === 7 ? <Spin size="small" /> : `${7}d`}
           </li>
           <li
-            className={!loading && period === Period.MONTH ? "active" : ""}
-            onClick={() => handlePeriod(Period.MONTH)}
+            className={!loading && period === 30 ? "active" : ""}
+            onClick={() => handlePeriod(30)}
           >
-            {loading === Period.MONTH ? (
-              <Spin size="small" />
-            ) : (
-              `${Period.MONTH}d`
-            )}
+            {loading === 30 ? <Spin size="small" /> : `${30}d`}
           </li>
         </ul>
       </div>
@@ -128,5 +114,3 @@ const Component: FC = () => {
     </div>
   );
 };
-
-export default Component;

@@ -1,30 +1,29 @@
-import { FC, useState } from "react";
-import { Link } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import { Form, InputNumber } from "antd";
+import { FC, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import { useAccount, useWriteContract } from "wagmi";
 
-import { useBaseContext } from "context";
-import { STAKE_ABI } from "utils/abis/stake";
-import { ContractAddress, HashKey, TickerKey } from "utils/constants";
-import { config } from "utils/wagmi-config";
-import constantKeys from "i18n/constant-keys";
+import { useCore } from "@/hooks/useCore";
+import { STAKE_ABI } from "@/utils/abis/stake";
+import { contractAddress, modalHash } from "@/utils/constants";
+import { wagmiConfig } from "@/utils/wagmi";
 
-interface ComponentFormProps {
+type FormProps = {
   amount: number;
-}
+};
 
-interface ComponentProps {
+type StakingTabContentProps = {
   buttonName: string;
   functionName: string;
   onUpdate: () => void;
-}
+};
 
-interface InitialState {
+type InitialState = {
   loading: boolean;
-}
+};
 
-const Component: FC<ComponentProps> = ({
+export const StakingTabContent: FC<StakingTabContentProps> = ({
   buttonName,
   functionName,
   onUpdate,
@@ -33,11 +32,11 @@ const Component: FC<ComponentProps> = ({
   const initialState: InitialState = { loading: false };
   const [state, setState] = useState(initialState);
   const { loading } = state;
-  const { tokens } = useBaseContext();
+  const { tokens } = useCore();
   const { address, isConnected } = useAccount();
-  const { writeContractAsync } = useWriteContract({ config });
-  const [form] = Form.useForm<ComponentFormProps>();
-  const totalAmount = tokens[TickerKey.VULT].balance;
+  const { writeContractAsync } = useWriteContract({ config: wagmiConfig });
+  const [form] = Form.useForm<FormProps>();
+  const totalAmount = tokens.VULT.balance;
 
   const handlePrice = (percentage: number) => {
     if (totalAmount) {
@@ -55,7 +54,7 @@ const Component: FC<ComponentProps> = ({
 
       writeContractAsync({
         abi: STAKE_ABI,
-        address: ContractAddress.VULT_STAKE,
+        address: contractAddress.vultStake,
         functionName,
         args: [amount],
         account: address,
@@ -73,7 +72,7 @@ const Component: FC<ComponentProps> = ({
 
   return (
     <Form form={form} onFinish={handleSubmit}>
-      <Form.Item<ComponentFormProps> name="amount" noStyle>
+      <Form.Item<FormProps> name="amount" noStyle>
         <InputNumber
           controls={false}
           formatter={(value) => `${value}`.toNumberFormat()}
@@ -83,14 +82,14 @@ const Component: FC<ComponentProps> = ({
         />
       </Form.Item>
       <span className="price">{`${t(
-        constantKeys.AVAILABLE
+        "available"
       )}: ${totalAmount.toNumberFormat()}`}</span>
       <ul className="percentage">
         <li onClick={() => handlePrice(25)}>25%</li>
         <li onClick={() => handlePrice(50)}>50%</li>
-        <li onClick={() => handlePrice(100)}>{t(constantKeys.MAX)}</li>
+        <li onClick={() => handlePrice(100)}>{t("max")}</li>
       </ul>
-      <Form.Item<ComponentFormProps>
+      <Form.Item<FormProps>
         shouldUpdate={(prevValues, curValues) =>
           prevValues.amount !== curValues.amount
         }
@@ -102,11 +101,11 @@ const Component: FC<ComponentProps> = ({
           return isConnected ? (
             loading ? (
               <span className="button button-secondary disabled">
-                {t(constantKeys.LOADING)}
+                {t("loading")}
               </span>
             ) : amount > totalAmount ? (
               <span className="button button-secondary disabled">
-                {t(constantKeys.INSUFFICIENT_BALANCE)}
+                {t("insufficientBalance")}
               </span>
             ) : totalAmount ? (
               <span onClick={handleSubmit} className="button button-secondary">
@@ -118,8 +117,8 @@ const Component: FC<ComponentProps> = ({
               </span>
             )
           ) : (
-            <Link to={HashKey.CONNECT} className="button button-secondary">
-              {t(constantKeys.CONNECT_WALLET)}
+            <Link to={modalHash.connect} className="button button-secondary">
+              {t("connectWallet")}
             </Link>
           );
         }}
@@ -127,5 +126,3 @@ const Component: FC<ComponentProps> = ({
     </Form>
   );
 };
-
-export default Component;

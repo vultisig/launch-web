@@ -1,9 +1,10 @@
+import axios from "axios";
 import { request } from "graphql-request";
 import { v4 as uuidv4 } from "uuid";
-import axios from "axios";
 
-import { ContractAddress, Currency } from "utils/constants";
-import { toCamelCase } from "utils/functions";
+import { contractAddress } from "@/utils/constants";
+import { Currency } from "@/utils/currency";
+import { toCamelCase } from "@/utils/functions";
 
 const fetch = axios.create({
   baseURL: `${import.meta.env.VITE_SERVER_ADDRESS}`,
@@ -54,7 +55,7 @@ export interface SuggestedGasFeeData {
   version: string;
 }
 
-const api = {
+export const api = {
   balance: async (
     address: string,
     decimals: number,
@@ -151,7 +152,7 @@ const api = {
     if (days > 7) {
       return await api.historicalPriceByDay(
         endpoint,
-        ContractAddress.UNI_TOKEN,
+        contractAddress.uniToken,
         startEpochSec,
         endEpochSec
       );
@@ -162,7 +163,7 @@ const api = {
       while (currentStart > endEpochSec) {
         const data = await api.historicalPriceByHour(
           endpoint,
-          ContractAddress.UNI_TOKEN,
+          contractAddress.uniToken,
           currentStart,
           endEpochSec
         );
@@ -216,7 +217,7 @@ const api = {
     }/subgraphs/id/5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV`;
     const currentEpochDay = Math.floor(Date.now() / 1000 / 3600 / (24 * days));
     const query = `{
-      tokenDayData(id: "${ContractAddress.UNI_TOKEN.toLowerCase()}-${currentEpochDay}") {
+      tokenDayData(id: "${contractAddress.uniToken.toLowerCase()}-${currentEpochDay}") {
         volumeUSD
       }
     }`;
@@ -230,5 +231,3 @@ const api = {
       .catch(() => 0);
   },
 };
-
-export default api;

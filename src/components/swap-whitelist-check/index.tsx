@@ -1,35 +1,33 @@
-import { FC, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { Form, Input } from "antd";
 import { isAddress } from "ethers";
 import { debounce } from "lodash";
+import { FC, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useAccount } from "wagmi";
 
-import constantKeys from "i18n/constant-keys";
-import useSwapVult from "hooks/swap";
+import { useSwapVult } from "@/hooks/swap";
+import { Check, Info, Search } from "@/icons";
 
-import { Check, Info, Search } from "icons";
-
-interface ComponentFormProps {
+type FormProps = {
   address: string;
-}
+};
 
-interface InitialState {
+type InitialState = {
   isValidAddress?: boolean;
   isWhitelist?: boolean;
   loading?: boolean;
-}
+};
 
-const Component: FC = () => {
+export const SwapWhitelistCheck: FC = () => {
   const { t } = useTranslation();
   const initialState: InitialState = {};
   const [state, setState] = useState(initialState);
   const { isValidAddress, isWhitelist, loading } = state;
   const { isAddressWhitelisted } = useSwapVult();
   const { isConnected } = useAccount();
-  const [form] = Form.useForm<ComponentFormProps>();
+  const [form] = Form.useForm<FormProps>();
 
-  const handleCheck = debounce(({ address }: ComponentFormProps) => {
+  const handleCheck = debounce(({ address }: FormProps) => {
     if (isAddress(address)) {
       setState((prevState) => ({
         ...prevState,
@@ -51,16 +49,16 @@ const Component: FC = () => {
 
   return isConnected ? null : (
     <Form form={form} onValuesChange={handleCheck} className="swap-whitelisted">
-      <Form.Item<ComponentFormProps>
+      <span>{t("searchTitle")}</span>
+      <Form.Item<FormProps>
         name="address"
         validateStatus="validating"
         hasFeedback={loading}
         noStyle
       >
-        <span>{t(constantKeys.SEARCH_TITLE)}</span>
         <Input
           prefix={<Search />}
-          placeholder={t(constantKeys.SEARCH_ADDRESS)}
+          placeholder={t("searchAddress")}
           readOnly={loading}
         />
       </Form.Item>
@@ -68,19 +66,15 @@ const Component: FC = () => {
         isWhitelist ? (
           <div className="whitelist islisted">
             <Check />
-            {t(constantKeys.WHITELISTED)}
+            {t("whitelisted")}
           </div>
         ) : (
           <div className="whitelist notlisted">
             <Info />
-            {t(constantKeys.NOT_WHITELISTED)}
+            {t("notWhitelisted")}
           </div>
         )
       ) : null}
     </Form>
   );
 };
-
-export default Component;
-
-//validateStatus="validating"

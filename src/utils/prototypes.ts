@@ -1,4 +1,4 @@
-import { Currency, currencySymbol } from "utils/constants";
+import { Currency, currencySymbols } from "@/utils/currency";
 
 declare global {
   interface Number {
@@ -76,7 +76,7 @@ Number.prototype.toPriceFormat = function (
     maximumFractionDigits: decimal || 2,
   });
 
-  return `${currencySymbol[currency]}${formattedValue}`;
+  return `${currencySymbols[currency]}${formattedValue}`;
 };
 
 String.prototype.replaceArgs = function (args) {

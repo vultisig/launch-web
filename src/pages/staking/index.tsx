@@ -1,34 +1,26 @@
-import { FC, useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import { Layout, Spin, Tabs, TabsProps } from "antd";
+import { formatUnits } from "ethers";
+import { FC, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAccount, useWriteContract } from "wagmi";
 
-import { useBaseContext } from "context";
-import { STAKE_ABI } from "utils/abis/stake";
-import {
-  ContractAddress,
-  defaultTokens,
-  HashKey,
-  PageKey,
-  TickerKey,
-} from "utils/constants";
-import { config } from "utils/wagmi-config";
-import constantKeys from "i18n/constant-keys";
-import constantPaths from "routes/constant-paths";
-
-import { ChartPie, Layers } from "icons";
-import TabContent from "components/staking-tab-content";
-import { useStakeContractData } from "hooks/stake";
-import { formatUnits } from "ethers";
+import { StakingTabContent } from "@/components/staking-tab-content";
+import { useStakeContractData } from "@/hooks/stake";
+import { useCore } from "@/hooks/useCore";
+import { ChartPie, Layers } from "@/icons";
+import { STAKE_ABI } from "@/utils/abis/stake";
+import { contractAddress, defaultTokens, modalHash } from "@/utils/constants";
+import { routeTree } from "@/utils/routes";
+import { wagmiConfig } from "@/utils/wagmi";
 
 const { Content } = Layout;
 
-const Component: FC = () => {
+export const StakingPage: FC = () => {
   const { t } = useTranslation();
-  const { changePage, updateWallet, currency } = useBaseContext();
+  const { currency, setCurrentPage, updateWallet } = useCore();
   const { address, isConnected } = useAccount();
-  const { writeContractAsync } = useWriteContract({ config });
+  const { writeContractAsync } = useWriteContract({ config: wagmiConfig });
   const {
     lastRewardBalance,
     totalStaked,
@@ -47,7 +39,7 @@ const Component: FC = () => {
     try {
       await writeContractAsync({
         abi: STAKE_ABI,
-        address: ContractAddress.VULT_STAKE,
+        address: contractAddress.vultStake,
         functionName: method,
         account: address,
       });
@@ -63,11 +55,11 @@ const Component: FC = () => {
 
   const items: TabsProps["items"] = [
     {
-      key: constantPaths.stakingStake,
-      label: t(constantKeys.STAKE),
+      key: routeTree.stakingStake.path,
+      label: t("stake"),
       children: (
-        <TabContent
-          buttonName={t(constantKeys.STAKE)}
+        <StakingTabContent
+          buttonName={t("stake")}
           functionName="deposit"
           onUpdate={() => {
             refetch();
@@ -77,11 +69,11 @@ const Component: FC = () => {
       ),
     },
     {
-      key: constantPaths.stakingWithdraw,
-      label: t(constantKeys.WITHDRAW),
+      key: routeTree.stakingWithdraw.path,
+      label: t("withdraw"),
       children: (
-        <TabContent
-          buttonName={t(constantKeys.WITHDRAW)}
+        <StakingTabContent
+          buttonName={t("withdraw")}
           functionName="withdraw"
           onUpdate={() => {
             refetch();
@@ -93,19 +85,16 @@ const Component: FC = () => {
   ];
 
   useEffect(() => {
-    changePage(PageKey.STAKING);
+    setCurrentPage("staking");
   }, []);
 
   return (
     <Content className="stacking-page">
-      <div className="heading">
-        <img src="/tokens/vult.svg" alt="staking-header" />
-        {t(constantKeys.STAKE_VULT)}
-      </div>
+      <div className="heading">{t("${1/_(w)/Stake_vult/g}")}</div>
       <div className="stats">
         <div className="item">
           <Layers className="icon" />
-          <span className="label">{t(constantKeys.REVENUE_TO_DISTRIBUTE)}</span>
+          <span className="label">{t("revenueToDistribute")}</span>
           <span className="value">
             {!loading ? (
               `${Number(
@@ -119,7 +108,7 @@ const Component: FC = () => {
         <div className="divider" />
         <div className="item">
           <Layers className="icon" />
-          <span className="label">{t(constantKeys.TOTAL_VULT_STAKED)}</span>
+          <span className="label">{t("totalVultStaked")}</span>
           <span className="value">
             {!loading ? (
               `${formatUnits(
@@ -134,7 +123,7 @@ const Component: FC = () => {
         <div className="divider" />
         <div className="item">
           <ChartPie className="icon" />
-          <span className="label">{t(constantKeys.STAKED_SUPPLY)}</span>
+          <span className="label">{t("stakedSupply")}</span>
           <span className="value">25.4%</span>
         </div>
       </div>
@@ -145,7 +134,7 @@ const Component: FC = () => {
         className="stake-withdraw"
       />
       <div className="stake-reward">
-        <div className="label">{t(constantKeys.AMOUNT_STAKED)}</div>
+        <div className="label">{t("amountStaked")}</div>
         <div className="item">
           {loading ? (
             <Spin size="small" />
@@ -158,17 +147,13 @@ const Component: FC = () => {
             </span>
           )}
           <span className="token-dropdown">
-            <img
-              src={`/tokens/${TickerKey.VULT.toLowerCase()}.svg`}
-              alt={TickerKey.VULT}
-              className="logo"
-            />
-            <span className="ticker">{TickerKey.VULT}</span>
+            <img src="/tokens/vult.svg" alt="VULT" className="logo" />
+            <span className="ticker">VULT</span>
           </span>
         </div>
       </div>
       <div className="stake-reward">
-        <div className="label">{t(constantKeys.REWARDS)}</div>
+        <div className="label">{t("rewards")}</div>
         <div className="item">
           {loading ? (
             <Spin size="small" />
@@ -181,15 +166,11 @@ const Component: FC = () => {
             </span>
           )}
           <span className="token-dropdown">
-            <img
-              src={`/tokens/${TickerKey.USDC.toLowerCase()}.svg`}
-              alt={TickerKey.USDC}
-              className="logo"
-            />
-            <span className="ticker">{TickerKey.USDC}</span>
+            <img src="/tokens/usdc.svg" alt="USDC" className="logo" />
+            <span className="ticker">USDC</span>
           </span>
         </div>
-        <div className="balance">{`1 ${TickerKey.VULT} = X ${TickerKey.USDC}`}</div>
+        <div className="balance">1 VULT = X USDC</div>
         <div className="button-group">
           {isConnected ? (
             <>
@@ -199,7 +180,7 @@ const Component: FC = () => {
                 }`}
                 onClick={() => handleClaimOrReinvest("reinvest")}
               >
-                {t(constantKeys.REINVEST)}
+                {t("reinvest")}
               </span>
               <span
                 className={`button button-secondary${
@@ -207,15 +188,15 @@ const Component: FC = () => {
                 }`}
                 onClick={() => handleClaimOrReinvest("claim")}
               >
-                {t(constantKeys.CLAIM)}
+                {t("claim")}
               </span>
             </>
           ) : (
             <Link
-              to={HashKey.CONNECT}
+              to={modalHash.connect}
               className={`button button-secondary${loading ? " disabled" : ""}`}
             >
-              {t(constantKeys.CONNECT_WALLET)}
+              {t("connectWallet")}
             </Link>
           )}
         </div>
@@ -223,5 +204,3 @@ const Component: FC = () => {
     </Content>
   );
 };
-
-export default Component;

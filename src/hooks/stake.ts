@@ -1,6 +1,7 @@
-import { STAKE_ABI } from "utils/abis/stake";
-import { ContractAddress } from "utils/constants";
 import { useReadContracts } from "wagmi";
+
+import { STAKE_ABI } from "@/utils/abis/stake";
+import { ContractAddress } from "@/utils/constants";
 
 export const useStakeContractData = (address?: string) => {
   const {

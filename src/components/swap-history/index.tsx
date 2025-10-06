@@ -1,19 +1,16 @@
+import { Empty, Spin, Tooltip } from "antd";
+import dayjs from "dayjs";
+import type { JSX } from "react";
 import { FC, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAccount } from "wagmi";
-import dayjs from "dayjs";
-import type { JSX } from "react";
 
-import { TxStatus } from "utils/constants";
-import { TransactionProps } from "utils/interfaces";
-import { setStoredTransaction } from "utils/storage";
-import useSwapHistory from "hooks/swap-history";
-import useSwapVult from "hooks/swap";
-import constantKeys from "i18n/constant-keys";
-
-import { ChevronRight, CircleCheckBig, OctagonAlert, Trash } from "icons";
-import MiddleTruncate from "components/middle-truncate";
-import { Empty, Spin, Tooltip } from "antd";
+import { MiddleTruncate } from "@/components/middle-truncate";
+import { useSwapVult } from "@/hooks/swap";
+import { useSwapHistory } from "@/hooks/swap-history";
+import { ChevronRight, CircleCheckBig, OctagonAlert, Trash } from "@/icons";
+import { setStoredTransaction } from "@/utils/storage";
+import { TransactionProps } from "@/utils/types";
 
 const Transaction: FC<{ address: string; transaction: TransactionProps }> = ({
   address,
@@ -32,10 +29,10 @@ const Transaction: FC<{ address: string; transaction: TransactionProps }> = ({
   } = transaction;
 
   const componentDidUpdate = () => {
-    if (status === TxStatus.PENDING) {
+    if (status === "pending") {
       getTxStatus(hash)
         .then((status) => {
-          if (status === TxStatus.PENDING) {
+          if (status === "pending") {
             setTimeout(() => {
               componentDidUpdate();
             }, 1000 * 10);
@@ -53,16 +50,16 @@ const Transaction: FC<{ address: string; transaction: TransactionProps }> = ({
   let statusIcon: JSX.Element;
 
   switch (status) {
-    case TxStatus.FAILED:
-      statusName = t(constantKeys.FAILED);
+    case "failed":
+      statusName = t("failed");
       statusIcon = <OctagonAlert />;
       break;
-    case TxStatus.SUCCESS:
-      statusName = t(constantKeys.SUCCESS);
+    case "success":
+      statusName = t("success");
       statusIcon = <CircleCheckBig />;
       break;
     default:
-      statusName = t(constantKeys.PENDING);
+      statusName = t("pending");
       statusIcon = <Spin size="small" />;
       break;
   }
@@ -70,7 +67,7 @@ const Transaction: FC<{ address: string; transaction: TransactionProps }> = ({
   return (
     <div className="item">
       <div className="action">
-        <span className="label">{t(constantKeys.SWAP)}</span>
+        <span className="label">{t("swap")}</span>
         <span className="time">
           {dayjs(date).format(import.meta.env.VITE_TIME_FORMAT)}
         </span>
@@ -109,7 +106,7 @@ const Transaction: FC<{ address: string; transaction: TransactionProps }> = ({
   );
 };
 
-const Component: FC = () => {
+export const SwapHistory: FC = () => {
   const { t } = useTranslation();
   const { address = "", isConnected } = useAccount();
   const { transactions, clearHistory } = useSwapHistory();
@@ -117,9 +114,9 @@ const Component: FC = () => {
   return isConnected ? (
     <div className="swap-history">
       <div className="header">
-        <span className="heading">{t(constantKeys.TRANSACTIONS)}</span>
+        <span className="heading">{t("transactions")}</span>
         {transactions.length > 0 && (
-          <Tooltip title={t(constantKeys.CLEAR_HISTORY)}>
+          <Tooltip title={t("clearHistory")}>
             <span className="button" onClick={clearHistory}>
               <Trash />
             </span>
@@ -135,10 +132,8 @@ const Component: FC = () => {
           />
         ))
       ) : (
-        <Empty description={t(constantKeys.NO_TRANSACTIONS_FOUND)} />
+        <Empty description={t("noTransactionsFound")} />
       )}
     </div>
   ) : null;
 };
-
-export default Component;
