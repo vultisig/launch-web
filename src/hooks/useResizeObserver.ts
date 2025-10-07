@@ -4,16 +4,15 @@ type Callback = (size: Partial<Size>) => void;
 type Size = { height: number; width: number };
 type Track = "width" | "height" | "both";
 
-export const useResizeObserver = (
+export const useResizeObserver = <E extends HTMLElement = HTMLElement>(
   callback: Callback,
   track: Track = "both"
 ) => {
-  const ref = useRef<HTMLElement>(null);
+  const ref = useRef<E | null>(null);
   const sizeRef = useRef<Size | null>(null);
 
   useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
+    if (!ref.current || typeof ResizeObserver === "undefined") return;
 
     const observer = new ResizeObserver(([{ contentRect }]) => {
       const { height, width } = contentRect;
@@ -45,7 +44,7 @@ export const useResizeObserver = (
       }
     });
 
-    observer.observe(element);
+    observer.observe(ref.current);
 
     return () => observer.disconnect();
   }, [callback, track]);

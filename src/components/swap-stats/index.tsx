@@ -16,7 +16,7 @@ export const SwapStats: FC<SwapStatsProps> = ({ marketCap, price, volume }) => {
       <div className="item">
         <span className="title">{t("marketCap")}</span>
         <span className="value">
-          {marketCap ? (
+          {Number.isFinite(marketCap) ? (
             toPriceFormat(marketCap, currency)
           ) : (
             <Spin size="small" />
@@ -26,13 +26,21 @@ export const SwapStats: FC<SwapStatsProps> = ({ marketCap, price, volume }) => {
       <div className="item">
         <span className="title">24h Vol</span>
         <span className="value">
-          {volume ? toPriceFormat(volume, currency) : <Spin size="small" />}
+          {Number.isFinite(volume) ? (
+            toPriceFormat(volume, currency)
+          ) : (
+            <Spin size="small" />
+          )}
         </span>
       </div>
       <div className="item ascending">
         <span className="title">{t("price")}</span>
         <span className="value">
-          {price ? toPriceFormat(price, currency) : <Spin size="small" />}
+          {Number.isFinite(price) ? (
+            toPriceFormat(price, currency)
+          ) : (
+            <Spin size="small" />
+          )}
         </span>
       </div>
     </div>

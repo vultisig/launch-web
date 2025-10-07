@@ -18,6 +18,7 @@ import { getTheme, setTheme as setThemeStorage } from "@/storage/theme";
 import { api } from "@/utils/api";
 import { defaultTokens } from "@/utils/constants";
 import { Currency } from "@/utils/currency";
+import { shallowCloneObject } from "@/utils/functions";
 import { Language } from "@/utils/language";
 import { RouteKey } from "@/utils/routes";
 import { Theme } from "@/utils/theme";
@@ -39,7 +40,7 @@ export const CoreProvider: FC<{ children: ReactNode }> = ({ children }) => {
       currentPage: "swap",
       language: getLanguage(),
       theme: getTheme(),
-      tokens: defaultTokens,
+      tokens: shallowCloneObject(defaultTokens),
       updating: false,
     };
   }, []);
@@ -91,7 +92,7 @@ export const CoreProvider: FC<{ children: ReactNode }> = ({ children }) => {
           )
         ).then((balances) => {
           setState((prevState) => {
-            const tokens = prevState.tokens;
+            const tokens = shallowCloneObject(prevState.tokens);
 
             balances.forEach(({ balance, ticker }) => {
               tokens[ticker].balance = balance;
@@ -103,11 +104,11 @@ export const CoreProvider: FC<{ children: ReactNode }> = ({ children }) => {
         api
           .values(
             Object.values(tokens).map(({ cmcId }) => cmcId),
-            "usd"
+            currency
           )
           .then((values) => {
             setState((prevState) => {
-              const tokens = prevState.tokens;
+              const tokens = shallowCloneObject(prevState.tokens);
 
               Object.values(tokens).forEach(({ cmcId, ticker, value }) => {
                 tokens[ticker].value = values[cmcId] || value;

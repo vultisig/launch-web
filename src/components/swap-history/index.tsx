@@ -1,7 +1,7 @@
 import { Empty, Spin, Tooltip } from "antd";
 import dayjs from "dayjs";
 import type { JSX } from "react";
-import { FC, useEffect } from "react";
+import { FC, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useAccount } from "wagmi";
 
@@ -28,24 +28,34 @@ const Transaction: FC<{ address: string; transaction: TransactionProps }> = ({
     hash,
     status,
   } = transaction;
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const checkTxStatus = () => {
-    if (status === "pending") {
-      getTxStatus(hash)
-        .then((status) => {
-          if (status === "pending") {
-            setTimeout(() => {
-              checkTxStatus();
-            }, 1000 * 10);
-          } else {
-            setTransaction(address, { ...transaction, status });
-          }
-        })
-        .catch(() => {});
-    }
+    if (status !== "pending") return;
+
+    getTxStatus(hash)
+      .then((nextStatus) => {
+        if (nextStatus === "pending") {
+          timerRef.current = setTimeout(checkTxStatus, 10_000);
+        } else {
+          setTransaction(address, { ...transaction, status: nextStatus });
+        }
+      })
+      .catch(() => {
+        timerRef.current = setTimeout(checkTxStatus, 10_000);
+      });
   };
 
-  useEffect(checkTxStatus, [status]);
+  useEffect(() => {
+    checkTxStatus();
+
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [hash, status]);
 
   let statusName: string;
   let statusIcon: JSX.Element;

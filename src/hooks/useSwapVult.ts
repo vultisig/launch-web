@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import { encodeFunctionData, erc20Abi } from "viem";
 import { useAccount, useWalletClient } from "wagmi";
 
+import { useCore } from "@/hooks/useCore";
 import { getGasSettings } from "@/storage/gasSettings";
 import { LAUNCH_LIST_ABI } from "@/utils/abis/launchList";
 import { api } from "@/utils/api";
@@ -19,16 +20,10 @@ import { contractAddress, defaultTokens } from "@/utils/constants";
 import { getBrowserProvider, getRPCProvider } from "@/utils/providers";
 import { TickerKey, TxStatus, UniswapTokenProps } from "@/utils/types";
 
-interface InitialState {
-  isWhitelist: boolean;
-}
-
 export const useSwapVult = () => {
-  const initialState: InitialState = {
-    isWhitelist: false,
-  };
-  const [state, setState] = useState(initialState);
+  const [state, setState] = useState({ isWhitelist: false });
   const { isWhitelist } = state;
+  const { currency } = useCore();
   const { address } = useAccount();
   const { data: walletClient } = useWalletClient();
   const gasSetting = getGasSettings();
@@ -385,7 +380,7 @@ export const useSwapVult = () => {
     return api
       .values(
         Object.values(defaultTokens).map(({ cmcId }) => cmcId),
-        "usd"
+        currency
       )
       .then((values) => {
         Object.values(defaultTokens).forEach(({ cmcId, ticker }) => {

@@ -91,7 +91,7 @@ export const StakingPage: FC = () => {
 
   return (
     <Content className="stacking-page">
-      <div className="heading">{t("${1/_(w)/Stake_vult/g}")}</div>
+      <div className="heading">{t("stakeVult")}</div>
       <div className="stats">
         <div className="item">
           <Layers className="icon" />

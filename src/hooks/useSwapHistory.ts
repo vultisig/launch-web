@@ -1,20 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAccount } from "wagmi";
 
 import { getTransactions, setTransactions } from "@/storage/transaction";
 import { TransactionProps } from "@/utils/types";
 
-let interval: NodeJS.Timeout;
-
-interface InitialState {
+interface StateProps {
   transactions: TransactionProps[];
 }
 
 export const useSwapHistory = () => {
-  const initialState: InitialState = { transactions: [] };
-  const [state, setState] = useState(initialState);
+  const [state, setState] = useState<StateProps>({ transactions: [] });
   const { transactions } = state;
   const { address } = useAccount();
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const clearHistory = (): void => {
     if (address) {
@@ -24,10 +22,13 @@ export const useSwapHistory = () => {
   };
 
   useEffect(() => {
-    clearInterval(interval);
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
 
     if (address) {
-      interval = setInterval(() => {
+      intervalRef.current = setInterval(() => {
         const transactions = getTransactions(address);
 
         setState((prevState) => {
@@ -41,6 +42,13 @@ export const useSwapHistory = () => {
     } else {
       setState((prevState) => ({ ...prevState, transactions: [] }));
     }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
   }, [address]);
 
   return { transactions, clearHistory };

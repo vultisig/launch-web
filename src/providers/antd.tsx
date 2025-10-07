@@ -1,6 +1,5 @@
 import { ConfigProvider, theme, ThemeConfig } from "antd";
 import { FC, ReactNode, useMemo } from "react";
-import { useTheme } from "styled-components";
 
 import {
   backgroundPrimary,
@@ -23,7 +22,6 @@ export const AntdProvider: FC<{
   children: ReactNode;
 }> = ({ children }) => {
   const { theme } = useCore();
-  const colors = useTheme();
 
   const themeConfig: ThemeConfig = useMemo(() => {
     return {
@@ -82,7 +80,7 @@ export const AntdProvider: FC<{
         fontFamily: "inherit",
       },
     };
-  }, [colors, theme]);
+  }, [theme]);
 
   return <ConfigProvider theme={themeConfig}>{children}</ConfigProvider>;
 };
