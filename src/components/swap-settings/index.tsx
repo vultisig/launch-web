@@ -3,9 +3,9 @@ import { FC, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { CarFront, ChevronLeft, Hourglass, Timer } from "@/icons";
+import { getGasSettings, setGasSettings } from "@/storage/gasSettings";
 import { api, SuggestedGasFeeData } from "@/utils/api";
 import { defaultGasSettings } from "@/utils/constants";
-import { getStoredGasSettings, setStoredGasSettings } from "@/utils/storage";
 import { GasSettingsMode, GasSettingsProps } from "@/utils/types";
 
 type SwapSettingsProps = {
@@ -13,15 +13,12 @@ type SwapSettingsProps = {
   visible?: boolean;
 };
 
-type InitialState = {
-  fees: SuggestedGasFeeData | null;
-};
+type StateProps = { fees: SuggestedGasFeeData | null };
 
 export const SwapSettings: FC<SwapSettingsProps> = ({ onClose, visible }) => {
-  const initialState: InitialState = { fees: null };
   const { t } = useTranslation();
+  const [state, setState] = useState<StateProps>({ fees: null });
   const [form] = Form.useForm<GasSettingsProps>();
-  const [state, setState] = useState(initialState);
   const { fees } = state;
 
   const handleReset = () => {
@@ -70,15 +67,15 @@ export const SwapSettings: FC<SwapSettingsProps> = ({ onClose, visible }) => {
           values.speed = "Custom";
         }
 
-        setStoredGasSettings(values);
+        setGasSettings(values);
 
         onClose(false, true);
       })
       .catch(() => {});
   };
 
-  const componentDidMount = () => {
-    let settings = getStoredGasSettings();
+  useEffect(() => {
+    let settings = getGasSettings();
 
     api
       .suggestedFees()
@@ -90,15 +87,13 @@ export const SwapSettings: FC<SwapSettingsProps> = ({ onClose, visible }) => {
             maxFee: Number(fees.medium.suggestedMaxFeePerGas),
             maxPriorityFee: Number(fees.medium.suggestedMaxPriorityFeePerGas),
           };
-          setStoredGasSettings(settings);
+          setGasSettings(settings);
         }
       })
       .finally(() => {
         form.setFieldsValue(settings);
       });
-  };
-
-  useEffect(componentDidMount, []);
+  }, []);
 
   return (
     <Form

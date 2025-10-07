@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 
-import { getStoredTransactions, setStoredTransactions } from "@/utils/storage";
+import { getTransactions, setTransactions } from "@/storage/transaction";
 import { TransactionProps } from "@/utils/types";
 
 let interval: NodeJS.Timeout;
@@ -16,12 +16,19 @@ export const useSwapHistory = () => {
   const { transactions } = state;
   const { address } = useAccount();
 
-  const componentDidUpdate = () => {
+  const clearHistory = (): void => {
+    if (address) {
+      setTransactions(address, []);
+      setState((prevState) => ({ ...prevState, transactions: [] }));
+    }
+  };
+
+  useEffect(() => {
     clearInterval(interval);
 
     if (address) {
       interval = setInterval(() => {
-        const transactions = getStoredTransactions(address);
+        const transactions = getTransactions(address);
 
         setState((prevState) => {
           const updated =
@@ -34,16 +41,7 @@ export const useSwapHistory = () => {
     } else {
       setState((prevState) => ({ ...prevState, transactions: [] }));
     }
-  };
-
-  const clearHistory = (): void => {
-    if (address) {
-      setStoredTransactions(address, []);
-      setState((prevState) => ({ ...prevState, transactions: [] }));
-    }
-  };
-
-  useEffect(componentDidUpdate, [address]);
+  }, [address]);
 
   return { transactions, clearHistory };
 };

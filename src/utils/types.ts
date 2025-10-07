@@ -8,10 +8,8 @@ export type GasSettingsProps = {
   maxPriorityFee: number;
   mode: GasSettingsMode;
   slippage: number;
-  speed: GasSettingsSpeed;
+  speed: "Custom" | "Fast" | "Slow" | "Standard";
 };
-
-export type GasSettingsSpeed = "Custom" | "Fast" | "Slow" | "Standard";
 
 export type SwapFormProps = {
   allocateAmount: number;
@@ -20,16 +18,7 @@ export type SwapFormProps = {
   buyToken: TickerKey;
 };
 
-export type InvestClaimFormProps = {
-  rewardAmount: number;
-  rewardToken: TickerKey;
-  stakeAmount: number;
-  stakeToken: TickerKey;
-};
-
 export type TickerKey = "ETH" | "VULT" | "UNI" | "USDC" | "WETH";
-
-export type TxStatus = "failed" | "pending" | "success";
 
 export type TokenProps = {
   balance: number;
@@ -50,5 +39,7 @@ export type TransactionProps = {
   hash: string;
   status: TxStatus;
 } & SwapFormProps;
+
+export type TxStatus = "failed" | "pending" | "success";
 
 export { Token as UniswapTokenProps };

@@ -27,6 +27,7 @@ import {
   RefreshCW,
 } from "@/icons";
 import { modalHash } from "@/utils/constants";
+import { toBalanceFormat, toPriceFormat } from "@/utils/functions";
 import { routeTree } from "@/utils/routes";
 
 const { Footer, Header } = Layout;
@@ -56,7 +57,7 @@ const Connect: FC = () => {
     navigate(-1);
   };
 
-  const componentDidUpdate = () => {
+  useEffect(() => {
     if (hash === modalHash.connect) {
       if (isConnected) {
         navigate(pathname, { replace: true });
@@ -66,9 +67,7 @@ const Connect: FC = () => {
     } else {
       setState((prevState) => ({ ...prevState, open: false }));
     }
-  };
-
-  useEffect(componentDidUpdate, [hash, isConnected]);
+  }, [hash, isConnected]);
 
   const getConnectorIcon = (name: string) => {
     const config = connectorsConfig.find((c) => c.name === name);
@@ -177,13 +176,14 @@ const Content: FC = () => {
             <Spin size="small" />
           ) : (
             <span className="price">
-              {Object.values(tokens)
-                .reduce(
+              {toPriceFormat(
+                Object.values(tokens).reduce(
                   (accumulator, { balance, value }) =>
                     accumulator + balance * value,
                   0
-                )
-                .toPriceFormat(currency)}
+                ),
+                currency
+              )}
             </span>
           )}
         </div>
@@ -205,9 +205,11 @@ const Content: FC = () => {
               ) : (
                 <div className="value">
                   <span className="price">
-                    {(balance * value).toPriceFormat(currency)}
+                    {toPriceFormat(balance * value, currency)}
                   </span>
-                  <span className="balance">{`${balance.toBalanceFormat()} ${ticker}`}</span>
+                  <span className="balance">{`${toBalanceFormat(
+                    balance
+                  )} ${ticker}`}</span>
                 </div>
               )}
             </div>

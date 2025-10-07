@@ -1,6 +1,6 @@
 import "styled-components";
 
-import { ColorToken, SharedColors } from "@/utils/constants/styled";
+import { ColorToken, SharedColors } from "@/utils/styled";
 
 declare module "styled-components" {
   export interface DefaultTheme extends SharedColors {

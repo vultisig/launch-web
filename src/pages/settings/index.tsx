@@ -8,11 +8,9 @@ const { Content } = Layout;
 export const SettingsPage: FC = () => {
   const { setCurrentPage } = useCore();
 
-  const componentDidMount = () => {
+  useEffect(() => {
     setCurrentPage("settings");
-  };
-
-  useEffect(componentDidMount, []);
+  }, []);
 
   return (
     <Content className="settings-page">

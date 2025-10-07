@@ -49,7 +49,7 @@ export const SwapPage: FC = () => {
     return Number(pool.token1Price.toSignificant(6));
   };
 
-  const componentDidMount = () => {
+  useEffect(() => {
     setCurrentPage("swap");
 
     api.volume(1).then((volume) => {
@@ -71,9 +71,7 @@ export const SwapPage: FC = () => {
         }));
       });
     });
-  };
-
-  useEffect(componentDidMount, []);
+  }, []);
 
   return (
     <Content className="swap-page">

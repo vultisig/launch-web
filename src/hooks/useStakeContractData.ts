@@ -1,7 +1,7 @@
 import { useReadContracts } from "wagmi";
 
 import { STAKE_ABI } from "@/utils/abis/stake";
-import { ContractAddress } from "@/utils/constants";
+import { contractAddress } from "@/utils/constants";
 
 export const useStakeContractData = (address?: string) => {
   const {
@@ -13,12 +13,12 @@ export const useStakeContractData = (address?: string) => {
       {
         abi: STAKE_ABI,
         functionName: "lastRewardBalance",
-        address: ContractAddress.VULT_STAKE,
+        address: contractAddress.vultStake,
       },
       {
         abi: STAKE_ABI,
         functionName: "totalStaked",
-        address: ContractAddress.VULT_STAKE,
+        address: contractAddress.vultStake,
       },
     ],
   });
@@ -33,13 +33,13 @@ export const useStakeContractData = (address?: string) => {
         args: [address],
         abi: STAKE_ABI,
         functionName: "pendingRewards",
-        address: ContractAddress.VULT_STAKE,
+        address: contractAddress.vultStake,
       },
       {
         args: [address],
         abi: STAKE_ABI,
         functionName: "userAmount",
-        address: ContractAddress.VULT_STAKE,
+        address: contractAddress.vultStake,
       },
     ],
     query: {

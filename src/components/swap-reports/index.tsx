@@ -11,16 +11,11 @@ import { api } from "@/utils/api";
 type DataProps = [number, number][];
 type Period = 1 | 7 | 30;
 
-type InitialState = {
-  data: DataProps;
-  loading?: Period;
-  period: Period;
-};
+type StateProps = { data: DataProps; loading?: Period; period: Period };
 
 export const SwapReports: FC = () => {
   const { t } = useTranslation();
-  const initialState: InitialState = { data: [], period: 1 };
-  const [state, setState] = useState(initialState);
+  const [state, setState] = useState<StateProps>({ data: [], period: 1 });
   const { data, loading, period } = state;
 
   const handlePeriod = (period: Period) => {
@@ -43,11 +38,7 @@ export const SwapReports: FC = () => {
     }
   };
 
-  const componentDidMount = () => {
-    handlePeriod(period);
-  };
-
-  useEffect(componentDidMount, []);
+  useEffect(() => handlePeriod(period), []);
 
   const options: HighchartsReactProps["options"] = {
     chart: { backgroundColor: "transparent", zooming: { type: "x" } },

@@ -6,10 +6,11 @@ import { useTranslation } from "react-i18next";
 import { useAccount } from "wagmi";
 
 import { MiddleTruncate } from "@/components/middle-truncate";
-import { useSwapVult } from "@/hooks/swap";
-import { useSwapHistory } from "@/hooks/swap-history";
+import { useSwapHistory } from "@/hooks/useSwapHistory";
+import { useSwapVult } from "@/hooks/useSwapVult";
 import { ChevronRight, CircleCheckBig, OctagonAlert, Trash } from "@/icons";
-import { setStoredTransaction } from "@/utils/storage";
+import { setTransaction } from "@/storage/transaction";
+import { toNumberFormat } from "@/utils/functions";
 import { TransactionProps } from "@/utils/types";
 
 const Transaction: FC<{ address: string; transaction: TransactionProps }> = ({
@@ -28,23 +29,23 @@ const Transaction: FC<{ address: string; transaction: TransactionProps }> = ({
     status,
   } = transaction;
 
-  const componentDidUpdate = () => {
+  const checkTxStatus = () => {
     if (status === "pending") {
       getTxStatus(hash)
         .then((status) => {
           if (status === "pending") {
             setTimeout(() => {
-              componentDidUpdate();
+              checkTxStatus();
             }, 1000 * 10);
           } else {
-            setStoredTransaction(address, { ...transaction, status });
+            setTransaction(address, { ...transaction, status });
           }
         })
         .catch(() => {});
     }
   };
 
-  useEffect(componentDidUpdate, [status]);
+  useEffect(checkTxStatus, [status]);
 
   let statusName: string;
   let statusIcon: JSX.Element;
@@ -84,7 +85,7 @@ const Transaction: FC<{ address: string; transaction: TransactionProps }> = ({
             alt={allocateToken}
             className="logo"
           />
-          <span className="value">{`-${allocateAmount}`.toNumberFormat()}</span>
+          <span className="value">{`-${toNumberFormat(allocateAmount)}`}</span>
           <span className="ticker">{allocateToken}</span>
         </div>
         <ChevronRight />
@@ -94,7 +95,7 @@ const Transaction: FC<{ address: string; transaction: TransactionProps }> = ({
             alt={buyToken}
             className="logo"
           />
-          <span className="value">{`+${buyAmount}`.toNumberFormat()}</span>
+          <span className="value">{`+${toNumberFormat(buyAmount)}`}</span>
           <span className="ticker">{buyToken}</span>
         </div>
         <div className={`btn ${status}`}>

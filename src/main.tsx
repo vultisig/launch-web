@@ -1,5 +1,4 @@
 import "@/i18n/config";
-import "@/utils/prototypes";
 import "@/styles/index.scss";
 
 import { StrictMode } from "react";

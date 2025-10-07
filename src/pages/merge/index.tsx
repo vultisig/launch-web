@@ -14,6 +14,11 @@ import { useAccount } from "wagmi";
 import { useCore } from "@/hooks/useCore";
 import { ArrowDown, ChevronDown, RefreshCW } from "@/icons";
 import { defaultTokens, modalHash } from "@/utils/constants";
+import {
+  toBalanceFormat,
+  toNumberFormat,
+  toPriceFormat,
+} from "@/utils/functions";
 
 const { Content } = Layout;
 
@@ -104,11 +109,12 @@ const BridgeTab: FC = () => {
       </div>
       <InputNumber
         controls={false}
-        formatter={(value) => `${value}`.toNumberFormat()}
+        formatter={(value = 0) => toNumberFormat(value)}
         min={0}
         placeholder="0.00"
       />
-      <span className="price">{`${t("available")}: ${(0).toPriceFormat(
+      <span className="price">{`${t("available")}: ${toPriceFormat(
+        0,
         currency
       )}`}</span>
       <ul className="percentage">
@@ -158,13 +164,14 @@ const MergeTab: FC = () => {
       <div className="balance">
         <InputNumber
           controls={false}
-          formatter={(value) => `${value}`.toNumberFormat()}
+          formatter={(value = 0) => toNumberFormat(value)}
           min={0}
           placeholder="0.00"
         />
-        <span className="result">{`${(0).toBalanceFormat()} VULT`}</span>
+        <span className="result">{`${toBalanceFormat(0)} VULT`}</span>
       </div>
-      <span className="price">{`${t("available")}: ${(0).toPriceFormat(
+      <span className="price">{`${t("available")}: ${toPriceFormat(
+        0,
         currency
       )}`}</span>
       <ul className="percentage">
@@ -193,11 +200,9 @@ export const MergePage: FC = () => {
     navigate(tab);
   };
 
-  const componentDidMount = () => {
+  useEffect(() => {
     setCurrentPage("merge");
-  };
-
-  useEffect(componentDidMount, []);
+  }, []);
 
   const items: TabsProps["items"] = [
     {

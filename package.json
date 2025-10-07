@@ -14,18 +14,19 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.2",
-    "@trustwallet/wallet-core": "^4.3.15",
     "@uniswap/sdk-core": "^7.7.2",
+    "@uniswap/v3-core": "^1.0.1",
+    "@uniswap/v3-periphery": "^1.4.4",
     "@uniswap/v3-sdk": "^3.25.2",
     "antd": "^5.27.4",
     "axios": "^1.12.2",
+    "dayjs": "^1.11.18",
     "ethers": "^6.15.0",
     "graphql-request": "^7.2.0",
     "highcharts": "^12.4.0",
     "highcharts-react-official": "^3.2.3",
     "i18next": "^25.5.3",
     "i18next-http-backend": "^3.0.2",
-    "keymirror": "^0.1.1",
     "lodash": "^4.17.21",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -42,12 +43,10 @@
     "@fontsource/montserrat": "^5.2.8",
     "@fontsource/righteous": "^5.2.7",
     "@fontsource/roboto-mono": "^5.2.8",
-    "@types/keymirror": "^0.1.4",
     "@types/lodash": "^4.17.20",
     "@types/node": "^24.6.2",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
-    "@types/uuid": "^11.0.0",
     "@vitejs/plugin-react": "^5.0.4",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.37.0",
@@ -61,6 +60,5 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.45.0",
     "vite": "^7.1.9"
-  },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+  }
 }

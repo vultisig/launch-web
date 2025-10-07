@@ -7,20 +7,15 @@ import { useAccount, useWriteContract } from "wagmi";
 import { useCore } from "@/hooks/useCore";
 import { STAKE_ABI } from "@/utils/abis/stake";
 import { contractAddress, modalHash } from "@/utils/constants";
+import { toNumberFormat } from "@/utils/functions";
 import { wagmiConfig } from "@/utils/wagmi";
 
-type FormProps = {
-  amount: number;
-};
+type FormProps = { amount: number };
 
 type StakingTabContentProps = {
   buttonName: string;
   functionName: string;
   onUpdate: () => void;
-};
-
-type InitialState = {
-  loading: boolean;
 };
 
 export const StakingTabContent: FC<StakingTabContentProps> = ({
@@ -29,8 +24,7 @@ export const StakingTabContent: FC<StakingTabContentProps> = ({
   onUpdate,
 }) => {
   const { t } = useTranslation();
-  const initialState: InitialState = { loading: false };
-  const [state, setState] = useState(initialState);
+  const [state, setState] = useState({ loading: false });
   const { loading } = state;
   const { tokens } = useCore();
   const { address, isConnected } = useAccount();
@@ -75,15 +69,15 @@ export const StakingTabContent: FC<StakingTabContentProps> = ({
       <Form.Item<FormProps> name="amount" noStyle>
         <InputNumber
           controls={false}
-          formatter={(value) => `${value}`.toNumberFormat()}
+          formatter={(value = 0) => toNumberFormat(value)}
           min={0}
           placeholder="0"
           readOnly={loading}
         />
       </Form.Item>
-      <span className="price">{`${t(
-        "available"
-      )}: ${totalAmount.toNumberFormat()}`}</span>
+      <span className="price">{`${t("available")}: ${toNumberFormat(
+        totalAmount
+      )}`}</span>
       <ul className="percentage">
         <li onClick={() => handlePrice(25)}>25%</li>
         <li onClick={() => handlePrice(50)}>50%</li>

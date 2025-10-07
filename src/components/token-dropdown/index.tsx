@@ -2,7 +2,8 @@ import { Dropdown, MenuProps } from "antd";
 import { FC } from "react";
 
 import { ChevronDown } from "@/icons";
-import { defaultTokens, TickerKey } from "@/utils/constants";
+import { defaultTokens } from "@/utils/constants";
+import { TickerKey } from "@/utils/types";
 
 interface TokenDropdownProps {
   ticker: TickerKey;

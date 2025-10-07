@@ -1,4 +1,4 @@
-import { message, Modal } from "antd";
+import { message as Message, Modal } from "antd";
 import { FC, ReactNode, useEffect, useMemo, useState } from "react";
 import { useAccount } from "wagmi";
 
@@ -45,8 +45,8 @@ export const CoreProvider: FC<{ children: ReactNode }> = ({ children }) => {
   }, []);
   const [state, setState] = useState(initialState);
   const { currency, currentPage, language, theme, tokens, updating } = state;
-  const [messageApi, messageHolder] = message.useMessage();
-  const [modalAPI, modalHolder] = Modal.useModal();
+  const [message, messageHolder] = Message.useMessage();
+  const [modal, modalHolder] = Modal.useModal();
   const { address, isConnected } = useAccount();
 
   const setCurrency = (currency: Currency, fromStorage?: boolean) => {
@@ -142,6 +142,8 @@ export const CoreProvider: FC<{ children: ReactNode }> = ({ children }) => {
         currency,
         currentPage,
         language,
+        message,
+        modal,
         setCurrency,
         setCurrentPage,
         setLanguage,

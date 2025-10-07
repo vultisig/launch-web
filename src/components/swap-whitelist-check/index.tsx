@@ -5,14 +5,12 @@ import { FC, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAccount } from "wagmi";
 
-import { useSwapVult } from "@/hooks/swap";
+import { useSwapVult } from "@/hooks/useSwapVult";
 import { Check, Info, Search } from "@/icons";
 
-type FormProps = {
-  address: string;
-};
+type FormProps = { address: string };
 
-type InitialState = {
+type StateProps = {
   isValidAddress?: boolean;
   isWhitelist?: boolean;
   loading?: boolean;
@@ -20,8 +18,7 @@ type InitialState = {
 
 export const SwapWhitelistCheck: FC = () => {
   const { t } = useTranslation();
-  const initialState: InitialState = {};
-  const [state, setState] = useState(initialState);
+  const [state, setState] = useState<StateProps>({});
   const { isValidAddress, isWhitelist, loading } = state;
   const { isAddressWhitelisted } = useSwapVult();
   const { isConnected } = useAccount();

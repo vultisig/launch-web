@@ -12,11 +12,11 @@ import { useEffect, useState } from "react";
 import { encodeFunctionData, erc20Abi } from "viem";
 import { useAccount, useWalletClient } from "wagmi";
 
+import { getGasSettings } from "@/storage/gasSettings";
 import { LAUNCH_LIST_ABI } from "@/utils/abis/launchList";
 import { api } from "@/utils/api";
 import { contractAddress, defaultTokens } from "@/utils/constants";
 import { getBrowserProvider, getRPCProvider } from "@/utils/providers";
-import { getStoredGasSettings } from "@/utils/storage";
 import { TickerKey, TxStatus, UniswapTokenProps } from "@/utils/types";
 
 interface InitialState {
@@ -31,7 +31,7 @@ export const useSwapVult = () => {
   const { isWhitelist } = state;
   const { address } = useAccount();
   const { data: walletClient } = useWalletClient();
-  const gasSetting = getStoredGasSettings();
+  const gasSetting = getGasSettings();
   const rpcClient = getRPCProvider();
 
   const checkApproval = async (

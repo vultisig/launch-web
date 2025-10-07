@@ -7,14 +7,20 @@ import { useAccount } from "wagmi";
 
 import { SwapSettings } from "@/components/swap-settings";
 import { TokenDropdown } from "@/components/token-dropdown";
-import { useSwapVult } from "@/hooks/swap";
 import { useCore } from "@/hooks/useCore";
+import { useSwapVult } from "@/hooks/useSwapVult";
 import { ArrowDownUp, Check, Info, RefreshCW, SettingsTwo } from "@/icons";
+import { getGasSettings } from "@/storage/gasSettings";
+import { setTransaction } from "@/storage/transaction";
 import { modalHash, uniswapTokens } from "@/utils/constants";
-import { getStoredGasSettings, setStoredTransaction } from "@/utils/storage";
+import {
+  toBalanceFormat,
+  toNumberFormat,
+  toPriceFormat,
+} from "@/utils/functions";
 import { SwapFormProps, TickerKey } from "@/utils/types";
 
-type InitialState = {
+type StateProps = {
   approving?: boolean;
   loading?: boolean;
   maxNetworkFee: number;
@@ -28,12 +34,11 @@ type InitialState = {
 
 export const SwapVult: FC = () => {
   const { t } = useTranslation();
-  const initialState: InitialState = {
+  const [state, setState] = useState<StateProps>({
     maxNetworkFee: 0,
     poolPrice: 0,
     priceImpact: 0,
-  };
-  const [state, setState] = useState(initialState);
+  });
   const {
     approving,
     loading,
@@ -59,7 +64,7 @@ export const SwapVult: FC = () => {
     getUniswapQuote,
     requestApproval,
   } = useSwapVult();
-  const gasSettings = getStoredGasSettings();
+  const gasSettings = getGasSettings();
 
   const handleChangeToken = (ticker: TickerKey, reverse: boolean) => {
     if (!loading) {
@@ -153,7 +158,7 @@ export const SwapVult: FC = () => {
             if (txHash) {
               const date = new Date();
 
-              setStoredTransaction(address, {
+              setTransaction(address, {
                 ...values,
                 date: date.getTime(),
                 hash: txHash,
@@ -319,7 +324,7 @@ export const SwapVult: FC = () => {
                       <Form.Item<SwapFormProps> name="allocateAmount" noStyle>
                         <InputNumber
                           controls={false}
-                          formatter={(value) => `${value}`.toNumberFormat()}
+                          formatter={(value = 0) => toNumberFormat(value)}
                           min={0}
                           placeholder="0"
                           readOnly={loading}
@@ -331,7 +336,7 @@ export const SwapVult: FC = () => {
                       />
                     </div>
                     <div className="price">
-                      <span>{(amount * value).toPriceFormat(currency)}</span>
+                      <span>{toPriceFormat(amount * value, currency)}</span>
                       {isConnected && (
                         <Tooltip title={t("clickToUseFullAmount")}>
                           <span
@@ -340,7 +345,7 @@ export const SwapVult: FC = () => {
                           >
                             {t("available")}:{" "}
                             <span className="balance-amount">
-                              {tokens[ticker].balance.toBalanceFormat()}
+                              {toBalanceFormat(tokens[ticker].balance)}
                             </span>
                           </span>
                         </Tooltip>
@@ -376,7 +381,7 @@ export const SwapVult: FC = () => {
                       <Form.Item<SwapFormProps> name="buyAmount" noStyle>
                         <InputNumber
                           controls={false}
-                          formatter={(value) => `${value}`.toNumberFormat()}
+                          formatter={(value = 0) => toNumberFormat(value)}
                           min={0}
                           placeholder="0"
                           readOnly={loading}
@@ -388,11 +393,12 @@ export const SwapVult: FC = () => {
                       />
                     </div>
                     <div className="price">
-                      <span>{(amount * value).toPriceFormat(currency)}</span>
+                      <span>{toPriceFormat(amount * value, currency)}</span>
                       {isConnected && (
                         <span>
-                          {t("amount")}:{" "}
-                          {tokens[ticker].balance.toBalanceFormat()}
+                          {`${t("amount")}: ${toBalanceFormat(
+                            tokens[ticker].balance
+                          )}`}
                         </span>
                       )}
                     </div>
@@ -443,7 +449,7 @@ export const SwapVult: FC = () => {
                     <div className="item">
                       <span className="label">{t("maxNetworkFee")}</span>
                       <span className="value">
-                        {maxNetworkFee.toPriceFormat(currency, 6)}
+                        {toPriceFormat(maxNetworkFee, currency, 6)}
                       </span>
                     </div>
                     <div className="item">

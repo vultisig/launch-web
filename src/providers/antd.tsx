@@ -2,6 +2,15 @@ import { ConfigProvider, theme, ThemeConfig } from "antd";
 import { FC, ReactNode, useMemo } from "react";
 import { useTheme } from "styled-components";
 
+import {
+  backgroundPrimary,
+  backgroundSecondary,
+  backgroundTertiary,
+  borderNormal,
+  buttonPrimary,
+  buttonPrimaryHover,
+  buttonSecondary,
+} from "@/colors";
 import { useCore } from "@/hooks/useCore";
 import { Theme } from "@/utils/theme";
 
@@ -19,62 +28,58 @@ export const AntdProvider: FC<{
   const themeConfig: ThemeConfig = useMemo(() => {
     return {
       algorithm: algorithm[theme],
-      token: {
-        borderRadius: 10,
-        colorBgBase: colors.bgPrimary.toHex(),
-        colorBgContainer: colors.bgPrimary.toHex(),
-        colorBgElevated: colors.bgSecondary.toHex(),
-        colorBorder: colors.borderLight.toHex(),
-        colorSplit: colors.borderNormal.toHex(),
-        colorBorderSecondary: colors.borderNormal.toHex(),
-        colorPrimary: colors.buttonPrimary.toHex(),
-        colorWarning: colors.warning.toHex(),
-        colorLinkHover: colors.textPrimary.toHex(),
-        colorLink: colors.textPrimary.toHex(),
-        fontFamily: "inherit",
-      },
       components: {
-        DatePicker: {
-          activeBorderColor: colors.borderNormal.toHex(),
-          activeShadow: "none",
-          hoverBorderColor: colors.borderNormal.toHex(),
+        Button: {
+          colorBgContainer: backgroundTertiary,
+          colorBorder: borderNormal,
+          borderColorDisabled: backgroundTertiary,
+          colorBgContainerDisabled: backgroundTertiary,
         },
-        Dropdown: {
-          fontSize: 16,
-          fontSizeSM: 20,
-          paddingBlock: 8,
+        Divider: {
+          colorSplit: borderNormal,
+        },
+        Drawer: {
+          colorBgElevated: backgroundSecondary,
+          colorSplit: borderNormal,
         },
         Input: {
-          activeBorderColor: colors.borderNormal.toHex(),
-          activeShadow: "none",
-          hoverBorderColor: colors.borderNormal.toHex(),
+          activeBorderColor: buttonSecondary,
+          activeShadow: buttonSecondary,
+          colorBgContainer: backgroundSecondary,
+          colorBorder: borderNormal,
+          hoverBorderColor: buttonSecondary,
         },
         InputNumber: {
-          activeBorderColor: colors.borderNormal.toHex(),
-          activeShadow: "none",
-          hoverBorderColor: colors.borderNormal.toHex(),
+          activeBorderColor: buttonSecondary,
+          activeShadow: buttonSecondary,
+          colorBgContainer: backgroundSecondary,
+          colorBorder: borderNormal,
+          hoverBorderColor: buttonSecondary,
         },
         Layout: {
-          headerBg: colors.bgSecondary.toHex(),
-          headerPadding: 0,
+          bodyBg: backgroundPrimary,
         },
-        Select: {
-          activeBorderColor: colors.borderNormal.toHex(),
-          activeOutlineColor: "transparent",
-          hoverBorderColor: colors.borderNormal.toHex(),
-          optionLineHeight: 2,
-          optionPadding: "4px 12px",
+        Message: {
+          contentBg: backgroundTertiary,
         },
-        Table: {
-          borderColor: colors.borderLight.toHex(),
-          headerBg: colors.bgTertiary.toHex(),
-          headerSplitColor: colors.borderNormal.toHex(),
+        Modal: {
+          contentBg: backgroundSecondary,
+          headerBg: backgroundSecondary,
+        },
+        Popover: {
+          colorBgElevated: backgroundSecondary,
         },
         Tabs: {
-          inkBarColor: colors.accentFour.toHex(),
-          itemHoverColor: colors.accentFour.toHex(),
-          itemSelectedColor: colors.accentFour.toHex(),
+          colorBorderSecondary: borderNormal,
         },
+        Tooltip: {
+          colorBgSpotlight: backgroundTertiary,
+        },
+      },
+      token: {
+        colorPrimary: buttonPrimary,
+        colorPrimaryHover: buttonPrimaryHover,
+        fontFamily: "inherit",
       },
     };
   }, [colors, theme]);

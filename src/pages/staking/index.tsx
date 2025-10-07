@@ -6,11 +6,12 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAccount, useWriteContract } from "wagmi";
 
 import { StakingTabContent } from "@/components/staking-tab-content";
-import { useStakeContractData } from "@/hooks/stake";
 import { useCore } from "@/hooks/useCore";
+import { useStakeContractData } from "@/hooks/useStakeContractData";
 import { ChartPie, Layers } from "@/icons";
 import { STAKE_ABI } from "@/utils/abis/stake";
 import { contractAddress, defaultTokens, modalHash } from "@/utils/constants";
+import { toNumberFormat, toPriceFormat } from "@/utils/functions";
 import { routeTree } from "@/utils/routes";
 import { wagmiConfig } from "@/utils/wagmi";
 
@@ -97,9 +98,10 @@ export const StakingPage: FC = () => {
           <span className="label">{t("revenueToDistribute")}</span>
           <span className="value">
             {!loading ? (
-              `${Number(
-                formatUnits(lastRewardBalance, defaultTokens.USDC.decimals)
-              ).toPriceFormat(currency)} USDC`
+              `${toPriceFormat(
+                formatUnits(lastRewardBalance, defaultTokens.USDC.decimals),
+                currency
+              )} USDC`
             ) : (
               <Spin size="small" />
             )}
@@ -111,10 +113,9 @@ export const StakingPage: FC = () => {
           <span className="label">{t("totalVultStaked")}</span>
           <span className="value">
             {!loading ? (
-              `${formatUnits(
-                totalStaked,
-                defaultTokens.VULT.decimals
-              ).toNumberFormat()} VULT`
+              `${toNumberFormat(
+                formatUnits(totalStaked, defaultTokens.VULT.decimals)
+              )} VULT`
             ) : (
               <Spin size="small" />
             )}
@@ -140,10 +141,9 @@ export const StakingPage: FC = () => {
             <Spin size="small" />
           ) : (
             <span className="value">
-              {formatUnits(
-                userAmount,
-                defaultTokens.VULT.decimals
-              ).toNumberFormat()}
+              {toNumberFormat(
+                formatUnits(userAmount, defaultTokens.VULT.decimals)
+              )}
             </span>
           )}
           <span className="token-dropdown">
@@ -159,10 +159,9 @@ export const StakingPage: FC = () => {
             <Spin size="small" />
           ) : (
             <span className="value">
-              {formatUnits(
-                pendingRewards,
-                defaultTokens.USDC.decimals
-              ).toNumberFormat()}
+              {toNumberFormat(
+                formatUnits(pendingRewards, defaultTokens.USDC.decimals)
+              )}
             </span>
           )}
           <span className="token-dropdown">
