@@ -135,7 +135,7 @@ export const CoreProvider: FC<{ children: ReactNode }> = ({ children }) => {
     setTheme(getTheme(), true);
   });
 
-  useEffect(updateWallet, [address, isConnected]);
+  useEffect(updateWallet, [address, currency, isConnected]);
 
   return (
     <CoreContext.Provider
