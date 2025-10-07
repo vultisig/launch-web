@@ -1,55 +1,23 @@
 import i18n from "i18next";
+import Backend from "i18next-http-backend";
 import { initReactI18next } from "react-i18next";
-//import LanguageDetector from "i18next-browser-languagedetector";
 
-import { Language } from "utils/constants";
+import { resources } from "@/i18n/resources";
+import { defaultLanguage } from "@/utils/language";
 
-import enTranslation from "i18n/locales/en_UK";
-import esTranslation from "i18n/locales/es_ES";
-import nlTranslation from "i18n/locales/nl_NL";
-import hrTranslation from "i18n/locales/hr_HR";
-import deTranslation from "i18n/locales/de_DE";
-import itTranslation from "i18n/locales/it_IT";
-import ruTranslation from "i18n/locales/ru_RU";
-import ptTranslation from "i18n/locales/pt_PT";
-// Initialization
-i18n
-  //.use(LanguageDetector) // Detects the user's language
-  .use(initReactI18next) // Passes i18n instance to react-i18next
-  .init({
-    resources: {
-      [Language.CROATIA]: {
-        translation: hrTranslation,
-      },
-      [Language.DUTCH]: {
-        translation: nlTranslation,
-      },
-      [Language.ENGLISH]: {
-        translation: enTranslation,
-      },
-      [Language.GERMAN]:{
-        translation: deTranslation,
-      },
-      [Language.ITALIAN]: {
-        translation: itTranslation,
-      },
-      [Language.RUSSIAN]: {
-        translation: ruTranslation,
-      },
-      [Language.PORTUGUESE]:{
-        translation: ptTranslation,
-      },
-      [Language.SPANISH]: {
-        translation: esTranslation,
-      },
-      
-     
-    },
-    fallbackLng: "en",
-    debug: false,
-    interpolation: {
-      escapeValue: false,
-    },
-  });
+const i18nInstance = i18n.use(Backend).use(initReactI18next);
 
-export default i18n;
+i18nInstance.init({
+  resources,
+  fallbackLng: defaultLanguage,
+  debug: false,
+  interpolation: { escapeValue: false },
+  returnNull: false,
+  returnEmptyString: false,
+  parseMissingKeyHandler: (key) => {
+    console.warn(`Missing translation key: ${key}`);
+    return key;
+  },
+});
+
+export { i18nInstance };

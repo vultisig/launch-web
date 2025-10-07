@@ -268,19 +268,22 @@
     display: flex;
     gap: rem(12);
 
-    span {
+    .middle-truncate {
       flex: 1;
       font-weight: 500;
+      overflow: hidden;
     }
 
     img {
       border-radius: 50%;
+      flex: none;
       height: rem(32);
       width: rem(32);
     }
 
     svg {
       cursor: pointer;
+      flex: none;
     }
   }
 

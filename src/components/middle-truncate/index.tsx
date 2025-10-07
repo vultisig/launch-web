@@ -1,35 +1,41 @@
-import { FC, RefObject, useEffect, useRef, useState } from "react";
+import { FC, RefObject, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-interface ComponentProps {
+import { useResizeObserver } from "@/hooks/useResizeObserver";
+
+type MiddleTruncateProps = {
   href?: string;
   targetBlank?: boolean;
   text: string;
-}
+};
 
-interface InitialState {
-  counter: number;
-  ellipsis: string;
-  truncating: boolean;
-}
-
-const Component: FC<ComponentProps> = ({ href, targetBlank, text }) => {
-  const initialState: InitialState = {
+export const MiddleTruncate: FC<MiddleTruncateProps> = ({
+  href,
+  targetBlank,
+  text,
+}) => {
+  const [state, setState] = useState({
     counter: 0,
     ellipsis: "",
     truncating: true,
-  };
-  const [state, setState] = useState(initialState);
-  const { counter, ellipsis, truncating } = state;
-  const elmRef = useRef<HTMLElement>(null);
+    wrapperWidth: 0,
+  });
+  const { counter, ellipsis, truncating, wrapperWidth } = state;
+  const elmRef = useResizeObserver(({ width = 0 }) => {
+    setState((prevState) => ({
+      ...prevState,
+      wrapperWidth: width,
+      ellipsis: text,
+      truncating: true,
+    }));
+  }, "width");
 
-  const ellipsisDidUpdate = (): void => {
+  useEffect(() => {
     if (elmRef.current) {
       const [child] = elmRef.current.children;
-      const parentWidth = elmRef.current.clientWidth;
-      const childWidth = child?.clientWidth ?? 0;
+      const clientWidth = child?.clientWidth ?? 0;
 
-      if (childWidth > parentWidth) {
+      if (clientWidth > wrapperWidth) {
         const chunkLen = Math.ceil(text.length / 2) - counter;
 
         setState((prevState) => ({
@@ -45,18 +51,15 @@ const Component: FC<ComponentProps> = ({ href, targetBlank, text }) => {
         }));
       }
     }
-  };
+  }, [ellipsis, counter, elmRef, text, wrapperWidth]);
 
-  const componentDidUpdate = (): void => {
+  useEffect(() => {
     setState((prevState) => ({
       ...prevState,
       ellipsis: text,
       truncating: true,
     }));
-  };
-
-  useEffect(ellipsisDidUpdate, [ellipsis]);
-  useEffect(componentDidUpdate, [text]);
+  }, [text]);
 
   const children = truncating ? <span>{ellipsis}</span> : ellipsis;
 
@@ -89,5 +92,3 @@ const Component: FC<ComponentProps> = ({ href, targetBlank, text }) => {
     </span>
   );
 };
-
-export default Component;

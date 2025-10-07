@@ -1,6 +1,4 @@
-//import translation from "i18n/constant-keys";
-
-export default {
+export const pt = {
   // A
   // B
   // C
@@ -17,11 +15,12 @@ export default {
   // N
   // O
   // P
-  // Q
   // R
   // S
   // T
   // U
   // V
   // W
+  // Y
+  // Z
 };

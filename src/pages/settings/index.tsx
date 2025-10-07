@@ -1,21 +1,16 @@
-import { FC, useEffect } from "react";
-// import { useTranslation } from "react-i18next";
 import { Empty, Layout } from "antd";
+import { FC, useEffect } from "react";
 
-import { useBaseContext } from "context";
-import { PageKey } from "utils/constants";
+import { useCore } from "@/hooks/useCore";
 
 const { Content } = Layout;
 
-const Component: FC = () => {
-  // const { t } = useTranslation();
-  const { changePage } = useBaseContext();
+export const SettingsPage: FC = () => {
+  const { setCurrentPage } = useCore();
 
-  const componentDidMount = () => {
-    changePage(PageKey.SETTINGS);
-  };
-
-  useEffect(componentDidMount, []);
+  useEffect(() => {
+    setCurrentPage("settings");
+  }, []);
 
   return (
     <Content className="settings-page">
@@ -23,5 +18,3 @@ const Component: FC = () => {
     </Content>
   );
 };
-
-export default Component;

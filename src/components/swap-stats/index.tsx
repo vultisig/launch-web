@@ -1,27 +1,23 @@
+import { Spin } from "antd";
 import { FC } from "react";
 import { useTranslation } from "react-i18next";
-import { Spin } from "antd";
 
-import { useBaseContext } from "context";
-import constantKeys from "i18n/constant-keys";
+import { useCore } from "@/hooks/useCore";
+import { toPriceFormat } from "@/utils/functions";
 
-interface ComponentProps {
-  marketCap: number;
-  price: number;
-  volume: number;
-}
+type SwapStatsProps = { marketCap: number; price: number; volume: number };
 
-const Component: FC<ComponentProps> = ({ marketCap, price, volume }) => {
+export const SwapStats: FC<SwapStatsProps> = ({ marketCap, price, volume }) => {
   const { t } = useTranslation();
-  const { currency } = useBaseContext();
+  const { currency } = useCore();
 
   return (
     <div className="swap-stats">
       <div className="item">
-        <span className="title">{t(constantKeys.MARKET_CAP)}</span>
+        <span className="title">{t("marketCap")}</span>
         <span className="value">
-          {marketCap ? (
-            marketCap.toPriceFormat(currency)
+          {Number.isFinite(marketCap) ? (
+            toPriceFormat(marketCap, currency)
           ) : (
             <Spin size="small" />
           )}
@@ -30,17 +26,23 @@ const Component: FC<ComponentProps> = ({ marketCap, price, volume }) => {
       <div className="item">
         <span className="title">24h Vol</span>
         <span className="value">
-          {volume ? volume.toPriceFormat(currency) : <Spin size="small" />}
+          {Number.isFinite(volume) ? (
+            toPriceFormat(volume, currency)
+          ) : (
+            <Spin size="small" />
+          )}
         </span>
       </div>
       <div className="item ascending">
-        <span className="title">{t(constantKeys.PRICE)}</span>
+        <span className="title">{t("price")}</span>
         <span className="value">
-          {price ? price.toPriceFormat(currency) : <Spin size="small" />}
+          {Number.isFinite(price) ? (
+            toPriceFormat(price, currency)
+          ) : (
+            <Spin size="small" />
+          )}
         </span>
       </div>
     </div>
   );
 };
-
-export default Component;
