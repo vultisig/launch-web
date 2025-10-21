@@ -11,7 +11,7 @@ import { useStakeContractData } from "@/hooks/useStakeContractData";
 import { ChartPie, Layers } from "@/icons";
 import { STAKE_ABI } from "@/utils/abis/stake";
 import { contractAddress, defaultTokens, modalHash } from "@/utils/constants";
-import { toNumberFormat, toPriceFormat } from "@/utils/functions";
+import { toNumberFormat, toValueFormat } from "@/utils/functions";
 import { routeTree } from "@/utils/routes";
 import { wagmiConfig } from "@/utils/wagmi";
 
@@ -98,7 +98,7 @@ export const StakingPage: FC = () => {
           <span className="label">{t("revenueToDistribute")}</span>
           <span className="value">
             {!loading ? (
-              `${toPriceFormat(
+              `${toValueFormat(
                 formatUnits(lastRewardBalance, defaultTokens.USDC.decimals),
                 currency
               )} USDC`

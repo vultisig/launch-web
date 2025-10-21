@@ -2,21 +2,21 @@ import {
   Divider,
   Drawer,
   Layout,
-  Menu,
-  MenuProps,
   message,
   Modal,
   Popconfirm,
   Spin,
+  Tabs,
+  TabsProps,
   Tooltip,
 } from "antd";
-import { FC, Fragment, useEffect, useRef, useState } from "react";
+import { FC, Fragment, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import MediaQuery from "react-responsive";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Connector, useAccount, useConnect, useDisconnect } from "wagmi";
 
-import { MiddleTruncate } from "@/components/middle-truncate";
+import { MiddleTruncate } from "@/components/MiddleTruncate";
 import { useCore } from "@/hooks/useCore";
 import {
   ArrowDownUp,
@@ -27,15 +27,17 @@ import {
   RefreshCW,
 } from "@/icons";
 import { modalHash } from "@/utils/constants";
-import { toBalanceFormat, toPriceFormat } from "@/utils/functions";
+import { toAmountFormat, toValueFormat } from "@/utils/functions";
 import { routeTree } from "@/utils/routes";
+import { Button } from "@/toolkits/Button";
 
 const { Footer, Header } = Layout;
 
+type InitialState = { open?: boolean };
+
 const Connect: FC = () => {
   const { t } = useTranslation();
-  const initialState: { open: boolean } = { open: false };
-  const [state, setState] = useState(initialState);
+  const [state, setState] = useState<InitialState>({});
   const { open } = state;
   const { isConnected } = useAccount();
   const { connectors, connect } = useConnect();
@@ -113,7 +115,7 @@ const Content: FC = () => {
   const initialState: { open: boolean } = { open: false };
   const [state, setState] = useState(initialState);
   const { open } = state;
-  const { address, isConnected } = useAccount();
+  const { address = "", isConnected } = useAccount();
   const { updateWallet, currency, tokens, updating } = useCore();
   const { disconnect } = useDisconnect();
   const { hash, pathname } = useLocation();
@@ -164,7 +166,7 @@ const Content: FC = () => {
       >
         <div className="address">
           <img src="/avatars/1.png" alt="Avatar" />
-          <MiddleTruncate text={address ?? ""} />
+          <MiddleTruncate>{address}</MiddleTruncate>
           <Tooltip title={t("copy")}>
             <Copy onClick={handleCopy} />
           </Tooltip>
@@ -176,7 +178,7 @@ const Content: FC = () => {
             <Spin size="small" />
           ) : (
             <span className="price">
-              {toPriceFormat(
+              {toValueFormat(
                 Object.values(tokens).reduce(
                   (accumulator, { balance, value }) =>
                     accumulator + balance * value,
@@ -205,9 +207,9 @@ const Content: FC = () => {
               ) : (
                 <div className="value">
                   <span className="price">
-                    {toPriceFormat(balance * value, currency)}
+                    {toValueFormat(balance * value, currency)}
                   </span>
-                  <span className="balance">{`${toBalanceFormat(
+                  <span className="balance">{`${toAmountFormat(
                     balance
                   )} ${ticker}`}</span>
                 </div>
@@ -226,16 +228,8 @@ export const DefaultLayout: FC = () => {
   const { t } = useTranslation();
   const { currentPage } = useCore();
   const { address = "", isConnected } = useAccount();
-  const [indicatorStyle, setIndicatorStyle] = useState({
-    width: "0px",
-    transform: "translateX(0)",
-  });
-  const [isAnimating, setIsAnimating] = useState(false);
-  const prevPositionRef = useRef({ width: "0px", left: 0 });
-  const menuRef = useRef<HTMLDivElement>(null);
-  const indicatorRef = useRef<HTMLDivElement>(null);
 
-  const items: MenuProps["items"] = [
+  const items: TabsProps["items"] = [
     {
       key: "swap",
       label: <Link to={routeTree.swap.path}>{t("swap")}</Link>,
@@ -246,59 +240,9 @@ export const DefaultLayout: FC = () => {
     },
     {
       key: "pool",
-      label: t("pool"),
+      label: <Link to={routeTree.pool.path}>{t("pool")}</Link>,
     },
   ];
-
-  useEffect(() => {
-    if (!menuRef.current) return;
-
-    const menuEl = menuRef.current;
-    if (!menuEl) return;
-
-    const menuItems = menuEl.querySelectorAll(".ant-menu-item");
-    if (!menuItems.length) return;
-
-    let activeItem: Element | null = null;
-
-    menuItems.forEach((item) => {
-      if (item.classList.contains("ant-menu-item-selected")) {
-        activeItem = item;
-      }
-    });
-
-    if (activeItem && indicatorRef.current) {
-      const width = (activeItem as HTMLElement).clientWidth;
-      const offsetLeft = (activeItem as HTMLElement).offsetLeft;
-
-      const prevWidth = prevPositionRef.current.width;
-      const prevLeft = prevPositionRef.current.left;
-
-      prevPositionRef.current = {
-        width: `${width}px`,
-        left: offsetLeft,
-      };
-
-      const indicator = indicatorRef.current;
-      indicator.style.setProperty("--start-x", `${prevLeft}px`);
-      indicator.style.setProperty("--start-width", prevWidth);
-      indicator.style.setProperty("--end-x", `${offsetLeft}px`);
-      indicator.style.setProperty("--end-width", `${width}px`);
-
-      setIsAnimating(true);
-
-      setIndicatorStyle({
-        width: `${width}px`,
-        transform: `translateX(${offsetLeft}px)`,
-      });
-
-      const animationTimeout = setTimeout(() => {
-        setIsAnimating(false);
-      }, 500);
-
-      return () => clearTimeout(animationTimeout);
-    }
-  }, [currentPage]);
 
   return (
     <Layout className="default-layout">
@@ -308,28 +252,16 @@ export const DefaultLayout: FC = () => {
           <span className="name">Vultisig</span>
         </div>
         <MediaQuery minWidth={992}>
-          <div className="menu-container" ref={menuRef}>
-            <Menu
-              selectedKeys={[currentPage]}
-              items={items}
-              mode="horizontal"
-              style={{ width: "100%" }}
-            />
-            <div
-              className={`menu-indicator ${isAnimating ? "animate" : ""}`}
-              style={indicatorStyle}
-              ref={indicatorRef}
-            />
-          </div>
+          <Tabs activeKey={currentPage} items={items} />
         </MediaQuery>
         {isConnected ? (
-          <Link to={modalHash.wallet} className="button button-secondary">
-            <MiddleTruncate text={address ?? ""} />
-          </Link>
+          <Button href={modalHash.wallet}>
+            <MiddleTruncate $style={{ width: "110px" }}>
+              {address}
+            </MiddleTruncate>
+          </Button>
         ) : (
-          <Link to={modalHash.connect} className="button button-secondary">
-            {t("connectWallet")}
-          </Link>
+          <Button href={modalHash.connect}>{t("connectWallet")}</Button>
         )}
       </Header>
       <Outlet />
@@ -350,7 +282,10 @@ export const DefaultLayout: FC = () => {
             <ArrowRightToLine />
             {t("staking")}
           </Link>
-          <Link to="" className={currentPage === "pool" ? "active" : ""}>
+          <Link
+            to={routeTree.pool.path}
+            className={currentPage === "pool" ? "active" : ""}
+          >
             <Database />
             {t("pool")}
           </Link>

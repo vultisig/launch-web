@@ -15,9 +15,9 @@ import { useCore } from "@/hooks/useCore";
 import { ArrowDown, ChevronDown, RefreshCW } from "@/icons";
 import { defaultTokens, modalHash } from "@/utils/constants";
 import {
-  toBalanceFormat,
+  toAmountFormat,
   toNumberFormat,
-  toPriceFormat,
+  toValueFormat,
 } from "@/utils/functions";
 
 const { Content } = Layout;
@@ -113,7 +113,7 @@ const BridgeTab: FC = () => {
         min={0}
         placeholder="0.00"
       />
-      <span className="price">{`${t("available")}: ${toPriceFormat(
+      <span className="price">{`${t("available")}: ${toValueFormat(
         0,
         currency
       )}`}</span>
@@ -168,9 +168,9 @@ const MergeTab: FC = () => {
           min={0}
           placeholder="0.00"
         />
-        <span className="result">{`${toBalanceFormat(0)} VULT`}</span>
+        <span className="result">{`${toAmountFormat(0)} VULT`}</span>
       </div>
-      <span className="price">{`${t("available")}: ${toPriceFormat(
+      <span className="price">{`${t("available")}: ${toValueFormat(
         0,
         currency
       )}`}</span>

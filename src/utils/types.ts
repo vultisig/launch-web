@@ -1,4 +1,7 @@
 import { Token } from "@uniswap/sdk-core";
+import type * as CSS from "csstype";
+
+export type CSSProperties = CSS.Properties<string>;
 
 export type GasSettingsMode = "ADVANCED" | "BASIC";
 

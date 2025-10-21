@@ -15,6 +15,7 @@ import { CoreProvider } from "@/providers/core";
 import { StyledProvider } from "@/providers/styled";
 import { routeTree } from "@/utils/routes";
 import { wagmiConfig } from "@/utils/wagmi";
+import { PoolPage } from "./pages/pool";
 
 export const App = () => {
   const queryClient = new QueryClient();
@@ -57,6 +58,10 @@ export const App = () => {
                       <Route
                         element={<MergePage />}
                         path={routeTree.merge.path}
+                      />
+                      <Route
+                        element={<PoolPage />}
+                        path={routeTree.pool.path}
                       />
                       <Route
                         element={<SettingsPage />}

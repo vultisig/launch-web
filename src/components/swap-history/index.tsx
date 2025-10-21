@@ -5,7 +5,7 @@ import { FC, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useAccount } from "wagmi";
 
-import { MiddleTruncate } from "@/components/middle-truncate";
+import { MiddleTruncate } from "@/components/MiddleTruncate";
 import { useSwapHistory } from "@/hooks/useSwapHistory";
 import { useSwapVult } from "@/hooks/useSwapVult";
 import { ChevronRight, CircleCheckBig, OctagonAlert, Trash } from "@/icons";
@@ -83,11 +83,9 @@ const Transaction: FC<{ address: string; transaction: TransactionProps }> = ({
           {dayjs(date).format(import.meta.env.VITE_TIME_FORMAT)}
         </span>
       </div>
-      <MiddleTruncate
-        href={`https://etherscan.io/tx/${hash}`}
-        text={hash}
-        targetBlank
-      />
+      <MiddleTruncate href={`https://etherscan.io/tx/${hash}`} targetBlank>
+        {hash}
+      </MiddleTruncate>
       <div className="swap">
         <div className="token">
           <img

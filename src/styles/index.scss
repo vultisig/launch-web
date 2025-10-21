@@ -11,7 +11,6 @@
 
 @use "../layouts/default";
 
-@use "../components/middle-truncate";
 @use "../components/swap-fees";
 @use "../components/swap-history";
 @use "../components/swap-reports";
@@ -23,5 +22,6 @@
 
 @use "../pages/merge";
 @use "../pages/settings";
+@use "../pages/pool";
 @use "../pages/swap";
 @use "../pages/staking";

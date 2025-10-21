@@ -17,6 +17,39 @@
     top: 0;
     z-index: 2;
 
+    .ant-tabs-content-holder {
+      display: none;
+    }
+
+    .ant-tabs-nav {
+      &::before {
+        content: none;
+      }
+    }
+
+    .ant-tabs-tab-btn {
+      a {
+        display: block;
+        font-weight: 500;
+        line-height: rem(64);
+        padding: 0 rem(20);
+      }
+    }
+
+    .ant-tabs-tab {
+      padding: 0;
+    }
+
+    .ant-tabs-tab-active {
+      a {
+        color: $button-primary;
+      }
+    }
+
+    .ant-tabs {
+      flex-grow: 1;
+    }
+
     .button {
       height: rem(44);
       width: rem(144);
@@ -24,78 +57,6 @@
       .middle-truncate {
         text-align: center;
         flex: 1;
-      }
-    }
-
-    .ant-menu-item-icon {
-      height: rem(16);
-      width: rem(16);
-    }
-
-    .ant-menu-title-content {
-      font-weight: 500;
-    }
-
-    .ant-menu-item {
-      align-items: center;
-      display: flex;
-    }
-
-    .ant-menu-item-selected {
-      .ant-menu-item-icon {
-        stroke: $button-primary;
-      }
-    }
-
-    .ant-menu {
-      /* Menu styling */
-      background-color: transparent;
-      border: none;
-      flex: 1;
-
-      /* Horizontal menu styling */
-      &.ant-menu-horizontal {
-        line-height: rem(64);
-
-        /* Menu items and submenu styling */
-        > .ant-menu-item,
-        > .ant-menu-submenu {
-          padding: 0 rem(20);
-          margin: 0;
-
-          /* Remove the default bottom border */
-          &::after {
-            display: none;
-          }
-        }
-
-        /* Individual menu item styling */
-        > .ant-menu-item {
-          transition: color 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
-
-          /* Selected menu item state */
-          &.ant-menu-item-selected {
-            color: $alert-success;
-          }
-        }
-      }
-    }
-
-    .menu-container {
-      position: relative;
-      flex: 1;
-      display: flex;
-
-      .ant-menu {
-        width: 100%;
-        border-bottom: none; /* Removed !important as this can be handled with proper specificity */
-      }
-
-      .menu-indicator {
-        @include tab-indicator;
-        position: absolute;
-        bottom: 0;
-        z-index: 1;
       }
     }
 
@@ -124,7 +85,6 @@
 
   .ant-layout-content {
     margin: 0 auto;
-    max-width: rem(768);
     padding: rem(16);
     width: 100%;
   }

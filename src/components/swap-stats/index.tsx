@@ -3,7 +3,7 @@ import { FC } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useCore } from "@/hooks/useCore";
-import { toPriceFormat } from "@/utils/functions";
+import { toValueFormat } from "@/utils/functions";
 
 type SwapStatsProps = { marketCap: number; price: number; volume: number };
 
@@ -17,7 +17,7 @@ export const SwapStats: FC<SwapStatsProps> = ({ marketCap, price, volume }) => {
         <span className="title">{t("marketCap")}</span>
         <span className="value">
           {Number.isFinite(marketCap) ? (
-            toPriceFormat(marketCap, currency)
+            toValueFormat(marketCap, currency)
           ) : (
             <Spin size="small" />
           )}
@@ -27,7 +27,7 @@ export const SwapStats: FC<SwapStatsProps> = ({ marketCap, price, volume }) => {
         <span className="title">24h Vol</span>
         <span className="value">
           {Number.isFinite(volume) ? (
-            toPriceFormat(volume, currency)
+            toValueFormat(volume, currency)
           ) : (
             <Spin size="small" />
           )}
@@ -37,7 +37,7 @@ export const SwapStats: FC<SwapStatsProps> = ({ marketCap, price, volume }) => {
         <span className="title">{t("price")}</span>
         <span className="value">
           {Number.isFinite(price) ? (
-            toPriceFormat(price, currency)
+            toValueFormat(price, currency)
           ) : (
             <Spin size="small" />
           )}

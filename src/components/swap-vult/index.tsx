@@ -14,9 +14,9 @@ import { getGasSettings } from "@/storage/gasSettings";
 import { setTransaction } from "@/storage/transaction";
 import { modalHash, uniswapTokens } from "@/utils/constants";
 import {
-  toBalanceFormat,
+  toAmountFormat,
   toNumberFormat,
-  toPriceFormat,
+  toValueFormat,
 } from "@/utils/functions";
 import { SwapFormProps, TickerKey } from "@/utils/types";
 
@@ -336,7 +336,7 @@ export const SwapVult: FC = () => {
                       />
                     </div>
                     <div className="price">
-                      <span>{toPriceFormat(amount * value, currency)}</span>
+                      <span>{toValueFormat(amount * value, currency)}</span>
                       {isConnected && (
                         <Tooltip title={t("clickToUseFullAmount")}>
                           <span
@@ -345,7 +345,7 @@ export const SwapVult: FC = () => {
                           >
                             {t("available")}:{" "}
                             <span className="balance-amount">
-                              {toBalanceFormat(tokens[ticker].balance)}
+                              {toAmountFormat(tokens[ticker].balance)}
                             </span>
                           </span>
                         </Tooltip>
@@ -393,10 +393,10 @@ export const SwapVult: FC = () => {
                       />
                     </div>
                     <div className="price">
-                      <span>{toPriceFormat(amount * value, currency)}</span>
+                      <span>{toValueFormat(amount * value, currency)}</span>
                       {isConnected && (
                         <span>
-                          {`${t("amount")}: ${toBalanceFormat(
+                          {`${t("amount")}: ${toAmountFormat(
                             tokens[ticker].balance
                           )}`}
                         </span>
@@ -449,7 +449,7 @@ export const SwapVult: FC = () => {
                     <div className="item">
                       <span className="label">{t("maxNetworkFee")}</span>
                       <span className="value">
-                        {toPriceFormat(maxNetworkFee, currency, 6)}
+                        {toValueFormat(maxNetworkFee, currency, 6)}
                       </span>
                     </div>
                     <div className="item">

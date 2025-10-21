@@ -9,6 +9,7 @@ import {
   buttonPrimary,
   buttonPrimaryHover,
   buttonSecondary,
+  textPrimary,
 } from "@/colors";
 import { useCore } from "@/hooks/useCore";
 import { Theme } from "@/utils/theme";
@@ -69,12 +70,17 @@ export const AntdProvider: FC<{
         },
         Tabs: {
           colorBorderSecondary: borderNormal,
+          horizontalItemGutter: 0,
+          horizontalItemPadding: "0",
+          horizontalMargin: "0",
         },
         Tooltip: {
           colorBgSpotlight: backgroundTertiary,
         },
       },
       token: {
+        colorLink: textPrimary,
+        colorLinkHover: "inherit",
         colorPrimary: buttonPrimary,
         colorPrimaryHover: buttonPrimaryHover,
         fontFamily: "inherit",

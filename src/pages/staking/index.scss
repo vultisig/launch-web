@@ -5,6 +5,7 @@
   display: flex;
   flex-direction: column;
   gap: rem(24);
+  max-width: rem(768);
 
   .heading {
     align-items: center;
@@ -163,20 +164,16 @@
     .ant-tabs-tab-btn {
       font-size: rem(15);
       font-weight: 500;
+      padding: rem(12) 0;
     }
 
     .ant-tabs-tab {
       flex: 1;
       justify-content: center;
-      margin: 0 !important;
     }
 
     .ant-tabs-nav-list {
       width: 100%;
-    }
-
-    .ant-tabs-nav {
-      margin: 0;
     }
   }
 }
