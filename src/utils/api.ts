@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import { contractAddress } from "@/utils/constants";
 import { Currency } from "@/utils/currency";
 import { toCamelCase } from "@/utils/functions";
+import { HistoricalPriceProps, SuggestedGasFeeProps } from "@/utils/types";
 
 const fetch = axios.create({
   baseURL: `${import.meta.env.VITE_SERVER_ADDRESS}`,
@@ -28,32 +29,6 @@ fetch.interceptors.response.use(
     return Promise.reject(response.data.error);
   }
 );
-
-interface HistoricalPriceProps {
-  date: number;
-  price: number;
-}
-
-interface GasFeeEstimate {
-  suggestedMaxPriorityFeePerGas: string;
-  suggestedMaxFeePerGas: string;
-  minWaitTimeEstimate: number;
-  maxWaitTimeEstimate: number;
-}
-
-export interface SuggestedGasFeeData {
-  low: GasFeeEstimate;
-  medium: GasFeeEstimate;
-  high: GasFeeEstimate;
-  estimatedBaseFee: string;
-  networkCongestion: number;
-  latestPriorityFeeRange: [string, string];
-  historicalPriorityFeeRange: [string, string];
-  historicalBaseFeeRange: [string, string];
-  priorityFeeTrend: "up" | "down" | "stable";
-  baseFeeTrend: "up" | "down" | "stable";
-  version: string;
-}
 
 export const api = {
   balance: async (
@@ -180,7 +155,7 @@ export const api = {
       return allData;
     }
   },
-  suggestedFees: async (): Promise<SuggestedGasFeeData> => {
+  suggestedFees: async (): Promise<SuggestedGasFeeProps> => {
     const endpoint =
       "https://gas.api.cx.metamask.io/networks/1/suggestedGasFees";
     const response = await axios.get(endpoint, {

@@ -4,16 +4,20 @@ import { useTranslation } from "react-i18next";
 
 import { CarFront, ChevronLeft, Hourglass, Timer } from "@/icons";
 import { getGasSettings, setGasSettings } from "@/storage/gasSettings";
-import { api, SuggestedGasFeeData } from "@/utils/api";
+import { api } from "@/utils/api";
 import { defaultGasSettings } from "@/utils/constants";
-import { GasSettingsMode, GasSettingsProps } from "@/utils/types";
+import {
+  GasSettingsMode,
+  GasSettingsProps,
+  SuggestedGasFeeProps,
+} from "@/utils/types";
 
 type SwapSettingsProps = {
   onClose: (settingsMode: boolean, updated?: boolean) => void;
   visible?: boolean;
 };
 
-type StateProps = { fees: SuggestedGasFeeData | null };
+type StateProps = { fees: SuggestedGasFeeProps | null };
 
 export const SwapSettings: FC<SwapSettingsProps> = ({ onClose, visible }) => {
   const { t } = useTranslation();

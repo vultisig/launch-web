@@ -7,10 +7,10 @@ import { erc20Abi } from "viem";
 
 import { SwapFees } from "@/components/swap-fees";
 import { SwapHistory } from "@/components/swap-history";
-import { SwapReports } from "@/components/swap-reports";
 import { SwapStats } from "@/components/swap-stats";
 import { SwapVult } from "@/components/swap-vult";
 import { SwapWhitelistCheck } from "@/components/swap-whitelist-check";
+import { SwapReports } from "@/components/SwapReports";
 import { useCore } from "@/hooks/useCore";
 import { api } from "@/utils/api";
 import { contractAddress, poolsAbi, uniswapTokens } from "@/utils/constants";

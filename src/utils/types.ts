@@ -1,7 +1,16 @@
 import { Token } from "@uniswap/sdk-core";
-import type * as CSS from "csstype";
+import * as CSS from "csstype";
+
+type GasFeeEstimate = {
+  suggestedMaxPriorityFeePerGas: string;
+  suggestedMaxFeePerGas: string;
+  minWaitTimeEstimate: number;
+  maxWaitTimeEstimate: number;
+};
 
 export type CSSProperties = CSS.Properties<string>;
+
+export type HistoricalPriceProps = { date: number; price: number };
 
 export type GasSettingsMode = "ADVANCED" | "BASIC";
 
@@ -12,6 +21,20 @@ export type GasSettingsProps = {
   mode: GasSettingsMode;
   slippage: number;
   speed: "Custom" | "Fast" | "Slow" | "Standard";
+};
+
+export type SuggestedGasFeeProps = {
+  low: GasFeeEstimate;
+  medium: GasFeeEstimate;
+  high: GasFeeEstimate;
+  estimatedBaseFee: string;
+  networkCongestion: number;
+  latestPriorityFeeRange: [string, string];
+  historicalPriorityFeeRange: [string, string];
+  historicalBaseFeeRange: [string, string];
+  priorityFeeTrend: "up" | "down" | "stable";
+  baseFeeTrend: "up" | "down" | "stable";
+  version: string;
 };
 
 export type SwapFormProps = {

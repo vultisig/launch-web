@@ -15,6 +15,7 @@ import { CoreProvider } from "@/providers/core";
 import { StyledProvider } from "@/providers/styled";
 import { routeTree } from "@/utils/routes";
 import { wagmiConfig } from "@/utils/wagmi";
+
 import { PoolPage } from "./pages/pool";
 
 export const App = () => {

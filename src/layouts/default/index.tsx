@@ -26,10 +26,10 @@ import {
   Power,
   RefreshCW,
 } from "@/icons";
+import { Button } from "@/toolkits/Button";
 import { modalHash } from "@/utils/constants";
 import { toAmountFormat, toValueFormat } from "@/utils/functions";
 import { routeTree } from "@/utils/routes";
-import { Button } from "@/toolkits/Button";
 
 const { Footer, Header } = Layout;
 

@@ -13,7 +13,6 @@
 
 @use "../components/swap-fees";
 @use "../components/swap-history";
-@use "../components/swap-reports";
 @use "../components/swap-settings";
 @use "../components/swap-stats";
 @use "../components/swap-vult";
@@ -22,6 +21,5 @@
 
 @use "../pages/merge";
 @use "../pages/settings";
-@use "../pages/pool";
 @use "../pages/swap";
 @use "../pages/staking";

@@ -7,10 +7,10 @@ import {
   useRef,
   useState,
 } from "react";
+import { Link } from "react-router-dom";
 
 import { useResizeObserver } from "@/hooks/useResizeObserver";
 import { Stack, StackProps } from "@/toolkits/Stack";
-import { Link } from "react-router-dom";
 
 type MiddleTruncateProps = StackProps &
   Omit<HTMLAttributes<HTMLElement>, "children"> & {
