@@ -246,12 +246,6 @@ const Component: FC = () => {
       label: <Link to={constantPaths.swap}>{t(constantKeys.SWAP)}</Link>,
     },
     {
-      key: PageKey.STAKING,
-      label: (
-        <Link to={constantPaths.stakingStake}>{t(constantKeys.STAKING)}</Link>
-      ),
-    },
-    {
       key: PageKey.POOL,
       label: t(constantKeys.POOL),
     },
@@ -351,13 +345,6 @@ const Component: FC = () => {
           >
             <ArrowDownUp />
             {t(constantKeys.SWAP)}
-          </Link>
-          <Link
-            to={constantPaths.stakingStake}
-            className={activePage === PageKey.STAKING ? "active" : ""}
-          >
-            <ArrowRightToLine />
-            {t(constantKeys.STAKING)}
           </Link>
           <Link to="" className={activePage === PageKey.POOL ? "active" : ""}>
             <Database />

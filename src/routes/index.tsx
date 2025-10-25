@@ -10,9 +10,7 @@ import constantPaths from "routes/constant-paths";
 
 const DefaultLayout = lazy(() => import("layouts/default"));
 
-const MergePage = lazy(() => import("pages/merge"));
 const SwapPage = lazy(() => import("pages/swap"));
-const Staking = lazy(() => import("pages/staking"));
 const SettingsPage = lazy(() => import("pages/settings"));
 
 interface RouteConfig {
@@ -65,34 +63,6 @@ const Component = () => {
           element: (
             <Suspense>
               <SwapPage />
-            </Suspense>
-          ),
-        },
-        {
-          path: constantPaths.staking,
-          redirect: constantPaths.stakingStake,
-        },
-        {
-          path: constantPaths.stakingStake,
-          element: (
-            <Suspense>
-              <Staking />
-            </Suspense>
-          ),
-        },
-        {
-          path: constantPaths.stakingWithdraw,
-          element: (
-            <Suspense>
-              <Staking />
-            </Suspense>
-          ),
-        },
-        {
-          path: constantPaths.merge,
-          element: (
-            <Suspense>
-              <MergePage />
             </Suspense>
           ),
         },
