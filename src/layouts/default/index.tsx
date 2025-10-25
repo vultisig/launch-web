@@ -21,14 +21,7 @@ import { HashKey, PageKey } from "utils/constants";
 import constantKeys from "i18n/constant-keys";
 import constantPaths from "routes/constant-paths";
 
-import {
-  ArrowDownUp,
-  ArrowRightToLine,
-  Copy,
-  Database,
-  Power,
-  RefreshCW,
-} from "icons";
+import { ArrowDownUp, Copy, Database, Power, RefreshCW } from "icons";
 import MiddleTruncate from "components/middle-truncate";
 
 const { Footer, Header } = Layout;
