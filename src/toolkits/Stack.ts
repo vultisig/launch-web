@@ -41,6 +41,24 @@ const stackPropertiesToString = (props: StackProps) => {
 
   return css`
     ${defaultPropertiesToString(props)}
+    ${$media?.sm &&
+    css`
+      @media (min-width: 576px) {
+        ${defaultPropertiesToString($media.sm)}
+      }
+    `}
+    ${$media?.md &&
+    css`
+      @media (min-width: 768px) {
+        ${defaultPropertiesToString($media.md)}
+      }
+    `}
+    ${$media?.lg &&
+    css`
+      @media (min-width: 992px) {
+        ${defaultPropertiesToString($media.lg)}
+      }
+    `}
     ${$media?.xl &&
     css`
       @media (min-width: 1200px) {
@@ -70,7 +88,14 @@ export const VStack = styled.div<StackProps>`
     })}
 `;
 
-export type StackProps = DefaultProps & { $media?: { xl?: DefaultProps } };
+export type StackProps = DefaultProps & {
+  $media?: {
+    sm?: DefaultProps;
+    md?: DefaultProps;
+    lg?: DefaultProps;
+    xl?: DefaultProps;
+  };
+};
 
 type DefaultProps = {
   $after?: CSSProperties;

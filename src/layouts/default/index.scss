@@ -130,43 +130,6 @@
   }
 }
 
-.default-layout-wallet-connect {
-  .btn {
-    align-items: center;
-    background-color: $background-tertiary;
-    border: solid rem(1) $border-normal;
-    border-radius: rem(8);
-    cursor: pointer;
-    display: flex;
-    font-weight: 500;
-    gap: rem(8);
-    line-height: rem(32);
-    padding: rem(12);
-    transition: all 0.2s;
-
-    img {
-      height: rem(32);
-    }
-
-    &:hover {
-      border-color: $button-primary;
-      color: $button-primary;
-    }
-  }
-
-  .ant-modal-body {
-    display: flex;
-    flex-direction: column;
-    gap: rem(16);
-
-    span {
-      img {
-        border-radius: rem(4);
-      }
-    }
-  }
-}
-
 @media (min-width: rem(768)) {
   .default-layout {
     .ant-layout-content {

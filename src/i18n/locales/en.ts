@@ -82,6 +82,8 @@ export const en = {
   totalWlAllocation: "Total WL allocation",
   transactionSettings: "Transaction Settings",
   transactions: "Transactions",
+  // U
+  usedAllocation: "Used Allocation",
   // V
   vaultBalance: "Vault Balance",
   // W

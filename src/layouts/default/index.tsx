@@ -9,7 +9,7 @@ import {
   TabsProps,
   Tooltip,
 } from "antd";
-import { FC, Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import MediaQuery from "react-responsive";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
@@ -18,7 +18,6 @@ import { Connector, useAccount, useConnect, useDisconnect } from "wagmi";
 
 import { MiddleTruncate } from "@/components/MiddleTruncate";
 import { useCore } from "@/hooks/useCore";
-import { ArrowDownUp, ArrowRightToLine, Database } from "@/icons";
 import { CopyIcon } from "@/icons/CopyIcon";
 import { PowerIcon } from "@/icons/PowerIcon";
 import { RefreshIcon } from "@/icons/RefreshIcon";
@@ -28,19 +27,19 @@ import { HStack, Stack, VStack } from "@/toolkits/Stack";
 import { modalHash } from "@/utils/constants";
 import { toAmountFormat, toValueFormat } from "@/utils/functions";
 import { routeTree } from "@/utils/routes";
+import { ArrowDownUpIcon } from "@/icons/ArrowDownUpIcon";
+import { ArrowRightToLineIcon } from "@/icons/ArrowRightToLineIcon";
+import { DatabaseIcon } from "@/icons/DatabaseIcon";
 
 const { Footer, Header } = Layout;
 
-type InitialState = { open?: boolean };
-
-const Connect: FC = () => {
+const Connect = () => {
   const { t } = useTranslation();
-  const [state, setState] = useState<InitialState>({});
-  const { open } = state;
   const { isConnected } = useAccount();
   const { connectors, connect } = useConnect();
-  const { hash, pathname } = useLocation();
+  const { hash } = useLocation();
   const navigate = useNavigate();
+  const colors = useTheme();
 
   const connectorsConfig = [
     {
@@ -52,35 +51,29 @@ const Connect: FC = () => {
     { name: "Safe", icon: "", isShow: false },
   ];
 
-  const handleConnect = (connector: Connector) => {
-    connect({ connector });
-    navigate(-1);
-  };
-
-  useEffect(() => {
-    if (hash === modalHash.connect) {
-      if (isConnected) {
-        navigate(pathname, { replace: true });
-      } else {
-        setState((prevState) => ({ ...prevState, open: true }));
-      }
-    } else {
-      setState((prevState) => ({ ...prevState, open: false }));
-    }
-  }, [hash, isConnected]);
-
   const getConnectorIcon = (name: string) => {
     const config = connectorsConfig.find((c) => c.name === name);
     return config?.icon || "";
   };
 
+  const handleConnect = (connector: Connector) => {
+    connect({ connector });
+    navigate(-1);
+  };
+
+  const open = useMemo(() => {
+    return isConnected && hash === modalHash.connect;
+  }, [hash]);
+
   return (
     <Modal
-      className="default-layout-wallet-connect"
       closable={false}
       footer={false}
       onCancel={() => navigate(-1)}
       open={open}
+      styles={{
+        body: { display: "flex", flexDirection: "column", gap: "16px" },
+      }}
       title={t("connectWallet")}
       width={360}
     >
@@ -93,22 +86,47 @@ const Connect: FC = () => {
         })
         .map((connector) => {
           const icon = connector.icon || getConnectorIcon(connector.name);
+
           return (
-            <span
+            <HStack
               key={connector.uid}
               onClick={() => handleConnect(connector)}
-              className="btn"
+              $style={{
+                alignItems: "center",
+                backgroundColor: colors.bgTertiary.toHex(),
+                borderColor: colors.borderNormal.toHex(),
+                borderRadius: "8px",
+                borderStyle: "solid",
+                borderWidth: "1px",
+                cursor: "pointer",
+                fontWeight: "500",
+                gap: "8px",
+                lineHeight: "32px",
+                padding: "12px",
+              }}
+              $hover={{ borderColor: colors.accentFour.toHex() }}
             >
-              {icon ? <img src={icon} alt={connector.name} /> : null}
+              {icon ? (
+                <Stack
+                  as="img"
+                  src={icon}
+                  alt={connector.name}
+                  $style={{
+                    borderRadius: "4px",
+                    height: "32px",
+                    width: "32px",
+                  }}
+                />
+              ) : null}
               {connector.name}
-            </span>
+            </HStack>
           );
         })}
     </Modal>
   );
 };
 
-const Content: FC = () => {
+const Content = () => {
   const { t } = useTranslation();
   const initialState: { open: boolean } = { open: false };
   const [state, setState] = useState(initialState);
@@ -300,7 +318,7 @@ const Content: FC = () => {
   );
 };
 
-export const DefaultLayout: FC = () => {
+export const DefaultLayout = () => {
   const { t } = useTranslation();
   const { currentPage } = useCore();
   const { address = "", isConnected } = useAccount();
@@ -348,21 +366,21 @@ export const DefaultLayout: FC = () => {
             to={routeTree.swap.path}
             className={currentPage === "swap" ? "active" : ""}
           >
-            <ArrowDownUp />
+            <ArrowDownUpIcon />
             {t("swap")}
           </Link>
           <Link
             to={routeTree.stakingStake.path}
             className={currentPage === "staking" ? "active" : ""}
           >
-            <ArrowRightToLine />
+            <ArrowRightToLineIcon />
             {t("staking")}
           </Link>
           <Link
             to={routeTree.pool.path}
             className={currentPage === "pool" ? "active" : ""}
           >
-            <Database />
+            <DatabaseIcon />
             {t("pool")}
           </Link>
         </Footer>

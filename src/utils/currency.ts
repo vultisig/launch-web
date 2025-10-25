@@ -29,7 +29,7 @@ export const currencyNames: Record<Currency, string> = {
 };
 
 export const currencySymbols: Record<Currency, string> = {
-  usd: "US$",
+  usd: "$",
   eur: "€",
   gbp: "£",
   chf: "CHF",

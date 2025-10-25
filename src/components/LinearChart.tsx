@@ -1,4 +1,8 @@
-import Highcharts, { SeriesAreaOptions } from "highcharts";
+import Highcharts, {
+  SeriesAreaOptions,
+  XAxisOptions,
+  YAxisOptions,
+} from "highcharts";
 import HighchartsReact, {
   HighchartsReactProps,
 } from "highcharts-react-official";
@@ -6,9 +10,17 @@ import { FC } from "react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "styled-components";
 
-type LinearChartProps = { data: SeriesAreaOptions["data"] };
+type LinearChartProps = {
+  data: SeriesAreaOptions["data"];
+  xAxisPlotBands?: XAxisOptions["plotBands"];
+  yAxisPlotBands?: YAxisOptions["plotBands"];
+};
 
-export const LinearChart: FC<LinearChartProps> = ({ data }) => {
+export const LinearChart: FC<LinearChartProps> = ({
+  data,
+  xAxisPlotBands = [],
+  yAxisPlotBands = [],
+}) => {
   const { t } = useTranslation();
   const colors = useTheme();
 
@@ -43,11 +55,19 @@ export const LinearChart: FC<LinearChartProps> = ({ data }) => {
       type: "datetime",
       lineColor: colors.bgTertiary.toHex(),
       tickColor: colors.bgTertiary.toHex(),
+      plotBands: xAxisPlotBands.map((plotBand) => ({
+        ...plotBand,
+        color: colors.success.toRgba(0.1),
+      })),
     },
     yAxis: {
       labels: { style: { color: colors.textPrimary.toHex() } },
       title: { text: undefined },
       gridLineColor: colors.bgTertiary.toHex(),
+      plotBands: yAxisPlotBands.map((plotBand) => ({
+        ...plotBand,
+        color: colors.success.toRgba(0.1),
+      })),
     },
   };
 

@@ -9,7 +9,7 @@ import { SwapSettings } from "@/components/swap-settings";
 import { TokenDropdown } from "@/components/token-dropdown";
 import { useCore } from "@/hooks/useCore";
 import { useSwapVult } from "@/hooks/useSwapVult";
-import { ArrowDownUp, Check, Info, SettingsTwo } from "@/icons";
+import { Check, Info, SettingsTwo } from "@/icons";
 import { RefreshIcon } from "@/icons/RefreshIcon";
 import { getGasSettings } from "@/storage/gasSettings";
 import { setTransaction } from "@/storage/transaction";
@@ -20,6 +20,7 @@ import {
   toValueFormat,
 } from "@/utils/functions";
 import { SwapFormProps, TickerKey } from "@/utils/types";
+import { ArrowDownUpIcon } from "@/icons/ArrowDownUpIcon";
 
 type StateProps = {
   approving?: boolean;
@@ -362,7 +363,7 @@ export const SwapVult: FC = () => {
             </Form.Item>
           </div>
           <div className="switch" onClick={handleSwitchToken}>
-            {loading ? <Spin /> : <ArrowDownUp />}
+            {loading ? <Spin /> : <ArrowDownUpIcon />}
           </div>
           <div className="item">
             <span className="title">{t("toBuy")}</span>

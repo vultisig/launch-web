@@ -27,60 +27,6 @@ export const ArrowDown: FC<SVGProps<SVGSVGElement>> = ({
   </svg>
 );
 
-export const ArrowDownUp: FC<SVGProps<SVGSVGElement>> = ({
-  fill = "none",
-  height = 24,
-  stroke = "white",
-  strokeLinecap = "round",
-  strokeLinejoin = "round",
-  strokeWidth = 2,
-  width = 24,
-  ...props
-}) => (
-  <svg
-    viewBox="0 0 24 24"
-    {...{
-      ...props,
-      fill,
-      height,
-      stroke,
-      strokeLinecap,
-      strokeLinejoin,
-      strokeWidth,
-      width,
-    }}
-  >
-    <path d="M3 16L7 20M7 20L11 16M7 20V4M21 8L17 4M17 4L13 8M17 4V20" />
-  </svg>
-);
-
-export const ArrowRightToLine: FC<SVGProps<SVGSVGElement>> = ({
-  fill = "none",
-  height = 24,
-  stroke = "white",
-  strokeLinecap = "round",
-  strokeLinejoin = "round",
-  strokeWidth = 2,
-  width = 24,
-  ...props
-}) => (
-  <svg
-    viewBox="0 0 24 24"
-    {...{
-      ...props,
-      fill,
-      height,
-      stroke,
-      strokeLinecap,
-      strokeLinejoin,
-      strokeWidth,
-      width,
-    }}
-  >
-    <path d="M17 12H3M17 12L11 18M17 12L11 6M21 5V19" />
-  </svg>
-);
-
 export const CarFront: FC<SVGProps<SVGSVGElement>> = ({
   fill = "none",
   height = 24,
@@ -375,33 +321,6 @@ export const Clock: FC<SVGProps<SVGSVGElement>> = ({
     }}
   >
     <path d="M12 6V12L16 14M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" />
-  </svg>
-);
-
-export const Database: FC<SVGProps<SVGSVGElement>> = ({
-  fill = "none",
-  height = 24,
-  stroke = "white",
-  strokeLinecap = "round",
-  strokeLinejoin = "round",
-  strokeWidth = 2,
-  width = 24,
-  ...props
-}) => (
-  <svg
-    viewBox="0 0 24 24"
-    {...{
-      ...props,
-      fill,
-      height,
-      stroke,
-      strokeLinecap,
-      strokeLinejoin,
-      strokeWidth,
-      width,
-    }}
-  >
-    <path d="M21 5C21 6.65685 16.9706 8 12 8C7.02944 8 3 6.65685 3 5M21 5C21 3.34315 16.9706 2 12 2C7.02944 2 3 3.34315 3 5M21 5V19C21 19.7956 20.0518 20.5587 18.364 21.1213C16.6761 21.6839 14.3869 22 12 22C9.61305 22 7.32387 21.6839 5.63604 21.1213C3.94821 20.5587 3 19.7956 3 19V5M3 12C3 12.7956 3.94821 13.5587 5.63604 14.1213C7.32387 14.6839 9.61305 15 12 15C14.3869 15 16.6761 14.6839 18.364 14.1213C20.0518 13.5587 21 12.7956 21 12" />
   </svg>
 );
 

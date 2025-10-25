@@ -2,7 +2,7 @@ import { FC } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useCore } from "@/hooks/useCore";
-import { ChartArea, CheckCheck } from "@/icons";
+import { ChartArea, ChartPie, CheckCheck } from "@/icons";
 import { toValueFormat } from "@/utils/functions";
 
 export const SwapFees: FC = () => {
@@ -20,6 +20,14 @@ export const SwapFees: FC = () => {
         <ChartArea className="icon" />
         <span className="label">{t("totalWlAllocation")}</span>
         <span className="value">{toValueFormat(1000, currency)}</span>
+      </div>
+      <div className="item">
+        <ChartPie className="icon" />
+        <span className="label">{t("usedAllocation")}</span>
+        <span className="value">{`${toValueFormat(
+          0,
+          currency
+        )} / ${toValueFormat(10000, currency)}`}</span>
       </div>
     </div>
   );

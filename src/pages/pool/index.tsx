@@ -435,7 +435,10 @@ export const PoolPage = () => {
               </HStack>
             </HStack>
             <Stack $style={{ width: "100%" }}>
-              <LinearChart data={loading ? [] : data} />
+              <LinearChart
+                data={loading ? [] : data}
+                yAxisPlotBands={[{ from: 6.18, to: 6.24 }]}
+              />
             </Stack>
             <Stack
               as="span"
