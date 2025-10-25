@@ -1,5 +1,4 @@
 import {
-  Divider,
   Drawer,
   Layout,
   message,
@@ -14,19 +13,18 @@ import { FC, Fragment, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import MediaQuery from "react-responsive";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useTheme } from "styled-components";
 import { Connector, useAccount, useConnect, useDisconnect } from "wagmi";
 
 import { MiddleTruncate } from "@/components/MiddleTruncate";
 import { useCore } from "@/hooks/useCore";
-import {
-  ArrowDownUp,
-  ArrowRightToLine,
-  Copy,
-  Database,
-  Power,
-  RefreshCW,
-} from "@/icons";
+import { ArrowDownUp, ArrowRightToLine, Database } from "@/icons";
+import { CopyIcon } from "@/icons/CopyIcon";
+import { PowerIcon } from "@/icons/PowerIcon";
+import { RefreshIcon } from "@/icons/RefreshIcon";
 import { Button } from "@/toolkits/Button";
+import { Divider } from "@/toolkits/Divider";
+import { HStack, Stack, VStack } from "@/toolkits/Stack";
 import { modalHash } from "@/utils/constants";
 import { toAmountFormat, toValueFormat } from "@/utils/functions";
 import { routeTree } from "@/utils/routes";
@@ -121,6 +119,7 @@ const Content: FC = () => {
   const { hash, pathname } = useLocation();
   const [messageApi, messageHolder] = message.useMessage();
   const navigate = useNavigate();
+  const colors = useTheme();
 
   const handleCopy = () => {
     navigator.clipboard
@@ -148,36 +147,98 @@ const Content: FC = () => {
   return (
     <>
       <Drawer
-        className="default-layout-wallet-content"
         closable={false}
         footer={false}
         onClose={() => navigate(-1)}
         open={open}
+        styles={{
+          body: {
+            display: "flex",
+            flexDirection: "column",
+            gap: "16px",
+            padding: "24px 16px",
+          },
+          header: { padding: "24px 16px" },
+        }}
         title={
-          <>
-            <span className="text">{t("connectedWallet")}</span>
-            <RefreshCW className="refresh" onClick={updateWallet} />
+          <HStack
+            $style={{
+              alignItems: "center",
+              gap: "12px",
+              justifyContent: "space-between",
+            }}
+          >
+            <Stack as="span" $style={{ flexGrow: "1" }}>
+              {t("connectedWallet")}
+            </Stack>
+            <Button onClick={updateWallet} ghost>
+              <RefreshIcon fontSize={20} />
+            </Button>
             <Popconfirm title={t("disconnect")} onConfirm={() => disconnect()}>
-              <Power className="disconnect" />
+              <Button kind="danger" ghost>
+                <PowerIcon fontSize={20} />
+              </Button>
             </Popconfirm>
-          </>
+          </HStack>
         }
         width={360}
       >
-        <div className="address">
-          <img src="/avatars/1.png" alt="Avatar" />
-          <MiddleTruncate>{address}</MiddleTruncate>
+        <HStack
+          $style={{
+            alignItems: "center",
+            gap: "12px",
+            justifyContent: "space-between",
+          }}
+        >
+          <Stack
+            as="img"
+            alt="Avatar"
+            src="/avatars/1.png"
+            $style={{
+              borderRadius: "50%",
+              flex: "none",
+              height: "32px",
+              width: "32px",
+            }}
+          />
+          <MiddleTruncate
+            $style={{ flexGrow: "1", fontWeight: "500", overflow: "hidden" }}
+          >
+            {address}
+          </MiddleTruncate>
           <Tooltip title={t("copy")}>
-            <Copy onClick={handleCopy} />
+            <Stack
+              as={Button}
+              onClick={handleCopy}
+              $style={{ flex: "none" }}
+              ghost
+            >
+              <CopyIcon fontSize={20} />
+            </Stack>
           </Tooltip>
-        </div>
+        </HStack>
         <Divider />
-        <div className="total">
-          <span className="label">{t("vaultBalance")}</span>
+        <HStack
+          $style={{
+            alignItems: "center",
+            gap: "8px",
+            justifyContent: "space-between",
+          }}
+        >
+          <Stack as="span" $style={{ lineHeight: "32px", fontWeight: "500" }}>
+            {t("vaultBalance")}
+          </Stack>
           {updating ? (
             <Spin size="small" />
           ) : (
-            <span className="price">
+            <Stack
+              as="span"
+              $style={{
+                fontSize: "16px",
+                fontWeight: "600",
+                lineHeight: "32px",
+              }}
+            >
               {toValueFormat(
                 Object.values(tokens).reduce(
                   (accumulator, { balance, value }) =>
@@ -186,35 +247,50 @@ const Content: FC = () => {
                 ),
                 currency
               )}
-            </span>
+            </Stack>
           )}
-        </div>
+        </HStack>
         {Object.values(tokens).map(({ balance, name, ticker, value }) => (
           <Fragment key={ticker}>
             <Divider />
-            <div className="token">
-              <img
-                src={`/tokens/${ticker.toLowerCase()}.svg`}
+            <HStack $style={{ gap: "8px" }}>
+              <Stack
+                as="img"
                 alt={ticker}
-                className="logo"
+                src={`/tokens/${ticker.toLowerCase()}.svg`}
+                $style={{ height: "32px", width: "32px" }}
               />
-              <div className="info">
-                <span className="ticker">{ticker}</span>
-                <span className="name">{name}</span>
-              </div>
+              <VStack $style={{ gap: "2px", flexGrow: "1" }}>
+                <Stack
+                  as="span"
+                  $style={{ fontSize: "16px", fontWeight: "600" }}
+                >
+                  {ticker}
+                </Stack>
+                <Stack
+                  as="span"
+                  $style={{ color: colors.textTertiary.toHex() }}
+                >
+                  {name}
+                </Stack>
+              </VStack>
               {updating ? (
                 <Spin size="small" />
               ) : (
-                <div className="value">
-                  <span className="price">
+                <VStack $style={{ alignItems: "flex-end", gap: "2px" }}>
+                  <Stack
+                    as="span"
+                    $style={{ fontSize: "16px", fontWeight: "600" }}
+                  >
                     {toValueFormat(balance * value, currency)}
-                  </span>
-                  <span className="balance">{`${toAmountFormat(
-                    balance
-                  )} ${ticker}`}</span>
-                </div>
+                  </Stack>
+                  <Stack
+                    as="span"
+                    $style={{ color: colors.textSecondary.toHex() }}
+                  >{`${toAmountFormat(balance)} ${ticker}`}</Stack>
+                </VStack>
               )}
-            </div>
+            </HStack>
           </Fragment>
         ))}
       </Drawer>
@@ -256,7 +332,7 @@ export const DefaultLayout: FC = () => {
         </MediaQuery>
         {isConnected ? (
           <Button href={modalHash.wallet}>
-            <MiddleTruncate $style={{ width: "110px" }}>
+            <MiddleTruncate $style={{ textAlign: "center", width: "110px" }}>
               {address}
             </MiddleTruncate>
           </Button>

@@ -80,10 +80,10 @@ const Transaction: FC<{ address: string; transaction: TransactionProps }> = ({
       <div className="action">
         <span className="label">{t("swap")}</span>
         <span className="time">
-          {dayjs(date).format(import.meta.env.VITE_TIME_FORMAT)}
+          {dayjs(date).format("HH:mm")}
         </span>
       </div>
-      <MiddleTruncate href={`https://etherscan.io/tx/${hash}`} targetBlank>
+      <MiddleTruncate href={`https://etherscan.io/tx/${hash}`} $style={{ flexGrow: "1", overflow: "hidden" }} targetBlank>
         {hash}
       </MiddleTruncate>
       <div className="swap">

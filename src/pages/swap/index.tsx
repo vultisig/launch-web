@@ -12,6 +12,7 @@ import { SwapVult } from "@/components/swap-vult";
 import { SwapWhitelistCheck } from "@/components/swap-whitelist-check";
 import { SwapReports } from "@/components/SwapReports";
 import { useCore } from "@/hooks/useCore";
+import { Stack, VStack } from "@/toolkits/Stack";
 import { api } from "@/utils/api";
 import { contractAddress, poolsAbi, uniswapTokens } from "@/utils/constants";
 import { getRPCProvider } from "@/utils/providers";
@@ -74,22 +75,37 @@ export const SwapPage: FC = () => {
   }, []);
 
   return (
-    <Content className="swap-page">
-      <div className="aside">
-        <MediaQuery maxWidth={1399}>
+    <Stack
+      as={Content}
+      $style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "16px",
+        maxWidth: "1600px",
+      }}
+      $media={{ xl: { $style: { flexDirection: "row-reverse" } } }}
+    >
+      <VStack
+        $style={{ gap: "16px" }}
+        $media={{ xl: { $style: { flex: "none", width: "400px" } } }}
+      >
+        <MediaQuery maxWidth={1199}>
           <SwapStats marketCap={marketCap} price={price} volume={volume} />
         </MediaQuery>
         <SwapWhitelistCheck />
         <SwapVult />
         <SwapFees />
-      </div>
-      <div className="main">
-        <MediaQuery minWidth={1400}>
+      </VStack>
+      <VStack
+        $style={{ gap: "16px" }}
+        $media={{ xl: { $style: { flexGrow: "1", overflow: "hidden" } } }}
+      >
+        <MediaQuery minWidth={1200}>
           <SwapStats marketCap={marketCap} price={price} volume={volume} />
         </MediaQuery>
         <SwapReports />
         <SwapHistory />
-      </div>
-    </Content>
+      </VStack>
+    </Stack>
   );
 };

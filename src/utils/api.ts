@@ -46,12 +46,12 @@ export const api = {
           isNative
             ? address
             : {
-                data: `0x70a08231000000000000000000000000${address.replace(
-                  "0x",
-                  ""
-                )}`,
-                to: contract,
-              },
+              data: `0x70a08231000000000000000000000000${address.replace(
+                "0x",
+                ""
+              )}`,
+              to: contract,
+            },
           "latest",
         ],
       })
@@ -117,9 +117,8 @@ export const api = {
       .catch(() => []);
   },
   historicalPrice: async (days: number): Promise<HistoricalPriceProps[]> => {
-    const endpoint = `https://gateway.thegraph.com/api/${
-      import.meta.env.VITE_GRAPH_API_KEY
-    }/subgraphs/id/5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV`;
+    const endpoint = `https://gateway.thegraph.com/api/${import.meta.env.VITE_GRAPH_API_KEY
+      }/subgraphs/id/5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV`;
 
     const startEpochSec = Math.floor(Date.now() / 1000);
     const endEpochSec = startEpochSec - 24 * days * 3600;
@@ -177,9 +176,12 @@ export const api = {
         )}&skip_invalid=true&aux=is_active&convert=${currency}`
       )
       .then(({ data }) => {
+        const _currency = currency.toUpperCase()
+        
+
         Object.entries(data.data).forEach(([key, value]) => {
           modifedData[key] =
-            (value.quote[currency] && value.quote[currency].price) || 0;
+            (value.quote[_currency] && value.quote[_currency].price) || 0;
         });
 
         return modifedData;
@@ -187,9 +189,8 @@ export const api = {
       .catch(() => modifedData);
   },
   volume: async (days: number): Promise<number> => {
-    const endpoint = `https://gateway.thegraph.com/api/${
-      import.meta.env.VITE_GRAPH_API_KEY
-    }/subgraphs/id/5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV`;
+    const endpoint = `https://gateway.thegraph.com/api/${import.meta.env.VITE_GRAPH_API_KEY
+      }/subgraphs/id/5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV`;
     const currentEpochDay = Math.floor(Date.now() / 1000 / 3600 / (24 * days));
     const query = `{
       tokenDayData(id: "${contractAddress.uniToken.toLowerCase()}-${currentEpochDay}") {

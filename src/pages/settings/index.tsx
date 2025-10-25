@@ -13,7 +13,7 @@ export const SettingsPage: FC = () => {
   }, []);
 
   return (
-    <Content className="settings-page">
+    <Content>
       <Empty />
     </Content>
   );

@@ -9,7 +9,8 @@ import { SwapSettings } from "@/components/swap-settings";
 import { TokenDropdown } from "@/components/token-dropdown";
 import { useCore } from "@/hooks/useCore";
 import { useSwapVult } from "@/hooks/useSwapVult";
-import { ArrowDownUp, Check, Info, RefreshCW, SettingsTwo } from "@/icons";
+import { ArrowDownUp, Check, Info, SettingsTwo } from "@/icons";
+import { RefreshIcon } from "@/icons/RefreshIcon";
 import { getGasSettings } from "@/storage/gasSettings";
 import { setTransaction } from "@/storage/transaction";
 import { modalHash, uniswapTokens } from "@/utils/constants";
@@ -296,7 +297,8 @@ export const SwapVult: FC = () => {
         className="swap-vult"
         style={{ display: settingsMode ? "none" : undefined }}
       >
-        <RefreshCW
+        <RefreshIcon
+          fontSize={24}
           className={`refresh ${loading ? "spinning" : ""}`}
           onClick={handleRefresh}
         />

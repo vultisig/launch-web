@@ -12,7 +12,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAccount } from "wagmi";
 
 import { useCore } from "@/hooks/useCore";
-import { ArrowDown, ChevronDown, RefreshCW } from "@/icons";
+import { ArrowDown, ChevronDown } from "@/icons";
+import { RefreshIcon } from "@/icons/RefreshIcon";
 import { defaultTokens, modalHash } from "@/utils/constants";
 import {
   toAmountFormat,
@@ -81,7 +82,7 @@ const BridgeTab: FC = () => {
           </div>
         </div>
         <div className="refresh">
-          <RefreshCW />
+          <RefreshIcon fontSize={24} />
         </div>
         <div className="group">
           <div className="item">

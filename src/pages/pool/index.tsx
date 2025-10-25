@@ -47,7 +47,7 @@ export const PoolPage = () => {
       as={Content}
       $style={{
         gap: "24px",
-        maxWidth: "1400px",
+        maxWidth: "1600px",
       }}
     >
       <VStack $style={{ gap: "16px" }}>

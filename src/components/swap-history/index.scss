@@ -40,14 +40,6 @@
     font-size: rem(16);
   }
 
-  .middle-truncate {
-    color: $text-primary;
-
-    &:hover {
-      color: $text-light;
-    }
-  }
-
   .action {
     display: flex;
     flex-direction: column;
@@ -167,16 +159,12 @@
   }
 }
 
-@media (min-width: rem(1400)) {
+@media (min-width: rem(1200)) {
   .swap-history {
     gap: rem(16);
 
     .heading {
       font-size: rem(20);
-    }
-
-    .middle-truncate {
-      flex: 1;
     }
 
     .btn {
