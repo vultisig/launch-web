@@ -24,7 +24,7 @@ const Component: FC = () => {
         setState((prevState) => ({ ...prevState, usedAllocation }));
       });
     }
-  }, [address && isConnected]);
+  }, [address, isConnected]);
 
   return (
     <div className="swap-fees">

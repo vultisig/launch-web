@@ -96,7 +96,7 @@ const Component: FC = () => {
           <SwapStats marketCap={marketCap} price={price} volume={volume} />
         </MediaQuery>
         <iframe
-          src="https://www.geckoterminal.com/eth/pools/0x1f9840a85d5af5bf1d1762f925bdaddc4201f984?embed=1&info=0&swaps=0&light_chart=0&chart_type=price&resolution=1d&bg_color=02122b"
+          src={`https://www.geckoterminal.com/eth/pools/${ContractAddress.UNI_USDC_POOL}?embed=1&info=0&swaps=0&light_chart=0&chart_type=price&resolution=1d&bg_color=02122b`}
           allow="clipboard-write"
           style={{
             border: "none",
