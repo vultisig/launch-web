@@ -7,6 +7,7 @@ export default {
   [translation.AMOUNT]: "Amount",
   [translation.AMOUNT_STAKED]: "Amount Staked",
   [translation.APPROVE]: "Approve",
+  [translation.APPROVING]: "Approving",
   [translation.AVAILABLE]: "Available",
   // B
   [translation.BASIC]: "Basic",

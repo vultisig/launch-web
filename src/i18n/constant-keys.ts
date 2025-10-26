@@ -7,6 +7,7 @@ export default keyMirror({
   AMOUNT: true,
   AMOUNT_STAKED: true,
   APPROVE: true,
+  APPROVING: true,
   AVAILABLE: true,
   // B
   BASIC: true,

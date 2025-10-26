@@ -60,6 +60,7 @@ const Component: FC = () => {
     getTokensValue,
     getUniswapQuote,
     requestApproval,
+    getTxStatus,
   } = useSwapVult();
   const gasSettings = getStoredGasSettings();
 
@@ -124,6 +125,32 @@ const Component: FC = () => {
       });
   };
 
+  const waitForTxConfirmation = async (txHash: string) => {
+    const status = await getTxStatus(txHash);
+    switch (status) {
+      case TxStatus.PENDING:
+        setState((prevState) => ({ ...prevState, approving: true }));
+        setTimeout(() => {
+          waitForTxConfirmation(txHash);
+        }, 1000);
+        break;
+      case TxStatus.FAILED:
+        setState((prevState) => ({
+          ...prevState,
+          approving: false,
+          needsApproval: true,
+        }));
+        break;
+      case TxStatus.SUCCESS:
+        setState((prevState) => ({
+          ...prevState,
+          approving: false,
+          needsApproval: false,
+        }));
+        break;
+    }
+  };
+
   const handleSwap = () => {
     if (address && !approving && !swapping) {
       const values = form.getFieldsValue();
@@ -138,14 +165,15 @@ const Component: FC = () => {
           tokenIn.address,
           tokenIn.decimals
         )
-          .then(() => {
-            setState((prevState) => ({ ...prevState, needsApproval: false }));
+          .then((txHash) => {
+            waitForTxConfirmation(txHash);
           })
           .catch(() => {
-            setState((prevState) => ({ ...prevState, needsApproval: true }));
-          })
-          .finally(() => {
-            setState((prevState) => ({ ...prevState, approving: false }));
+            setState((prevState) => ({
+              ...prevState,
+              needsApproval: true,
+              approving: false,
+            }));
           });
       } else {
         setState((prevState) => ({ ...prevState, swapping: true }));
@@ -495,7 +523,7 @@ const Component: FC = () => {
                         </span>
                       ) : approving ? (
                         <span className="button button-secondary disabled">
-                          {t(constantKeys.APPROVE)}
+                          {t(constantKeys.APPROVING)}
                         </span>
                       ) : (
                         <span
