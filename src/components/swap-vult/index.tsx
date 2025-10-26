@@ -47,7 +47,7 @@ const Component: FC = () => {
     swapping,
     values,
   } = state;
-  const { currency, tokens } = useBaseContext();
+  const { currency, tokens, updateTokenBalances } = useBaseContext();
   const { address, isConnected } = useAccount();
   const [form] = Form.useForm<SwapFormProps>();
   const {
@@ -60,6 +60,7 @@ const Component: FC = () => {
     getTokensValue,
     getUniswapQuote,
     requestApproval,
+    getTxStatus,
   } = useSwapVult();
   const gasSettings = getStoredGasSettings();
 
@@ -124,6 +125,77 @@ const Component: FC = () => {
       });
   };
 
+  const waitForTxConfirmation = async (
+    txHash: string,
+    startedAt = Date.now(),
+    retryCount = 0
+  ) => {
+    const MAX_RETRIES = 180; // 3 minutes with 1 second intervals
+    const POLL_INTERVAL_MS = 1000;
+    const TIMEOUT_MS = 180_000; // 3 minutes total timeout
+
+    if (retryCount >= MAX_RETRIES || Date.now() - startedAt >= TIMEOUT_MS) {
+      setState((prevState) => ({
+        ...prevState,
+        approving: false,
+        needsApproval: true,
+      }));
+      messageApi.error(t(constantKeys.TRANSACTION_TIMEOUT));
+      return;
+    }
+
+    try {
+      const status = await getTxStatus(txHash);
+
+      switch (status) {
+        case TxStatus.PENDING:
+          setState((prevState) => ({ ...prevState, approving: true }));
+          setTimeout(() => {
+            waitForTxConfirmation(txHash, startedAt, retryCount + 1);
+          }, POLL_INTERVAL_MS);
+          break;
+
+        case TxStatus.FAILED:
+          setState((prevState) => ({
+            ...prevState,
+            approving: false,
+            needsApproval: true,
+          }));
+          messageApi.error(t(constantKeys.TRANSACTION_FAILED));
+          break;
+
+        case TxStatus.SUCCESS:
+          setState((prevState) => ({
+            ...prevState,
+            approving: false,
+            needsApproval: false,
+          }));
+          messageApi.success(t(constantKeys.TRANSACTION_SUCCESS));
+          break;
+
+        default:
+          const backoffDelay = Math.min(
+            POLL_INTERVAL_MS * Math.pow(2, Math.floor(retryCount / 10)),
+            10000
+          );
+          setTimeout(() => {
+            waitForTxConfirmation(txHash, startedAt, retryCount + 1);
+          }, backoffDelay);
+          break;
+      }
+    } catch (error) {
+      console.error("Error checking transaction status:", error);
+
+      const backoffDelay = Math.min(
+        POLL_INTERVAL_MS * Math.pow(2, Math.floor(retryCount / 5)),
+        10000
+      );
+      setTimeout(() => {
+        waitForTxConfirmation(txHash, startedAt, retryCount + 1);
+      }, backoffDelay);
+    }
+  };
+
   const handleSwap = () => {
     if (address && !approving && !swapping) {
       const values = form.getFieldsValue();
@@ -138,14 +210,15 @@ const Component: FC = () => {
           tokenIn.address,
           tokenIn.decimals
         )
-          .then(() => {
-            setState((prevState) => ({ ...prevState, needsApproval: false }));
+          .then((txHash) => {
+            waitForTxConfirmation(txHash);
           })
           .catch(() => {
-            setState((prevState) => ({ ...prevState, needsApproval: true }));
-          })
-          .finally(() => {
-            setState((prevState) => ({ ...prevState, approving: false }));
+            setState((prevState) => ({
+              ...prevState,
+              needsApproval: true,
+              approving: false,
+            }));
           });
       } else {
         setState((prevState) => ({ ...prevState, swapping: true }));
@@ -161,6 +234,9 @@ const Component: FC = () => {
                 hash: txHash,
                 status: TxStatus.PENDING,
               });
+              // Clear the tokenIn input amount
+              form.setFieldValue("allocateAmount", undefined);
+              form.setFieldValue("buyAmount", undefined);
             }
           })
           .finally(() => {
@@ -280,6 +356,7 @@ const Component: FC = () => {
     if (!loading) {
       const { allocateToken, buyAmount, buyToken } = form.getFieldsValue();
       handleUpdateQuote(buyToken, allocateToken, buyAmount, false);
+      updateTokenBalances([tokens[allocateToken], tokens[buyToken]]);
     }
   };
 
@@ -495,7 +572,8 @@ const Component: FC = () => {
                         </span>
                       ) : approving ? (
                         <span className="button button-secondary disabled">
-                          {t(constantKeys.APPROVE)}
+                          <Spin size="small" style={{ marginRight: 8 }} />
+                          {t(constantKeys.APPROVING)}
                         </span>
                       ) : (
                         <span

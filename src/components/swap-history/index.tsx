@@ -14,12 +14,14 @@ import constantKeys from "i18n/constant-keys";
 import { ChevronRight, CircleCheckBig, OctagonAlert, Trash } from "icons";
 import MiddleTruncate from "components/middle-truncate";
 import { Empty, Spin, Tooltip } from "antd";
+import { useBaseContext } from "context";
 
 const Transaction: FC<{ address: string; transaction: TransactionProps }> = ({
   address,
   transaction,
 }) => {
   const { t } = useTranslation();
+  const { tokens, updateTokenBalances } = useBaseContext();
   const { getTxStatus } = useSwapVult();
   const {
     allocateAmount,
@@ -41,6 +43,7 @@ const Transaction: FC<{ address: string; transaction: TransactionProps }> = ({
             }, 1000 * 10);
           } else {
             setStoredTransaction(address, { ...transaction, status });
+            updateTokenBalances(Object.values(tokens));
           }
         })
         .catch(() => {});
