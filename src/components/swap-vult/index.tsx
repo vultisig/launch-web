@@ -189,6 +189,10 @@ const Component: FC = () => {
                 hash: txHash,
                 status: TxStatus.PENDING,
               });
+              
+              // Clear the tokenIn input amount
+              form.setFieldValue("allocateAmount", 0);
+              form.setFieldValue("buyAmount", undefined);
             }
           })
           .finally(() => {
