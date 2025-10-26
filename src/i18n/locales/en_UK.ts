@@ -90,6 +90,9 @@ export default {
   [translation.TOTAL_VULT_STAKED]: "Total VULT Staked",
   [translation.TOTAL_WL_ALLOCATION]: "Total WL allocation",
   [translation.TRANSACTION_SETTINGS]: "Transaction Settings",
+  [translation.TRANSACTION_FAILED]: "Transaction failed",
+  [translation.TRANSACTION_SUCCESS]: "Transaction successful",
+  [translation.TRANSACTION_TIMEOUT]: "Transaction timeout - please try again",
   [translation.TRANSACTIONS]: "Transactions",
   [translation.USED_ALLOCATION]: "Used Allocation",
   // U

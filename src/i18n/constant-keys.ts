@@ -89,7 +89,10 @@ export default keyMirror({
   TOTAL_VULT_STAKED: true,
   TOTAL_WL_ALLOCATION: true,
   TRANSACTIONS: true,
+  TRANSACTION_FAILED: true,
   TRANSACTION_SETTINGS: true,
+  TRANSACTION_SUCCESS: true,
+  TRANSACTION_TIMEOUT: true,
   // U
   USED_ALLOCATION: true,
   // V
