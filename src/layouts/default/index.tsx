@@ -18,7 +18,9 @@ import { Connector, useAccount, useConnect, useDisconnect } from "wagmi";
 
 import { MiddleTruncate } from "@/components/MiddleTruncate";
 import { useCore } from "@/hooks/useCore";
+import { ArrowDownUpIcon } from "@/icons/ArrowDownUpIcon";
 import { CopyIcon } from "@/icons/CopyIcon";
+import { DatabaseIcon } from "@/icons/DatabaseIcon";
 import { PowerIcon } from "@/icons/PowerIcon";
 import { RefreshIcon } from "@/icons/RefreshIcon";
 import { Button } from "@/toolkits/Button";
@@ -27,9 +29,6 @@ import { HStack, Stack, VStack } from "@/toolkits/Stack";
 import { modalHash } from "@/utils/constants";
 import { toAmountFormat, toValueFormat } from "@/utils/functions";
 import { routeTree } from "@/utils/routes";
-import { ArrowDownUpIcon } from "@/icons/ArrowDownUpIcon";
-import { ArrowRightToLineIcon } from "@/icons/ArrowRightToLineIcon";
-import { DatabaseIcon } from "@/icons/DatabaseIcon";
 
 const { Footer, Header } = Layout;
 
@@ -62,7 +61,7 @@ const Connect = () => {
   };
 
   const open = useMemo(() => {
-    return isConnected && hash === modalHash.connect;
+    return !isConnected && hash === modalHash.connect;
   }, [hash]);
 
   return (
@@ -329,10 +328,6 @@ export const DefaultLayout = () => {
       label: <Link to={routeTree.swap.path}>{t("swap")}</Link>,
     },
     {
-      key: "staking",
-      label: <Link to={routeTree.stakingStake.path}>{t("staking")}</Link>,
-    },
-    {
       key: "pool",
       label: <Link to={routeTree.pool.path}>{t("pool")}</Link>,
     },
@@ -345,7 +340,7 @@ export const DefaultLayout = () => {
           <img src="/logo.svg" alt="Vultisig" className="icon" />
           <span className="name">Vultisig</span>
         </div>
-        <MediaQuery minWidth={992}>
+        <MediaQuery minWidth={768}>
           <Tabs activeKey={currentPage} items={items} />
         </MediaQuery>
         {isConnected ? (
@@ -360,7 +355,7 @@ export const DefaultLayout = () => {
       </Header>
       <Outlet />
       <Connect />
-      <MediaQuery maxWidth={991}>
+      <MediaQuery maxWidth={767}>
         <Footer>
           <Link
             to={routeTree.swap.path}
@@ -368,13 +363,6 @@ export const DefaultLayout = () => {
           >
             <ArrowDownUpIcon />
             {t("swap")}
-          </Link>
-          <Link
-            to={routeTree.stakingStake.path}
-            className={currentPage === "staking" ? "active" : ""}
-          >
-            <ArrowRightToLineIcon />
-            {t("staking")}
           </Link>
           <Link
             to={routeTree.pool.path}

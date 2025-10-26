@@ -10,6 +10,7 @@ import { TokenDropdown } from "@/components/token-dropdown";
 import { useCore } from "@/hooks/useCore";
 import { useSwapVult } from "@/hooks/useSwapVult";
 import { Check, Info, SettingsTwo } from "@/icons";
+import { ArrowDownUpIcon } from "@/icons/ArrowDownUpIcon";
 import { RefreshIcon } from "@/icons/RefreshIcon";
 import { getGasSettings } from "@/storage/gasSettings";
 import { setTransaction } from "@/storage/transaction";
@@ -20,7 +21,6 @@ import {
   toValueFormat,
 } from "@/utils/functions";
 import { SwapFormProps, TickerKey } from "@/utils/types";
-import { ArrowDownUpIcon } from "@/icons/ArrowDownUpIcon";
 
 type StateProps = {
   approving?: boolean;

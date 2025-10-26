@@ -5,10 +5,7 @@ import { WagmiProvider } from "wagmi";
 
 import { i18nInstance } from "@/i18n/config";
 import { DefaultLayout } from "@/layouts/default";
-import { MergePage } from "@/pages/merge";
 import { NotFoundPage } from "@/pages/not-found";
-import { SettingsPage } from "@/pages/settings";
-import { StakingPage } from "@/pages/staking";
 import { SwapPage } from "@/pages/swap";
 import { AntdProvider } from "@/providers/antd";
 import { CoreProvider } from "@/providers/core";
@@ -39,34 +36,12 @@ export const App = () => {
                         index
                       />
                       <Route
-                        element={
-                          <Navigate to={routeTree.stakingStake.path} replace />
-                        }
-                        path={routeTree.staking.path}
-                      />
-                      <Route
                         element={<SwapPage />}
                         path={routeTree.swap.path}
                       />
                       <Route
-                        element={<StakingPage />}
-                        path={routeTree.stakingStake.path}
-                      />
-                      <Route
-                        element={<StakingPage />}
-                        path={routeTree.stakingWithdraw.path}
-                      />
-                      <Route
-                        element={<MergePage />}
-                        path={routeTree.merge.path}
-                      />
-                      <Route
                         element={<PoolPage />}
                         path={routeTree.pool.path}
-                      />
-                      <Route
-                        element={<SettingsPage />}
-                        path={routeTree.settings.path}
                       />
                     </Route>
                     <Route
