@@ -30,6 +30,7 @@ interface BaseContext {
   changeLanguage: (language: Language) => void;
   changePage: (language: PageKey) => void;
   updateWallet: () => void;
+  updateTokenBalances: (tokensToUpdate: TokenProps[]) => Promise<void>;
   activePage: PageKey;
   currency: Currency;
   language: Language;
@@ -77,13 +78,15 @@ const Component: FC<{ children: ReactNode }> = ({ children }) => {
     setState((prevState) => ({ ...prevState, activePage }));
   };
 
-  const componentDidUpdate = () => {
-    if (address) {
-      setState((prevState) => ({ ...prevState, updating: true }));
+  const updateTokenBalances = async (tokensToUpdate: TokenProps[]): Promise<void> => {
+    if (!address) return;
 
-      Promise.all([
+    setState((prevState) => ({ ...prevState, updating: true }));
+
+    try {
+      await Promise.all([
         Promise.all(
-          Object.values(tokens).map((token) =>
+          tokensToUpdate.map((token) =>
             api
               .balance(
                 address,
@@ -106,23 +109,29 @@ const Component: FC<{ children: ReactNode }> = ({ children }) => {
         }),
         api
           .values(
-            Object.values(tokens).map(({ cmcId }) => cmcId),
+            tokensToUpdate.map(({ cmcId }) => cmcId),
             Currency.USD
           )
           .then((values) => {
             setState((prevState) => {
               const tokens = prevState.tokens;
 
-              Object.values(tokens).forEach(({ cmcId, ticker, value }) => {
+              tokensToUpdate.forEach(({ cmcId, ticker, value }) => {
                 tokens[ticker].value = values[cmcId] || value;
               });
 
               return { ...prevState, tokens };
             });
           }),
-      ]).then(() => {
-        setState((prevState) => ({ ...prevState, updating: false }));
-      });
+      ]);
+    } finally {
+      setState((prevState) => ({ ...prevState, updating: false }));
+    }
+  };
+
+  const componentDidUpdate = () => {
+    if (address) {
+      updateTokenBalances(Object.values(tokens));
     }
   };
 
@@ -140,6 +149,7 @@ const Component: FC<{ children: ReactNode }> = ({ children }) => {
         changeLanguage,
         changePage,
         updateWallet: componentDidUpdate,
+        updateTokenBalances,
         activePage,
         currency,
         language,

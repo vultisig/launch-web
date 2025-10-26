@@ -47,7 +47,7 @@ const Component: FC = () => {
     swapping,
     values,
   } = state;
-  const { currency, tokens } = useBaseContext();
+  const { currency, tokens, updateTokenBalances } = useBaseContext();
   const { address, isConnected } = useAccount();
   const [form] = Form.useForm<SwapFormProps>();
   const {
@@ -308,6 +308,7 @@ const Component: FC = () => {
     if (!loading) {
       const { allocateToken, buyAmount, buyToken } = form.getFieldsValue();
       handleUpdateQuote(buyToken, allocateToken, buyAmount, false);
+      updateTokenBalances([tokens[allocateToken], tokens[buyToken]]);
     }
   };
 
