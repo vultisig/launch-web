@@ -90,6 +90,7 @@ export default {
   [translation.TOTAL_WL_ALLOCATION]: "Total WL allocation",
   [translation.TRANSACTION_SETTINGS]: "Transaction Settings",
   [translation.TRANSACTIONS]: "Transactions",
+  [translation.USED_ALLOCATION]: "Used Allocation",
   // U
   // V
   [translation.VAULT_BALANCE]: "Vault Balance",

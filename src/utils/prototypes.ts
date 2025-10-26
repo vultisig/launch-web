@@ -68,12 +68,12 @@ Number.prototype.toNumberFormat = function () {
 
 Number.prototype.toPriceFormat = function (
   currency: Currency,
-  decimal?: number
+  decimal: number = 2
 ) {
   const formattedValue = this.toLocaleString("en-US", {
     style: "decimal",
-    minimumFractionDigits: decimal || 2,
-    maximumFractionDigits: decimal || 2,
+    minimumFractionDigits: decimal,
+    maximumFractionDigits: decimal,
   });
 
   return `${currencySymbol[currency]}${formattedValue}`;

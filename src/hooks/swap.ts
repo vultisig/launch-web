@@ -180,6 +180,22 @@ const useSwapVult = () => {
     }
   };
 
+  const getAddressSpentUSDC = async (address: string): Promise<number> => {
+    const launchListContract = new Contract(
+      ContractAddress.LAUNCH_LIST,
+      LAUNCH_LIST_ABI,
+      rpcClient
+    );
+
+    try {
+      const usdcValue = await launchListContract.addressUsdcSpent(address);
+      return Number(usdcValue);
+    } catch (error) {
+      console.error("Error fetching spent USDC of address:", error);
+      return 0;
+    }
+  };
+
   const getMaxNetworkFee = (ethPrice: number) => {
     // Convert Gwei to ETH (1 Gwei = 10^-9 ETH)
     const maxFeeEth = gasSetting.maxFee * 1e-9;
@@ -527,6 +543,7 @@ const useSwapVult = () => {
     checkApproval,
     executeSwap,
     getAddressSpentETH,
+    getAddressSpentUSDC,
     getPhase1ETHAllocation,
     getPhase2ETHAllocation,
     getPoolConstants,

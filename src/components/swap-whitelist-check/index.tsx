@@ -51,13 +51,13 @@ const Component: FC = () => {
 
   return isConnected ? null : (
     <Form form={form} onValuesChange={handleCheck} className="swap-whitelisted">
+      <span>{t(constantKeys.SEARCH_TITLE)}</span>
       <Form.Item<ComponentFormProps>
         name="address"
         validateStatus="validating"
         hasFeedback={loading}
         noStyle
       >
-        <span>{t(constantKeys.SEARCH_TITLE)}</span>
         <Input
           prefix={<Search />}
           placeholder={t(constantKeys.SEARCH_ADDRESS)}
