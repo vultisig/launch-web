@@ -4,9 +4,9 @@ import { useAccount } from "wagmi";
 import { getTransactions, setTransactions } from "@/storage/transaction";
 import { TransactionProps } from "@/utils/types";
 
-interface StateProps {
+type StateProps = {
   transactions: TransactionProps[];
-}
+};
 
 export const useSwapHistory = () => {
   const [state, setState] = useState<StateProps>({ transactions: [] });
@@ -36,7 +36,9 @@ export const useSwapHistory = () => {
             JSON.stringify(prevState.transactions) !==
             JSON.stringify(transactions);
 
-          return updated ? { ...prevState, transactions } : prevState;
+          return updated
+            ? { ...prevState, transactions: [...transactions, ...transactions] }
+            : prevState;
         });
       }, 1000);
     } else {

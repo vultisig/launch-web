@@ -1,17 +1,19 @@
-import { Form, Input, InputNumber, message, Spin, Tooltip } from "antd";
+import { Form, Input, InputNumber, Spin, Tooltip } from "antd";
 import { debounce } from "lodash";
-import { FC, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useAccount } from "wagmi";
 
 import { SwapSettings } from "@/components/swap-settings";
-import { TokenDropdown } from "@/components/token-dropdown";
+import { TokenDropdown } from "@/components/TokenDropdown";
 import { useCore } from "@/hooks/useCore";
 import { useSwapVult } from "@/hooks/useSwapVult";
-import { Check, Info, SettingsTwo } from "@/icons";
 import { ArrowDownUpIcon } from "@/icons/ArrowDownUpIcon";
+import { CheckIcon } from "@/icons/CheckIcon";
+import { InfoIcon } from "@/icons/InfoIcon";
 import { RefreshIcon } from "@/icons/RefreshIcon";
+import { SettingsIcon } from "@/icons/SettingsIcon";
 import { getGasSettings } from "@/storage/gasSettings";
 import { setTransaction } from "@/storage/transaction";
 import { modalHash, uniswapTokens } from "@/utils/constants";
@@ -34,7 +36,7 @@ type StateProps = {
   values?: Record<TickerKey, number>;
 };
 
-export const SwapVult: FC = () => {
+export const SwapVult = () => {
   const { t } = useTranslation();
   const [state, setState] = useState<StateProps>({
     maxNetworkFee: 0,
@@ -51,8 +53,7 @@ export const SwapVult: FC = () => {
     swapping,
     values,
   } = state;
-  const [messageApi, contextHolder] = message.useMessage();
-  const { currency, tokens } = useCore();
+  const { currency, message, tokens } = useCore();
   const { address, isConnected } = useAccount();
   const [form] = Form.useForm<SwapFormProps>();
   const {
@@ -211,7 +212,7 @@ export const SwapVult: FC = () => {
           fullAmount -= gasFeeWithBuffer;
         } else {
           // Show warning message to the user
-          messageApi.warning(
+          message.warning(
             t("insufficientBalance") + ". " + t("pleaseAddMoreEthForGas")
           );
           // Set the amount to 0
@@ -288,7 +289,6 @@ export const SwapVult: FC = () => {
 
   return (
     <>
-      {contextHolder}
       <SwapSettings onClose={handleMode} visible={settingsMode} />
       <Form
         form={form}
@@ -305,7 +305,11 @@ export const SwapVult: FC = () => {
         />
         <div className="heading">
           <span className="text">{t("swap")}</span>
-          <SettingsTwo onClick={() => handleMode(true)} className="toggle" />
+          <SettingsIcon
+            fontSize={24}
+            onClick={() => handleMode(true)}
+            className="toggle"
+          />
         </div>
         <div className="swap">
           <div className="item">
@@ -469,12 +473,12 @@ export const SwapVult: FC = () => {
                   <>
                     {isWhitelist ? (
                       <div className="whitelist islisted">
-                        <Check />
+                        <CheckIcon />
                         {t("whitelisted")}
                       </div>
                     ) : (
                       <div className="whitelist notlisted">
-                        <Info />
+                        <InfoIcon />
                         {t("notWhitelisted")}
                       </div>
                     )}

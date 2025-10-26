@@ -1,4 +1,4 @@
-import { FC, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "styled-components";
 
@@ -8,7 +8,7 @@ import { Spin } from "@/toolkits/Spin";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
 import { defaultPeriod, Period, periodNames, periods } from "@/utils/period";
 
-export const SwapReports: FC = () => {
+export const SwapReports = () => {
   const { t } = useTranslation();
   const [period, setPeriod] = useState<Period>(defaultPeriod);
   const { data, loading } = useChartData(period);

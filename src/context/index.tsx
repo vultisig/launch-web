@@ -11,7 +11,7 @@ import { RouteKey } from "@/utils/routes";
 import { Theme } from "@/utils/theme";
 import { Tokens } from "@/utils/types";
 
-interface CoreContextType {
+type CoreContextType = {
   currency: Currency;
   currentPage: RouteKey;
   language: Language;
@@ -25,7 +25,7 @@ interface CoreContextType {
   tokens: Tokens;
   updateWallet: () => void;
   updating: boolean;
-}
+};
 
 export const CoreContext = createContext<CoreContextType | undefined>(
   undefined

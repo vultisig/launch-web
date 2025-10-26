@@ -2,7 +2,10 @@ import { Form, InputNumber, Radio } from "antd";
 import { FC, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { CarFront, ChevronLeft, Hourglass, Timer } from "@/icons";
+import { CarFrontIcon } from "@/icons/CarFrontIcon";
+import { ChevronLeftIcon } from "@/icons/ChevronLeftIcon";
+import { HourglassIcon } from "@/icons/HourglassIcon";
+import { TimerIcon } from "@/icons/TimerIcon";
 import { getGasSettings, setGasSettings } from "@/storage/gasSettings";
 import { api } from "@/utils/api";
 import { defaultGasSettings } from "@/utils/constants";
@@ -113,7 +116,7 @@ export const SwapSettings: FC<SwapSettingsProps> = ({ onClose, visible }) => {
         <span onClick={handleReset} className="reset">
           {t("reset")}
         </span>
-        <ChevronLeft onClick={() => onClose(false)} className="toggle" />
+        <ChevronLeftIcon onClick={() => onClose(false)} className="toggle" />
       </div>
       <div className="slippage">
         <span className="label">{t("slippage")}</span>
@@ -196,7 +199,7 @@ export const SwapSettings: FC<SwapSettingsProps> = ({ onClose, visible }) => {
                 >
                   <Radio.Group>
                     <Radio value="Fast">
-                      <Timer className="icon" />
+                      <TimerIcon className="icon" />
                       <span className="title">
                         <span className="text">{t("fast")}</span>
                         <span className="speed">
@@ -213,7 +216,7 @@ export const SwapSettings: FC<SwapSettingsProps> = ({ onClose, visible }) => {
                       </span>
                     </Radio>
                     <Radio value="Standard">
-                      <CarFront className="icon" />
+                      <CarFrontIcon className="icon" />
                       <span className="title">
                         <span className="text">{t("standard")}</span>
                         <span className="speed">
@@ -230,7 +233,7 @@ export const SwapSettings: FC<SwapSettingsProps> = ({ onClose, visible }) => {
                       </span>
                     </Radio>
                     <Radio value="Slow">
-                      <Hourglass className="icon" />
+                      <HourglassIcon className="icon" />
                       <span className="title">
                         <span className="text">{t("slow")}</span>
                         <span className="speed">

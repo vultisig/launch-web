@@ -1,16 +1,17 @@
 import { FeeAmount, Pool } from "@uniswap/v3-sdk";
 import { Layout } from "antd";
 import { Contract, formatEther } from "ethers";
-import { FC, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import MediaQuery from "react-responsive";
 import { erc20Abi } from "viem";
+import { useAccount } from "wagmi";
 
-import { SwapFees } from "@/components/swap-fees";
-import { SwapHistory } from "@/components/swap-history";
-import { SwapStats } from "@/components/swap-stats";
 import { SwapVult } from "@/components/swap-vult";
-import { SwapWhitelistCheck } from "@/components/swap-whitelist-check";
+import { SwapFees } from "@/components/SwapFees";
+import { SwapHistory } from "@/components/SwapHistory";
 import { SwapReports } from "@/components/SwapReports";
+import { SwapStats } from "@/components/SwapStats";
+import { SwapWhitelist } from "@/components/SwapWhitelist";
 import { useCore } from "@/hooks/useCore";
 import { Stack, VStack } from "@/toolkits/Stack";
 import { api } from "@/utils/api";
@@ -19,17 +20,17 @@ import { getRPCProvider } from "@/utils/providers";
 
 const { Content } = Layout;
 
-interface InitialState {
-  marketCap: number;
-  price: number;
-  volume: number;
-}
+type StateProps = { marketCap: number; price: number; volume: number };
 
-export const SwapPage: FC = () => {
-  const initialState: InitialState = { marketCap: 0, price: 0, volume: 0 };
-  const [state, setState] = useState(initialState);
+export const SwapPage = () => {
+  const [state, setState] = useState<StateProps>({
+    marketCap: 0,
+    price: 0,
+    volume: 0,
+  });
   const { marketCap, price, volume } = state;
   const { setCurrentPage } = useCore();
+  const { isConnected } = useAccount();
 
   const fetchPrice = async () => {
     const contract = new Contract(
@@ -92,7 +93,7 @@ export const SwapPage: FC = () => {
         <MediaQuery maxWidth={1199}>
           <SwapStats marketCap={marketCap} price={price} volume={volume} />
         </MediaQuery>
-        <SwapWhitelistCheck />
+        {!isConnected && <SwapWhitelist />}
         <SwapVult />
         <SwapFees />
       </VStack>
@@ -104,7 +105,7 @@ export const SwapPage: FC = () => {
           <SwapStats marketCap={marketCap} price={price} volume={volume} />
         </MediaQuery>
         <SwapReports />
-        <SwapHistory />
+        {isConnected && <SwapHistory />}
       </VStack>
     </Stack>
   );

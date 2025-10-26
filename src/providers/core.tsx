@@ -1,5 +1,5 @@
 import { message as Message, Modal } from "antd";
-import { FC, ReactNode, useEffect, useMemo, useState } from "react";
+import { FC, ReactNode, useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 
 import { CoreContext } from "@/context";
@@ -24,27 +24,24 @@ import { RouteKey } from "@/utils/routes";
 import { Theme } from "@/utils/theme";
 import { Tokens } from "@/utils/types";
 
-interface InitialState {
+type StateProps = {
   currency: Currency;
   currentPage: RouteKey;
   language: Language;
   theme: Theme;
   tokens: Tokens;
   updating: boolean;
-}
+};
 
 export const CoreProvider: FC<{ children: ReactNode }> = ({ children }) => {
-  const initialState: InitialState = useMemo(() => {
-    return {
-      currency: getCurrency(),
-      currentPage: "swap",
-      language: getLanguage(),
-      theme: getTheme(),
-      tokens: shallowCloneObject(defaultTokens),
-      updating: false,
-    };
-  }, []);
-  const [state, setState] = useState(initialState);
+  const [state, setState] = useState<StateProps>({
+    currency: getCurrency(),
+    currentPage: "swap",
+    language: getLanguage(),
+    theme: getTheme(),
+    tokens: shallowCloneObject(defaultTokens),
+    updating: false,
+  });
   const { currency, currentPage, language, theme, tokens, updating } = state;
   const [message, messageHolder] = Message.useMessage();
   const [modal, modalHolder] = Modal.useModal();
