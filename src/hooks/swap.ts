@@ -1,4 +1,4 @@
-import { Contract, formatEther, formatUnits, parseUnits } from "ethers";
+import { Contract, formatUnits, parseUnits } from "ethers";
 import { encodeFunctionData, erc20Abi } from "viem";
 import { useAccount, useWalletClient } from "wagmi";
 import {
@@ -165,17 +165,18 @@ const useSwapVult = () => {
     }
   };
 
-  const getAddressSpentETH = async (address: string): Promise<number> => {
+  const getAddressSpentUSDC = async (address: string): Promise<number> => {
     const launchListContract = new Contract(
       ContractAddress.LAUNCH_LIST,
       LAUNCH_LIST_ABI,
       rpcClient
     );
+
     try {
-      const weiValue = await launchListContract.addressEthSpent(address);
-      return Number(formatEther(weiValue));
+      const usdcValue = await launchListContract.addressUsdcSpent(address);
+      return Number(formatUnits(usdcValue, 6));
     } catch (error) {
-      console.error("Error fetching spent ETH of address:", error);
+      console.error("Error fetching spent USDC of address:", error);
       return 0;
     }
   };
@@ -193,36 +194,6 @@ const useSwapVult = () => {
     const maxNetworkFeeUsd = maxNetworkFeeEth * ethPrice;
 
     return maxNetworkFeeUsd;
-  };
-
-  const getPhase1ETHAllocation = async (): Promise<number> => {
-    const launchListContract = new Contract(
-      ContractAddress.LAUNCH_LIST,
-      LAUNCH_LIST_ABI,
-      rpcClient
-    );
-    try {
-      const weiValue = await launchListContract.phase1EthLimit();
-      return Number(formatEther(weiValue));
-    } catch (error) {
-      console.error("Error fetching phase1 allocation:", error);
-      return 0;
-    }
-  };
-
-  const getPhase2ETHAllocation = async (): Promise<number> => {
-    const launchListContract = new Contract(
-      ContractAddress.LAUNCH_LIST,
-      LAUNCH_LIST_ABI,
-      rpcClient
-    );
-    try {
-      const weiValue = await launchListContract.phase2EthLimit();
-      return Number(formatEther(weiValue));
-    } catch (error) {
-      console.error("Error fetching phase2 allocation:", error);
-      return 0;
-    }
   };
 
   const getPoolConstant = async (
@@ -526,9 +497,7 @@ const useSwapVult = () => {
     isWhitelist,
     checkApproval,
     executeSwap,
-    getAddressSpentETH,
-    getPhase1ETHAllocation,
-    getPhase2ETHAllocation,
+    getAddressSpentUSDC,
     getPoolConstants,
     getMaxNetworkFee,
     getPoolPrice,

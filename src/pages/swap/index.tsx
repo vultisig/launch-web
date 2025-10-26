@@ -18,7 +18,6 @@ import api from "utils/api";
 
 import SwapFees from "components/swap-fees";
 import SwapHistory from "components/swap-history";
-import SwapReports from "components/swap-reports";
 import SwapStats from "components/swap-stats";
 import SwapVult from "components/swap-vult";
 import SwapWhitelistCheck from "components/swap-whitelist-check";
@@ -39,21 +38,21 @@ const Component: FC = () => {
 
   const fetchPrice = async () => {
     const contract = new Contract(
-      ContractAddress.WETH_USDC_POOL,
+      ContractAddress.UNI_USDC_POOL,
       POOLS_ABI,
       getRPCProvider()
     );
     const slot0 = await contract.slot0();
     const poolLiquidity = String(await contract.liquidity());
     const pool = new Pool(
-      uniswapTokens[TickerKey.WETH],
+      uniswapTokens[TickerKey.UNI],
       uniswapTokens[TickerKey.USDC],
       FeeAmount.HIGH,
       String(slot0.sqrtPriceX96),
       poolLiquidity,
       Number(slot0.tick)
     );
-    return Number(pool.token1Price.toSignificant(6));
+    return Number(pool.token0Price.toSignificant(6));
   };
 
   const componentDidMount = () => {
@@ -65,7 +64,7 @@ const Component: FC = () => {
 
     fetchPrice().then((price) => {
       const contract = new Contract(
-        ContractAddress.WETH_TOKEN,
+        ContractAddress.UNI_TOKEN,
         erc20Abi,
         getRPCProvider()
       );
@@ -96,7 +95,17 @@ const Component: FC = () => {
         <MediaQuery minWidth={1400}>
           <SwapStats marketCap={marketCap} price={price} volume={volume} />
         </MediaQuery>
-        <SwapReports />
+        <iframe
+          src={`https://www.geckoterminal.com/eth/pools/${ContractAddress.UNI_USDC_POOL}?embed=1&info=0&swaps=0&light_chart=0&chart_type=price&resolution=1d&bg_color=02122b`}
+          allow="clipboard-write"
+          style={{
+            border: "none",
+            borderRadius: 12,
+            height: "600px",
+            width: "100%",
+          }}
+          allowFullScreen
+        />
         <SwapHistory />
       </div>
     </Content>

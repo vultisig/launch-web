@@ -90,6 +90,7 @@ export default keyMirror({
   TRANSACTIONS: true,
   TRANSACTION_SETTINGS: true,
   // U
+  USED_ALLOCATION: true,
   // V
   VAULT_BALANCE: true,
   // W

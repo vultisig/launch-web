@@ -6,6 +6,15 @@ export const LAUNCH_LIST_ABI = [
     stateMutability: "nonpayable",
     type: "constructor",
   },
+  { inputs: [], name: "AccessControlBadConfirmation", type: "error" },
+  {
+    inputs: [
+      { internalType: "address", name: "account", type: "address" },
+      { internalType: "bytes32", name: "neededRole", type: "bytes32" },
+    ],
+    name: "AccessControlUnauthorizedAccount",
+    type: "error",
+  },
   {
     inputs: [{ internalType: "address", name: "owner", type: "address" }],
     name: "OwnableInvalidOwner",
@@ -15,26 +24,6 @@ export const LAUNCH_LIST_ABI = [
     inputs: [{ internalType: "address", name: "account", type: "address" }],
     name: "OwnableUnauthorizedAccount",
     type: "error",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      { indexed: true, internalType: "address", name: "user", type: "address" },
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "amount",
-        type: "uint256",
-      },
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "total",
-        type: "uint256",
-      },
-    ],
-    name: "EthSpent",
-    type: "event",
   },
   {
     anonymous: false,
@@ -111,25 +100,25 @@ export const LAUNCH_LIST_ABI = [
       {
         indexed: false,
         internalType: "uint256",
-        name: "oldPhase1EthLimit",
+        name: "oldPhase1UsdcLimit",
         type: "uint256",
       },
       {
         indexed: false,
         internalType: "uint256",
-        name: "oldPhase2EthLimit",
+        name: "oldPhase2UsdcLimit",
         type: "uint256",
       },
       {
         indexed: false,
         internalType: "uint256",
-        name: "newPhase1EthLimit",
+        name: "newPhase1UsdcLimit",
         type: "uint256",
       },
       {
         indexed: false,
         internalType: "uint256",
-        name: "newPhase2EthLimit",
+        name: "newPhase2UsdcLimit",
         type: "uint256",
       },
     ],
@@ -145,6 +134,100 @@ export const LAUNCH_LIST_ABI = [
     type: "event",
   },
   {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: "bytes32", name: "role", type: "bytes32" },
+      {
+        indexed: true,
+        internalType: "bytes32",
+        name: "previousAdminRole",
+        type: "bytes32",
+      },
+      {
+        indexed: true,
+        internalType: "bytes32",
+        name: "newAdminRole",
+        type: "bytes32",
+      },
+    ],
+    name: "RoleAdminChanged",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: "bytes32", name: "role", type: "bytes32" },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "account",
+        type: "address",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "sender",
+        type: "address",
+      },
+    ],
+    name: "RoleGranted",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: "bytes32", name: "role", type: "bytes32" },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "account",
+        type: "address",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "sender",
+        type: "address",
+      },
+    ],
+    name: "RoleRevoked",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: "address", name: "user", type: "address" },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "amount",
+        type: "uint256",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "total",
+        type: "uint256",
+      },
+    ],
+    name: "UsdcSpent",
+    type: "event",
+  },
+  {
+    inputs: [],
+    name: "DEFAULT_ADMIN_ROLE",
+    outputs: [{ internalType: "bytes32", name: "", type: "bytes32" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "LAUNCHLIST_SPENDER_ROLE",
+    outputs: [{ internalType: "bytes32", name: "", type: "bytes32" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
     inputs: [],
     name: "UNISWAP_QUOTER",
     outputs: [{ internalType: "address", name: "", type: "address" }],
@@ -153,14 +236,28 @@ export const LAUNCH_LIST_ABI = [
   },
   {
     inputs: [],
-    name: "WETH",
+    name: "USDC",
     outputs: [{ internalType: "address", name: "", type: "address" }],
     stateMutability: "view",
     type: "function",
   },
   {
+    inputs: [],
+    name: "USDC_DECIMALS",
+    outputs: [{ internalType: "uint8", name: "", type: "uint8" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "WHITELIST_MANAGER_ROLE",
+    outputs: [{ internalType: "bytes32", name: "", type: "bytes32" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
     inputs: [{ internalType: "address", name: "", type: "address" }],
-    name: "addressEthSpent",
+    name: "addressUsdcSpent",
     outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
     stateMutability: "view",
     type: "function",
@@ -189,13 +286,6 @@ export const LAUNCH_LIST_ABI = [
     type: "function",
   },
   {
-    inputs: [{ internalType: "uint256", name: "tokenAmount", type: "uint256" }],
-    name: "getEthValueForToken",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
     inputs: [{ internalType: "uint256", name: "index", type: "uint256" }],
     name: "getLaunchListAddressAtIndex",
     outputs: [{ internalType: "address", name: "", type: "address" }],
@@ -220,6 +310,40 @@ export const LAUNCH_LIST_ABI = [
     inputs: [],
     name: "getLaunchListPoolCount",
     outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "bytes32", name: "role", type: "bytes32" }],
+    name: "getRoleAdmin",
+    outputs: [{ internalType: "bytes32", name: "", type: "bytes32" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "uint256", name: "tokenAmount", type: "uint256" }],
+    name: "getUsdcValueForToken",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "bytes32", name: "role", type: "bytes32" },
+      { internalType: "address", name: "account", type: "address" },
+    ],
+    name: "grantRole",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "bytes32", name: "role", type: "bytes32" },
+      { internalType: "address", name: "account", type: "address" },
+    ],
+    name: "hasRole",
+    outputs: [{ internalType: "bool", name: "", type: "bool" }],
     stateMutability: "view",
     type: "function",
   },
@@ -285,14 +409,14 @@ export const LAUNCH_LIST_ABI = [
   },
   {
     inputs: [],
-    name: "phase1EthLimit",
+    name: "phase1UsdcLimit",
     outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
     stateMutability: "view",
     type: "function",
   },
   {
     inputs: [],
-    name: "phase2EthLimit",
+    name: "phase2UsdcLimit",
     outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
     stateMutability: "view",
     type: "function",
@@ -320,6 +444,26 @@ export const LAUNCH_LIST_ABI = [
   },
   {
     inputs: [
+      { internalType: "bytes32", name: "role", type: "bytes32" },
+      { internalType: "address", name: "callerConfirmation", type: "address" },
+    ],
+    name: "renounceRole",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "bytes32", name: "role", type: "bytes32" },
+      { internalType: "address", name: "account", type: "address" },
+    ],
+    name: "revokeRole",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
       {
         internalType: "enum LaunchList.Phase",
         name: "newPhase",
@@ -333,8 +477,8 @@ export const LAUNCH_LIST_ABI = [
   },
   {
     inputs: [
-      { internalType: "uint256", name: "phase1EthLimit_", type: "uint256" },
-      { internalType: "uint256", name: "phase2EthLimit_", type: "uint256" },
+      { internalType: "uint256", name: "phase1UsdcLimit_", type: "uint256" },
+      { internalType: "uint256", name: "phase2UsdcLimit_", type: "uint256" },
     ],
     name: "setPhaseLimits",
     outputs: [],
@@ -352,6 +496,13 @@ export const LAUNCH_LIST_ABI = [
     name: "setUniswapV3OraclePool",
     outputs: [],
     stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "bytes4", name: "interfaceId", type: "bytes4" }],
+    name: "supportsInterface",
+    outputs: [{ internalType: "bool", name: "", type: "bool" }],
+    stateMutability: "view",
     type: "function",
   },
   {
