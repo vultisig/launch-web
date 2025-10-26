@@ -524,6 +524,7 @@ const Component: FC = () => {
                         </span>
                       ) : approving ? (
                         <span className="button button-secondary disabled">
+                          <Spin size="small" style={{ marginRight: 8 }} />
                           {t(constantKeys.APPROVING)}
                         </span>
                       ) : (
