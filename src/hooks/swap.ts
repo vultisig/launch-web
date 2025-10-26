@@ -189,7 +189,7 @@ const useSwapVult = () => {
 
     try {
       const usdcValue = await launchListContract.addressUsdcSpent(address);
-      return Number(usdcValue);
+      return Number(formatUnits(usdcValue, 6));
     } catch (error) {
       console.error("Error fetching spent USDC of address:", error);
       return 0;
