@@ -1,4 +1,3 @@
-import { request } from "graphql-request";
 import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
 
@@ -112,22 +111,22 @@ const api = {
       })
       .catch(() => modifedData);
   },
-  volume: async (days: number): Promise<number> => {
-    const endpoint = `https://gateway.thegraph.com/api/${
-      import.meta.env.VITE_GRAPH_API_KEY
-    }/subgraphs/id/5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV`;
-    const currentEpochDay = Math.floor(Date.now() / 1000 / 3600 / (24 * days));
-    const query = `{
-      tokenDayData(id: "${ContractAddress.VULT_TOKEN.toLowerCase()}-${currentEpochDay}") {
-        volumeUSD
-      }
-    }`;
-
-    return request<{
-      tokenDayData: { volumeUSD: string };
-    }>(endpoint, query)
-      .then(({ tokenDayData }) =>
-        tokenDayData?.volumeUSD ? parseFloat(tokenDayData.volumeUSD) : 0
+  volume: async (): Promise<number> => {
+    return fetch
+      .get<{ data: { attributes: { volumeUsd: { h24: string | null } } } }>(
+        `/geckoterminal/api/v2/networks/eth/pools/${ContractAddress.VULT_USDC_POOL}`,
+        {
+          params: {
+            include: "base_token",
+            include_volume_breakdown: false,
+            include_composition: false,
+          },
+        }
+      )
+      .then(({ data }) =>
+        data?.data?.attributes?.volumeUsd?.h24
+          ? Number(data.data.attributes.volumeUsd.h24)
+          : 0
       )
       .catch(() => 0);
   },

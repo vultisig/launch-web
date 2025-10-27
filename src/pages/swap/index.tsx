@@ -58,7 +58,7 @@ const Component: FC = () => {
   const componentDidMount = () => {
     changePage(PageKey.SWAP);
 
-    api.volume(1).then((volume) => {
+    api.volume().then((volume) => {
       setState((prevState) => ({ ...prevState, volume }));
     });
 
