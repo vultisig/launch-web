@@ -69,8 +69,9 @@ export enum ContractAddress {
   UNI_TOKEN = "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
   UNI_USDC_POOL = "0xd0fc8ba7e267f2bc56044a7715a489d851dc6d78",
   USDC_TOKEN = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-  VULT = "0xb788144df611029c60b859df47e79b7726c4deba",
+  VULT_TOKEN = "0xb788144df611029c60b859df47e79b7726c4deba",
   VULT_STAKE = "0xea56819d589d266b165b287e57d1b63efceb630c",
+  VULT_USDC_POOL = "0x6Df52cC6E2E6f6531E4ceB4b083CF49864A89020",
   VULT_WETH_POOL = "0xeDeC8b375f256B7cf34f0b0d85A13E7b2E3F46af",
   WETH_TOKEN = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
   WETH_USDC_POOL = "0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640",
@@ -178,7 +179,7 @@ export const defaultTokens: Record<TickerKey, TokenProps> = {
   [TickerKey.VULT]: {
     balance: 0,
     cmcId: 33502,
-    contractAddress: ContractAddress.VULT,
+    contractAddress: ContractAddress.VULT_TOKEN,
     decimals: 18,
     isAirdropToken: true,
     isNative: false,
@@ -226,7 +227,7 @@ export const uniswapTokens: Record<TickerKey, Token> = {
     ChainId.MAINNET,
     defaultTokens[TickerKey.ETH].contractAddress,
     defaultTokens[TickerKey.ETH].decimals,
-    TickerKey.ETH,
+    defaultTokens[TickerKey.ETH].ticker,
     defaultTokens[TickerKey.ETH].name
   ),
   [TickerKey.UNI]: new Token(
@@ -238,7 +239,7 @@ export const uniswapTokens: Record<TickerKey, Token> = {
   ),
   [TickerKey.VULT]: new Token(
     ChainId.MAINNET,
-    ContractAddress.VULT,
+    defaultTokens[TickerKey.VULT].contractAddress,
     defaultTokens[TickerKey.VULT].decimals,
     defaultTokens[TickerKey.VULT].ticker,
     defaultTokens[TickerKey.VULT].name

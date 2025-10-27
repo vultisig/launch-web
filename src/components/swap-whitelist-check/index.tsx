@@ -82,5 +82,3 @@ const Component: FC = () => {
 };
 
 export default Component;
-
-//validateStatus="validating"

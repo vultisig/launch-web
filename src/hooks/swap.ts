@@ -181,6 +181,22 @@ const useSwapVult = () => {
     }
   };
 
+  const getCurrentPhase = async (): Promise<number> => {
+    const launchListContract = new Contract(
+      ContractAddress.LAUNCH_LIST,
+      LAUNCH_LIST_ABI,
+      rpcClient
+    );
+
+    try {
+      const currentPhase = await launchListContract.currentPhase();
+      return Number(currentPhase);
+    } catch (error) {
+      console.error("Error fetching current phase:", error);
+      return 0;
+    }
+  };
+
   const getMaxNetworkFee = (ethPrice: number) => {
     // Convert Gwei to ETH (1 Gwei = 10^-9 ETH)
     const maxFeeEth = gasSetting.maxFee * 1e-9;
@@ -498,6 +514,7 @@ const useSwapVult = () => {
     checkApproval,
     executeSwap,
     getAddressSpentUSDC,
+    getCurrentPhase,
     getPoolConstants,
     getMaxNetworkFee,
     getPoolPrice,

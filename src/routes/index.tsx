@@ -11,7 +11,6 @@ import constantPaths from "routes/constant-paths";
 const DefaultLayout = lazy(() => import("layouts/default"));
 
 const SwapPage = lazy(() => import("pages/swap"));
-const SettingsPage = lazy(() => import("pages/settings"));
 
 interface RouteConfig {
   path: string;
@@ -63,14 +62,6 @@ const Component = () => {
           element: (
             <Suspense>
               <SwapPage />
-            </Suspense>
-          ),
-        },
-        {
-          path: constantPaths.settings,
-          element: (
-            <Suspense>
-              <SettingsPage />
             </Suspense>
           ),
         },
