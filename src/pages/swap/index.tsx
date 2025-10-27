@@ -102,6 +102,7 @@ const Component: FC = () => {
             border: "none",
             borderRadius: 12,
             flexGrow: 1,
+            minHeight: 600,
             width: "100%",
           }}
           allowFullScreen
