@@ -220,7 +220,7 @@ const useSwapVult = () => {
       factoryAddress: ContractAddress.POOL_FACTORY,
       tokenA,
       tokenB,
-      fee: FeeAmount.MEDIUM,
+      fee: FeeAmount.HIGH,
     });
 
     const poolContract = new Contract(
