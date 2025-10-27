@@ -52,7 +52,6 @@ const Component: FC = () => {
       poolLiquidity,
       Number(slot0.tick)
     );
-    debugger;
     return Number(pool.token1Price.toSignificant(8));
   };
 
