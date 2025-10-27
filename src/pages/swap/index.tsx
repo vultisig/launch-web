@@ -25,34 +25,35 @@ import SwapWhitelistCheck from "components/swap-whitelist-check";
 const { Content } = Layout;
 
 interface InitialState {
-  marketCap: number;
-  price: number;
-  volume: number;
+  marketCap?: number;
+  price?: number;
+  volume?: number;
 }
 
 const Component: FC = () => {
-  const initialState: InitialState = { marketCap: 0, price: 0, volume: 0 };
+  const initialState: InitialState = {};
   const [state, setState] = useState(initialState);
   const { marketCap, price, volume } = state;
   const { changePage } = useBaseContext();
 
   const fetchPrice = async () => {
     const contract = new Contract(
-      ContractAddress.UNI_USDC_POOL,
+      ContractAddress.VULT_USDC_POOL,
       POOLS_ABI,
       getRPCProvider()
     );
     const slot0 = await contract.slot0();
     const poolLiquidity = String(await contract.liquidity());
     const pool = new Pool(
-      uniswapTokens[TickerKey.UNI],
       uniswapTokens[TickerKey.USDC],
+      uniswapTokens[TickerKey.VULT],
       FeeAmount.HIGH,
       String(slot0.sqrtPriceX96),
       poolLiquidity,
       Number(slot0.tick)
     );
-    return Number(pool.token0Price.toSignificant(6));
+    debugger;
+    return Number(pool.token1Price.toSignificant(8));
   };
 
   const componentDidMount = () => {
@@ -64,7 +65,7 @@ const Component: FC = () => {
 
     fetchPrice().then((price) => {
       const contract = new Contract(
-        ContractAddress.UNI_TOKEN,
+        ContractAddress.VULT_TOKEN,
         erc20Abi,
         getRPCProvider()
       );
@@ -96,12 +97,12 @@ const Component: FC = () => {
           <SwapStats marketCap={marketCap} price={price} volume={volume} />
         </MediaQuery>
         <iframe
-          src={`https://www.geckoterminal.com/eth/pools/${ContractAddress.UNI_USDC_POOL}?embed=1&info=0&swaps=0&light_chart=0&chart_type=price&resolution=1d&bg_color=02122b`}
+          src={`https://www.geckoterminal.com/eth/pools/${ContractAddress.VULT_USDC_POOL}?embed=1&info=0&swaps=0&light_chart=0&chart_type=price&resolution=1d&bg_color=02122b`}
           allow="clipboard-write"
           style={{
             border: "none",
             borderRadius: 12,
-            height: "600px",
+            flexGrow: 1,
             width: "100%",
           }}
           allowFullScreen

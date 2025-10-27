@@ -16,7 +16,7 @@
     "@uniswap/v3-sdk": "^3.25.2",
     "antd": "^5.24.2",
     "axios": "^1.8.1",
-    "ethers": "^6.13.5",
+    "ethers": "^6.15.0",
     "graphql-request": "^7.1.2",
     "highcharts": "^12.1.2",
     "highcharts-react-official": "^3.2.1",

@@ -368,7 +368,7 @@ const Component: FC = () => {
         form={form}
         initialValues={{
           allocateToken: TickerKey.USDC,
-          buyToken: TickerKey.UNI,
+          buyToken: TickerKey.VULT,
         }}
         onFinish={handleSwap}
         onValuesChange={handleChangeValues}

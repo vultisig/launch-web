@@ -6,9 +6,9 @@ import { useBaseContext } from "context";
 import constantKeys from "i18n/constant-keys";
 
 interface ComponentProps {
-  marketCap: number;
-  price: number;
-  volume: number;
+  marketCap?: number;
+  price?: number;
+  volume?: number;
 }
 
 const Component: FC<ComponentProps> = ({ marketCap, price, volume }) => {
@@ -20,8 +20,8 @@ const Component: FC<ComponentProps> = ({ marketCap, price, volume }) => {
       <div className="item">
         <span className="title">{t(constantKeys.MARKET_CAP)}</span>
         <span className="value">
-          {marketCap ? (
-            marketCap.toPriceFormat(currency)
+          {Number.isFinite(marketCap) ? (
+            marketCap?.toPriceFormat(currency)
           ) : (
             <Spin size="small" />
           )}
@@ -30,13 +30,21 @@ const Component: FC<ComponentProps> = ({ marketCap, price, volume }) => {
       <div className="item">
         <span className="title">24h Vol</span>
         <span className="value">
-          {volume ? volume.toPriceFormat(currency) : <Spin size="small" />}
+          {Number.isFinite(volume) ? (
+            volume?.toPriceFormat(currency)
+          ) : (
+            <Spin size="small" />
+          )}
         </span>
       </div>
       <div className="item ascending">
         <span className="title">{t(constantKeys.PRICE)}</span>
         <span className="value">
-          {price ? price.toPriceFormat(currency) : <Spin size="small" />}
+          {Number.isFinite(price) ? (
+            price?.toPriceFormat(currency, 4)
+          ) : (
+            <Spin size="small" />
+          )}
         </span>
       </div>
     </div>
