@@ -378,7 +378,7 @@ const Component: FC = () => {
       });
     }, 10_000);
 
-    return () => clearTimeout(phaseInterval);
+    return () => clearInterval(phaseInterval);
   }, []);
 
   return (
