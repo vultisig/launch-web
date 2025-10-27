@@ -1,4 +1,4 @@
-import { FC, useState } from "react";
+import { FC, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Form, Input, InputNumber, Spin, Tooltip, message } from "antd";
@@ -18,6 +18,7 @@ import TokenDropdown from "components/token-dropdown";
 
 interface InitialState {
   approving?: boolean;
+  isPhaseActive?: boolean;
   loading?: boolean;
   maxNetworkFee: number;
   needsApproval?: boolean;
@@ -39,6 +40,7 @@ const Component: FC = () => {
   const [state, setState] = useState(initialState);
   const {
     approving,
+    isPhaseActive,
     loading,
     maxNetworkFee,
     needsApproval,
@@ -54,6 +56,7 @@ const Component: FC = () => {
     isWhitelist,
     checkApproval,
     executeSwap,
+    getCurrentPhase,
     getMaxNetworkFee,
     getPoolPrice,
     getPriceImpact,
@@ -197,7 +200,12 @@ const Component: FC = () => {
   };
 
   const handleSwap = () => {
-    if (address && !approving && !swapping) {
+    if (
+      address &&
+      !approving &&
+      !swapping &&
+      (needsApproval || isPhaseActive)
+    ) {
       const values = form.getFieldsValue();
       const tokenIn = uniswapTokens[values.allocateToken];
       const tokenOut = uniswapTokens[values.buyToken];
@@ -359,6 +367,19 @@ const Component: FC = () => {
       updateTokenBalances([tokens[allocateToken], tokens[buyToken]]);
     }
   };
+
+  useEffect(() => {
+    const phaseInterval = setInterval(() => {
+      getCurrentPhase().then((currentPhase) => {
+        if (currentPhase > 0) {
+          setState((prevState) => ({ ...prevState, isPhaseActive: true }));
+          clearInterval(phaseInterval);
+        }
+      });
+    }, 10_000);
+
+    return () => clearTimeout(phaseInterval);
+  }, []);
 
   return (
     <>
@@ -575,7 +596,7 @@ const Component: FC = () => {
                           <Spin size="small" style={{ marginRight: 8 }} />
                           {t(constantKeys.APPROVING)}
                         </span>
-                      ) : (
+                      ) : needsApproval || isPhaseActive ? (
                         <span
                           className="button button-secondary"
                           onClick={handleSwap}
@@ -583,6 +604,10 @@ const Component: FC = () => {
                           {needsApproval
                             ? t(constantKeys.APPROVE)
                             : t(constantKeys.SWAP)}
+                        </span>
+                      ) : (
+                        <span className="button button-secondary disabled">
+                          Presale Starts Soon
                         </span>
                       )
                     ) : (
