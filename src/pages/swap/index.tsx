@@ -200,7 +200,7 @@ const Component: FC = () => {
   const fetchCandlestickData = async () => {
     try {
       const response = await fetch(
-        "https://api.vultisig.com/geckoterminal/api/v2/networks/eth/pools/0x6Df52cC6E2E6f6531E4ceB4b083CF49864A89020/ohlcv/minute?aggregate=1&limit=100&currency=usd&include_empty_intervals=false&token=quote"
+        "https://api.geckoterminal.com/api/v2/networks/eth/pools/0x6Df52cC6E2E6f6531E4ceB4b083CF49864A89020/ohlcv/minute?aggregate=1&limit=100&currency=usd&include_empty_intervals=false&token=quote"
       );
       const data = await response.json();
 
