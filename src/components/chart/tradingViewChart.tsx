@@ -21,7 +21,7 @@ const TradingViewWidget: React.FC = () => {
       hide_legend: true,
       hide_volume: false,
       hotlist: false,
-      interval: "60",
+      interval: "1",
       locale: "en",
       save_image: true,
       style: "1",
