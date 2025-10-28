@@ -58,7 +58,15 @@ export const PoolPage = () => {
   useEffect(() => setCurrentPage("pool"), []);
 
   return (
-    <VStack as={Content} $style={{ gap: "24px", maxWidth: "1600px" }}>
+    <VStack
+      as={Content}
+      $style={{
+        gap: "24px",
+        maxWidth: "1600px",
+        padding: "24px 16px",
+        width: "100%",
+      }}
+    >
       <VStack $style={{ gap: "16px" }}>
         <Stack
           as="span"

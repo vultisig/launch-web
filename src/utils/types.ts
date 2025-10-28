@@ -12,13 +12,11 @@ export type CSSProperties = CSS.Properties<string>;
 
 export type HistoricalPriceProps = { date: number; price: number };
 
-export type GasSettingsMode = "ADVANCED" | "BASIC";
-
 export type GasSettingsProps = {
   gasLimit: number;
   maxFee: number;
   maxPriorityFee: number;
-  mode: GasSettingsMode;
+  mode: "ADVANCED" | "BASIC";
   slippage: number;
   speed: "Custom" | "Fast" | "Slow" | "Standard";
 };

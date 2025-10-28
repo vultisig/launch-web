@@ -6,6 +6,7 @@ import MediaQuery from "react-responsive";
 import { erc20Abi } from "viem";
 import { useAccount } from "wagmi";
 
+import { SettingsModal } from "@/components/SettingsModal";
 import { SwapVult } from "@/components/swap-vult";
 import { SwapFees } from "@/components/SwapFees";
 import { SwapHistory } from "@/components/SwapHistory";
@@ -76,37 +77,42 @@ export const SwapPage = () => {
   }, []);
 
   return (
-    <Stack
-      as={Content}
-      $style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "16px",
-        maxWidth: "1600px",
-      }}
-      $media={{ xl: { $style: { flexDirection: "row-reverse" } } }}
-    >
-      <VStack
-        $style={{ gap: "16px" }}
-        $media={{ xl: { $style: { flex: "none", width: "400px" } } }}
+    <>
+      <Stack
+        as={Content}
+        $style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "16px",
+          maxWidth: "1600px",
+          padding: "24px 16px",
+          width: "100%",
+        }}
+        $media={{ xl: { $style: { flexDirection: "row-reverse" } } }}
       >
-        <MediaQuery maxWidth={1199}>
-          <SwapStats marketCap={marketCap} price={price} volume={volume} />
-        </MediaQuery>
-        {!isConnected && <SwapWhitelist />}
-        <SwapVult />
-        <SwapFees />
-      </VStack>
-      <VStack
-        $style={{ gap: "16px" }}
-        $media={{ xl: { $style: { flexGrow: "1", overflow: "hidden" } } }}
-      >
-        <MediaQuery minWidth={1200}>
-          <SwapStats marketCap={marketCap} price={price} volume={volume} />
-        </MediaQuery>
-        <SwapReports />
-        {isConnected && <SwapHistory />}
-      </VStack>
-    </Stack>
+        <VStack
+          $style={{ gap: "16px" }}
+          $media={{ xl: { $style: { flex: "none", width: "400px" } } }}
+        >
+          <MediaQuery maxWidth={1199}>
+            <SwapStats marketCap={marketCap} price={price} volume={volume} />
+          </MediaQuery>
+          {!isConnected && <SwapWhitelist />}
+          <SwapVult />
+          <SwapFees />
+        </VStack>
+        <VStack
+          $style={{ gap: "16px" }}
+          $media={{ xl: { $style: { flexGrow: "1", overflow: "hidden" } } }}
+        >
+          <MediaQuery minWidth={1200}>
+            <SwapStats marketCap={marketCap} price={price} volume={volume} />
+          </MediaQuery>
+          <SwapReports />
+          {isConnected && <SwapHistory />}
+        </VStack>
+      </Stack>
+      <SettingsModal />
+    </>
   );
 };

@@ -3,14 +3,9 @@ import { ChainId, Token } from "@uniswap/sdk-core";
 import { GasSettingsProps, TickerKey, TokenProps } from "@/utils/types";
 
 export const modalHash = {
-  bridge: "#bridge",
   connect: "#connect",
-  merge: "#merge",
-  pool: "#pool",
-  stake: "#stake",
-  staking: "#staking",
+  settings: "#settings",
   wallet: "#wallet",
-  withdraw: "#withdraw",
 } as const;
 
 export const contractAddress = {

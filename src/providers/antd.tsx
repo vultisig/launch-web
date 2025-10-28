@@ -63,9 +63,16 @@ export const AntdProvider: FC<{
           hoverBorderColor: colors.borderNormal.toHex(),
         },
         Layout: {
-          bodyBg: colors.bgPrimary.toHex(),
+          bodyBg: "transparent",
+          footerBg: colors.bgSecondary.toHex(),
+          footerPadding: 0,
           headerBg: colors.bgSecondary.toHex(),
           headerPadding: 0,
+        },
+        Menu: {
+          colorBgContainer: "transparent",
+          colorSplit: "transparent",
+          itemPaddingInline: 0,
         },
         Message: {
           contentBg: colors.bgTertiary.toHex(),
@@ -76,6 +83,9 @@ export const AntdProvider: FC<{
         },
         Popover: {
           colorBgElevated: colors.bgSecondary.toHex(),
+        },
+        Radio: {
+          wrapperMarginInlineEnd: 0,
         },
         Rate: {
           starColor: colors.warning.toHex(),
@@ -114,7 +124,7 @@ export const AntdProvider: FC<{
         colorBorder: colors.borderLight.toHex(),
         colorSplit: colors.borderNormal.toHex(),
         colorBorderSecondary: colors.borderNormal.toHex(),
-        colorPrimary: colors.buttonPrimary.toHex(),
+        colorPrimary: colors.accentFour.toHex(),
         colorWarning: colors.warning.toHex(),
         colorLinkHover: "inherit",
         colorLink: colors.textPrimary.toHex(),

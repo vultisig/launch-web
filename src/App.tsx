@@ -4,16 +4,15 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { WagmiProvider } from "wagmi";
 
 import { i18nInstance } from "@/i18n/config";
-import { DefaultLayout } from "@/layouts/default";
+import { DefaultLayout } from "@/layouts/Default";
 import { NotFoundPage } from "@/pages/NotFound";
+import { PoolPage } from "@/pages/Pool";
 import { SwapPage } from "@/pages/Swap";
 import { AntdProvider } from "@/providers/antd";
 import { CoreProvider } from "@/providers/core";
 import { StyledProvider } from "@/providers/styled";
 import { routeTree } from "@/utils/routes";
 import { wagmiConfig } from "@/utils/wagmi";
-
-import { PoolPage } from "./pages/Pool";
 
 export const App = () => {
   const queryClient = new QueryClient();

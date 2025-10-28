@@ -5,11 +5,7 @@
 @use "@fontsource/roboto-mono/latin.css" as roboto;
 
 @use "_variables";
-@use "_animations";
 @use "_normalize";
 @use "_global";
 
-@use "../layouts/default";
-
-@use "../components/swap-settings";
 @use "../components/swap-vult";

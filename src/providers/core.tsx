@@ -2,7 +2,7 @@ import { message as Message, Modal } from "antd";
 import { FC, ReactNode, useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 
-import { CoreContext } from "@/context";
+import { CoreContext } from "@/context/Core";
 import { i18nInstance } from "@/i18n/config";
 import { storageKeys } from "@/storage/constants";
 import {

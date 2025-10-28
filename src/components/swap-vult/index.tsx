@@ -1,11 +1,10 @@
-import { Form, Input, InputNumber, Spin, Tooltip } from "antd";
+import { Form, Input, InputNumber, Tooltip } from "antd";
 import { debounce } from "lodash";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { useTheme } from "styled-components";
 import { useAccount } from "wagmi";
 
-import { SwapSettings } from "@/components/swap-settings";
 import { TokenDropdown } from "@/components/TokenDropdown";
 import { useCore } from "@/hooks/useCore";
 import { useSwapVult } from "@/hooks/useSwapVult";
@@ -16,6 +15,9 @@ import { RefreshIcon } from "@/icons/RefreshIcon";
 import { SettingsIcon } from "@/icons/SettingsIcon";
 import { getGasSettings } from "@/storage/gasSettings";
 import { setTransaction } from "@/storage/transaction";
+import { Button } from "@/toolkits/Button";
+import { Spin } from "@/toolkits/Spin";
+import { HStack, Stack, VStack } from "@/toolkits/Stack";
 import { modalHash, uniswapTokens } from "@/utils/constants";
 import {
   toAmountFormat,
@@ -31,7 +33,6 @@ type StateProps = {
   needsApproval?: boolean;
   poolPrice: number;
   priceImpact: number;
-  settingsMode?: boolean;
   swapping?: boolean;
   values?: Record<TickerKey, number>;
 };
@@ -49,7 +50,6 @@ export const SwapVult = () => {
     maxNetworkFee,
     needsApproval,
     priceImpact,
-    settingsMode,
     swapping,
     values,
   } = state;
@@ -68,6 +68,7 @@ export const SwapVult = () => {
     requestApproval,
   } = useSwapVult();
   const gasSettings = getGasSettings();
+  const colors = useTheme();
 
   const handleChangeToken = (ticker: TickerKey, reverse: boolean) => {
     if (!loading) {
@@ -119,16 +120,6 @@ export const SwapVult = () => {
     },
     800
   );
-
-  const handleMode = (settingsMode: boolean, updated?: boolean) => {
-    setState((prevState) => ({ ...prevState, settingsMode }));
-
-    if (updated)
-      form.setFieldsValue({
-        allocateAmount: undefined,
-        buyAmount: undefined,
-      });
-  };
 
   const handleSwap = () => {
     if (address && !approving && !swapping) {
@@ -288,29 +279,45 @@ export const SwapVult = () => {
   };
 
   return (
-    <>
-      <SwapSettings onClose={handleMode} visible={settingsMode} />
-      <Form
-        form={form}
-        initialValues={{ allocateToken: "USDC", buyToken: "UNI" }}
-        onFinish={handleSwap}
-        onValuesChange={handleChangeValues}
-        className="swap-vult"
-        style={{ display: settingsMode ? "none" : undefined }}
+    <Form
+      form={form}
+      initialValues={{ allocateToken: "USDC", buyToken: "UNI" }}
+      onFinish={handleSwap}
+      onValuesChange={handleChangeValues}
+      className="swap-vult"
+    >
+      <VStack
+        $style={{
+          backgroundColor: colors.bgSecondary.toHex(),
+          borderRadius: "20px",
+          gap: "16px",
+          padding: "16px",
+        }}
       >
-        <RefreshIcon
-          fontSize={24}
-          className={`refresh ${loading ? "spinning" : ""}`}
-          onClick={handleRefresh}
-        />
-        <div className="heading">
-          <span className="text">{t("swap")}</span>
-          <SettingsIcon
-            fontSize={24}
-            onClick={() => handleMode(true)}
-            className="toggle"
+        <HStack
+          $style={{ alignItems: "center", justifyContent: "space-between" }}
+        >
+          {loading ? (
+            <Spin />
+          ) : (
+            <Button
+              icon={<RefreshIcon fontSize={24} />}
+              onClick={handleRefresh}
+              ghost
+            />
+          )}
+          <Stack
+            as="span"
+            $style={{ fontSize: "22px", fontWeight: "500", lineHeight: "24px" }}
+          >
+            {t("swap")}
+          </Stack>
+          <Button
+            icon={<SettingsIcon fontSize={24} />}
+            href={modalHash.settings}
+            ghost
           />
-        </div>
+        </HStack>
         <div className="swap">
           <div className="item">
             <span className="title">{t("iWantToAllocate")}</span>
@@ -432,9 +439,7 @@ export const SwapVult = () => {
               getFieldsValue();
 
             return loading ? (
-              <span className="button button-secondary disabled">
-                {t("loading")}
-              </span>
+              <Button disabled>{t("loading")}</Button>
             ) : (
               <>
                 {allocateAmount && buyAmount ? (
@@ -471,55 +476,56 @@ export const SwapVult = () => {
                 ) : null}
                 {isConnected ? (
                   <>
-                    {isWhitelist ? (
-                      <div className="whitelist islisted">
-                        <CheckIcon />
-                        {t("whitelisted")}
-                      </div>
-                    ) : (
-                      <div className="whitelist notlisted">
-                        <InfoIcon />
-                        {t("notWhitelisted")}
-                      </div>
-                    )}
+                    <HStack
+                      $style={{
+                        alignItems: "center",
+                        borderRadius: "12px",
+                        gap: "8px",
+                        height: "50px",
+                        padding: "0 16px",
+                        ...(isWhitelist
+                          ? {
+                              backgroundColor: colors.success.toRgba(0.1),
+                              color: colors.success.toHex(),
+                            }
+                          : {
+                              backgroundColor: colors.bgTertiary.toHex(),
+                            }),
+                      }}
+                    >
+                      {isWhitelist ? (
+                        <CheckIcon fontSize={16} />
+                      ) : (
+                        <InfoIcon fontSize={16} />
+                      )}
+                      <Stack as="span" $style={{ fontWeight: "500" }}>
+                        {t(isWhitelist ? "whitelisted" : "notWhitelisted")}
+                      </Stack>
+                    </HStack>
                     {allocateAmount && buyAmount ? (
                       allocateAmount > tokens[allocateToken].balance ? (
-                        <span className="button button-secondary disabled">
-                          {t("insufficientBalance")}
-                        </span>
+                        <Button disabled>{t("insufficientBalance")}</Button>
                       ) : approving ? (
-                        <span className="button button-secondary disabled">
-                          {t("approve")}
-                        </span>
+                        <Button disabled>{t("approve")}</Button>
                       ) : (
-                        <span
-                          className="button button-secondary"
-                          onClick={handleSwap}
-                        >
+                        <Button onClick={handleSwap}>
                           {needsApproval ? t("approve") : t("swap")}
-                        </span>
+                        </Button>
                       )
                     ) : (
-                      <span className="button button-secondary disabled">
-                        {t("enterAmount")}
-                      </span>
+                      <Button disabled>{t("enterAmount")}</Button>
                     )}
                   </>
                 ) : (
-                  <Link
-                    to={modalHash.connect}
-                    className={`button button-secondary${
-                      loading ? " disabled" : ""
-                    }`}
-                  >
+                  <Button disabled={loading} href={modalHash.connect}>
                     {t("connectWallet")}
-                  </Link>
+                  </Button>
                 )}
               </>
             );
           }}
         </Form.Item>
-      </Form>
-    </>
+      </VStack>
+    </Form>
   );
 };

@@ -1,41 +1,23 @@
-@use "_variables" as *;
-@use "_animations" as *;
-
 body {
-  background-color: $blue-dark;
-  color: $text-primary;
-  font-family: $primary-font;
-  min-width: rem(360);
+  font-family: "Montserrat", Tahoma, Geneva, Verdana, sans-serif;
+  min-width: 400px;
   overflow-x: hidden;
-
-  &::-webkit-scrollbar {
-    background-color: $blue-base;
-    width: rem(8);
-  }
-
-  &::-webkit-scrollbar-corner {
-    background-color: $blue-base;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background-color: $blue-light;
-  }
 }
 
 .ant-modal {
   .ant-modal-title {
-    font-size: rem(16);
+    font-size: 16;
     font-weight: 500;
     text-align: center;
   }
 
   .ant-modal-header {
     margin: 0;
-    padding: rem(24) rem(30);
+    padding: 24px;
   }
 
   .ant-modal-body {
-    padding: 0 rem(30) rem(30);
+    padding: 0 24px 24px;
   }
 
   .ant-modal-footer {
@@ -47,60 +29,11 @@ body {
   }
 }
 
-.button {
-  align-items: center;
-  cursor: pointer;
-  color: $text-primary;
-  border-radius: rem(30);
-  display: flex;
-  font-weight: 600;
-  justify-content: center;
-  height: rem(48);
-  padding: 0 rem(16);
-  transition: all 0.2s;
-
-  &:hover {
-    color: $text-primary;
-  }
-
-  &-primary {
-    background-color: $button-primary;
-
-    &:hover {
-      background-color: $button-primary-hover;
-    }
-  }
-
-  &-secondary {
-    background-color: $button-secondary;
-
-    &:hover {
-      background-color: $button-secondary-hover;
-    }
-  }
-
-  &.disabled {
-    background-color: $button-disabled;
-    color: $button-disabled-text;
-    cursor: default;
-  }
-}
-
-.button-group {
-  display: flex;
-  flex-direction: column;
-  gap: rem(16);
-
-  .button {
-    width: 100%;
-  }
-}
-
-@media (max-width: rem(576)) {
+@media (max-width: 576px) {
   .ant-modal {
     margin: 0 !important;
     max-width: 100% !important;
-    min-width: rem(360);
+    min-width: 400px;
     top: 0;
     width: 100% !important;
 
@@ -119,11 +52,5 @@ body {
 
   .ant-modal-wrap {
     overflow: hidden !important;
-  }
-}
-
-@media (min-width: rem(768)) {
-  .button-group {
-    flex-direction: row;
   }
 }
