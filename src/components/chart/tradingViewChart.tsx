@@ -24,7 +24,7 @@ const TradingViewWidget: React.FC = () => {
       interval: "60",
       locale: "en",
       save_image: true,
-      style: "0",
+      style: "1",
       symbol: "UNISWAP3ETH:VULTUSDC_6DF52C.USD",
       theme: "dark",
       timezone: "Etc/UTC",
