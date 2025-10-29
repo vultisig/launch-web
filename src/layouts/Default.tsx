@@ -19,7 +19,7 @@ import { RouteKey, routeTree } from "@/utils/routes";
 
 const { Footer, Header } = Layout;
 
-type Menu = {
+type NavItem = {
   href: string;
   icon: FC;
   key: RouteKey;
@@ -32,7 +32,7 @@ export const DefaultLayout = () => {
   const { address = "", isConnected } = useAccount();
   const colors = useTheme();
 
-  const menu: Menu[] = [
+  const menu: NavItem[] = [
     {
       href: routeTree.swap.path,
       icon: ArrowDownUpIcon,
@@ -40,7 +40,7 @@ export const DefaultLayout = () => {
       title: t("swap"),
     },
     {
-      href: routeTree.pool.path,
+      href: "#",
       icon: DatabaseIcon,
       key: "pool",
       title: t("pool"),

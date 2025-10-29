@@ -89,7 +89,7 @@ export const SwapVult = () => {
 
   const handleChangeValues = debounce(
     ({ allocateAmount, buyAmount }: SwapFormProps, values: SwapFormProps) => {
-      if (allocateAmount !== undefined) {
+      if (Number.isFinite(allocateAmount)) {
         form.setFieldValue("buyAmount", undefined);
 
         if (allocateAmount) {
@@ -102,7 +102,7 @@ export const SwapVult = () => {
         }
       }
 
-      if (buyAmount !== undefined) {
+      if (Number.isFinite(buyAmount)) {
         form.setFieldValue("allocateAmount", undefined);
 
         if (buyAmount) {
@@ -349,9 +349,9 @@ export const SwapVult = () => {
                       <Form.Item<SwapFormProps> name="allocateAmount" noStyle>
                         <SwapInput
                           controls={false}
-                          formatter={(value = 0) => toNumberFormat(value)}
                           min={0}
                           placeholder="0"
+                          formatter={(value = "") => toNumberFormat(value)}
                           readOnly={loading}
                         />
                       </Form.Item>
@@ -450,9 +450,9 @@ export const SwapVult = () => {
                       <Form.Item<SwapFormProps> name="buyAmount" noStyle>
                         <SwapInput
                           controls={false}
-                          formatter={(value = 0) => toNumberFormat(value)}
                           min={0}
                           placeholder="0"
+                          formatter={(value = "") => toNumberFormat(value)}
                           readOnly
                         />
                       </Form.Item>

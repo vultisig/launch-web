@@ -47,7 +47,11 @@ export const match = <T extends string | number | symbol, V>(
 
 export const shallowCloneObject = <T extends Record<string, any>>(obj: T) => {
   return Object.fromEntries(
-    Object.entries(obj).map(([key, value]) => [key, { ...value }])
+    Object.entries(obj).map(([key, value]) => {
+      if (Array.isArray(value)) return [key, [...value]];
+      if (value && typeof value === "object") return [key, { ...value }];
+      return [key, value];
+    })
   ) as T;
 };
 
@@ -135,7 +139,12 @@ export const toNumberFormat = (value: number | string, decimal = 20) => {
     useGrouping: true,
   });
 
-  const num = typeof value === "string" ? Number(value.trim()) : value;
+  const num =
+    typeof value === "string" && value.trim() !== ""
+      ? Number(value.trim())
+      : typeof value === "number"
+      ? value
+      : NaN;
 
   return isNaN(num) ? value.toString() : formatter.format(num);
 };

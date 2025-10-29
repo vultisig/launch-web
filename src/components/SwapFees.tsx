@@ -25,7 +25,7 @@ export const SwapFees = () => {
         setUsedAllocation(usedAllocation);
       });
     }
-  }, [address, isConnected]);
+  }, [address, isConnected, getAddressSpentUSDC]);
 
   const fees = [
     {

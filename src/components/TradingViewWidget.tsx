@@ -46,5 +46,5 @@ export const TradingViewWidget = () => {
     };
   }, []);
 
-  return <Stack ref={container} $style={{ minHeight: "600px" }} />;
+  return <Stack ref={container} $style={{ height: "600px" }} />;
 };

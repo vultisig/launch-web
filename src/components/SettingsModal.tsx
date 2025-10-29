@@ -13,6 +13,7 @@ import { Button } from "@/toolkits/Button";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
 import { api } from "@/utils/api";
 import { defaultGasSettings, modalHash } from "@/utils/constants";
+import { shallowCloneObject } from "@/utils/functions";
 import { GasSettingsProps, SuggestedGasFeeProps } from "@/utils/types";
 
 type ModeOption = {
@@ -90,32 +91,32 @@ export const SettingsModal = () => {
   };
 
   const handleSubmit: FormProps<GasSettingsProps>["onFinish"] = (values) => {
-    if (values.mode === "BASIC") {
+    if (values.mode === "ADVANCED") {
+      values.speed = "Custom";
+    } else if (fees) {
       switch (values.speed) {
         case "Fast": {
-          values.maxFee = Number(fees?.high.suggestedMaxFeePerGas);
+          values.maxFee = Number(fees.high.suggestedMaxFeePerGas);
           values.maxPriorityFee = Number(
-            fees?.high.suggestedMaxPriorityFeePerGas
+            fees.high.suggestedMaxPriorityFeePerGas
           );
           break;
         }
         case "Standard": {
-          values.maxFee = Number(fees?.medium.suggestedMaxFeePerGas);
+          values.maxFee = Number(fees.medium.suggestedMaxFeePerGas);
           values.maxPriorityFee = Number(
-            fees?.medium.suggestedMaxPriorityFeePerGas
+            fees.medium.suggestedMaxPriorityFeePerGas
           );
           break;
         }
         case "Slow": {
-          values.maxFee = Number(fees?.low.suggestedMaxFeePerGas);
+          values.maxFee = Number(fees.low.suggestedMaxFeePerGas);
           values.maxPriorityFee = Number(
-            fees?.low.suggestedMaxPriorityFeePerGas
+            fees.low.suggestedMaxPriorityFeePerGas
           );
           break;
         }
       }
-    } else {
-      values.speed = "Custom";
     }
 
     setGasSettings(values);
@@ -124,23 +125,26 @@ export const SettingsModal = () => {
 
   useEffect(() => {
     if (open) {
+      const _gasSettings = shallowCloneObject(gasSettings);
+
       api
         .suggestedFees()
         .then(({ data }) => {
           setFees(data);
 
           if (
-            JSON.stringify(gasSettings) === JSON.stringify(defaultGasSettings)
+            JSON.stringify(_gasSettings) === JSON.stringify(defaultGasSettings)
           ) {
-            setGasSettings({
-              ...gasSettings,
-              maxFee: Number(data.medium.suggestedMaxFeePerGas),
-              maxPriorityFee: Number(data.medium.suggestedMaxPriorityFeePerGas),
-            });
+            _gasSettings.maxFee = Number(data.medium.suggestedMaxFeePerGas);
+            _gasSettings.maxPriorityFee = Number(
+              data.medium.suggestedMaxPriorityFeePerGas
+            );
+
+            setGasSettings(_gasSettings);
           }
         })
         .finally(() => {
-          form.setFieldsValue(gasSettings);
+          form.setFieldsValue(_gasSettings);
         });
     }
   }, [open]);
