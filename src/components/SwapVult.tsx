@@ -13,8 +13,6 @@ import { CheckIcon } from "@/icons/CheckIcon";
 import { InfoIcon } from "@/icons/InfoIcon";
 import { RefreshIcon } from "@/icons/RefreshIcon";
 import { SettingsIcon } from "@/icons/SettingsIcon";
-import { getGasSettings } from "@/storage/gasSettings";
-import { setTransaction } from "@/storage/transaction";
 import { Button } from "@/toolkits/Button";
 import { Spin } from "@/toolkits/Spin";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
@@ -53,7 +51,7 @@ export const SwapVult = () => {
     swapping,
     values,
   } = state;
-  const { currency, message, tokens } = useCore();
+  const { currency, gasSettings, message, setTransactions, tokens } = useCore();
   const { address, isConnected } = useAccount();
   const [form] = Form.useForm<SwapFormProps>();
   const {
@@ -67,7 +65,6 @@ export const SwapVult = () => {
     getUniswapQuote,
     requestApproval,
   } = useSwapVult();
-  const gasSettings = getGasSettings();
   const colors = useTheme();
 
   const handleChangeToken = (ticker: TickerKey, reverse: boolean) => {
@@ -152,12 +149,14 @@ export const SwapVult = () => {
             if (txHash) {
               const date = new Date();
 
-              setTransaction(address, {
-                ...values,
-                date: date.getTime(),
-                hash: txHash,
-                status: "pending",
-              });
+              setTransactions(address, [
+                {
+                  ...values,
+                  date: date.getTime(),
+                  hash: txHash,
+                  status: "pending",
+                },
+              ]);
             }
           })
           .finally(() => {

@@ -4,11 +4,11 @@ import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 import styled, { useTheme } from "styled-components";
 
+import { useCore } from "@/hooks/useCore";
 import { CarFrontIcon } from "@/icons/CarFrontIcon";
 import { CrossIcon } from "@/icons/CrossIcon";
 import { HourglassIcon } from "@/icons/HourglassIcon";
 import { TimerIcon } from "@/icons/TimerIcon";
-import { getGasSettings, setGasSettings } from "@/storage/gasSettings";
 import { Button } from "@/toolkits/Button";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
 import { api } from "@/utils/api";
@@ -31,6 +31,7 @@ type SpeedOption = {
 export const SettingsModal = () => {
   const { t } = useTranslation();
   const [fees, setFees] = useState<SuggestedGasFeeProps | null>(null);
+  const { gasSettings, setGasSettings } = useCore();
   const { hash } = useLocation();
   const [form] = Form.useForm<GasSettingsProps>();
   const navigate = useNavigate();
@@ -88,7 +89,7 @@ export const SettingsModal = () => {
     });
   };
 
-  const handleSubmit: FormProps["onFinish"] = (values) => {
+  const handleSubmit: FormProps<GasSettingsProps>["onFinish"] = (values) => {
     if (values.mode === "BASIC") {
       switch (values.speed) {
         case "Fast": {
@@ -123,23 +124,23 @@ export const SettingsModal = () => {
 
   useEffect(() => {
     if (open) {
-      const settings = getGasSettings();
-
       api
         .suggestedFees()
         .then((fees) => {
           setFees(fees);
 
-          if (JSON.stringify(settings) === JSON.stringify(defaultGasSettings)) {
+          if (
+            JSON.stringify(gasSettings) === JSON.stringify(defaultGasSettings)
+          ) {
             setGasSettings({
-              ...settings,
+              ...gasSettings,
               maxFee: Number(fees.medium.suggestedMaxFeePerGas),
               maxPriorityFee: Number(fees.medium.suggestedMaxPriorityFeePerGas),
             });
           }
         })
         .finally(() => {
-          form.setFieldsValue(settings);
+          form.setFieldsValue(gasSettings);
         });
     }
   }, [open]);

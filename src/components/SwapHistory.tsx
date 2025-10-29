@@ -6,13 +6,12 @@ import { useTheme } from "styled-components";
 import { useAccount } from "wagmi";
 
 import { MiddleTruncate } from "@/components/MiddleTruncate";
-import { useSwapHistory } from "@/hooks/useSwapHistory";
+import { useCore } from "@/hooks/useCore";
 import { useSwapVult } from "@/hooks/useSwapVult";
 import { ChevronRightIcon } from "@/icons/ChevronRightIcon";
 import { CircleCheckBigIcon } from "@/icons/CircleCheckBigIcon";
 import { OctagonAlertIcon } from "@/icons/OctagonAlertIcon";
 import { TrashIcon } from "@/icons/TrashIcon";
-import { setTransaction } from "@/storage/transaction";
 import { Button } from "@/toolkits/Button";
 import { Divider } from "@/toolkits/Divider";
 import { Spin } from "@/toolkits/Spin";
@@ -22,6 +21,7 @@ import { TransactionProps } from "@/utils/types";
 
 const Transaction: FC<TransactionProps> = (transaction) => {
   const { t } = useTranslation();
+  const { setTransactions } = useCore();
   const { address = "" } = useAccount();
   const { getTxStatus } = useSwapVult();
   const {
@@ -44,7 +44,7 @@ const Transaction: FC<TransactionProps> = (transaction) => {
         if (nextStatus === "pending") {
           timerRef.current = setTimeout(checkTxStatus, 10_000);
         } else {
-          setTransaction(address, { ...transaction, status: nextStatus });
+          setTransactions(address, [{ ...transaction, status: nextStatus }]);
         }
       })
       .catch(() => {
@@ -192,7 +192,8 @@ const Transaction: FC<TransactionProps> = (transaction) => {
 
 export const SwapHistory = () => {
   const { t } = useTranslation();
-  const { transactions, clearHistory } = useSwapHistory();
+  const { transactions, setTransactions } = useCore();
+  const { address } = useAccount();
 
   return (
     <VStack as="span" $style={{ gap: "16px" }}>
@@ -206,12 +207,12 @@ export const SwapHistory = () => {
         >
           {t("transactions")}
         </Stack>
-        {transactions.length > 0 && (
+        {address && transactions.length > 0 && (
           <Tooltip title={t("clearHistory")}>
             <Button
               icon={<TrashIcon fontSize={16} />}
               kind="danger"
-              onClick={clearHistory}
+              onClick={() => setTransactions(address, [])}
               ghost
             />
           </Tooltip>
