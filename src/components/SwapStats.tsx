@@ -7,7 +7,7 @@ import { useCore } from "@/hooks/useCore";
 import { Stack, VStack } from "@/toolkits/Stack";
 import { toValueFormat } from "@/utils/functions";
 
-type SwapStatsProps = { marketCap: number; price: number; volume: number };
+type SwapStatsProps = { marketCap?: number; price?: number; volume?: number };
 
 export const SwapStats: FC<SwapStatsProps> = ({ marketCap, price, volume }) => {
   const { t } = useTranslation();
@@ -17,27 +17,30 @@ export const SwapStats: FC<SwapStatsProps> = ({ marketCap, price, volume }) => {
   const stats = [
     {
       label: t("marketCap"),
-      value: Number.isFinite(marketCap) ? (
-        toValueFormat(marketCap, currency)
-      ) : (
-        <Spin size="small" />
-      ),
+      value:
+        marketCap === undefined ? (
+          <Spin size="small" />
+        ) : (
+          toValueFormat(marketCap, currency)
+        ),
     },
     {
       label: "24h Vol",
-      value: Number.isFinite(volume) ? (
-        toValueFormat(volume, currency)
-      ) : (
-        <Spin size="small" />
-      ),
+      value:
+        volume === undefined ? (
+          <Spin size="small" />
+        ) : (
+          toValueFormat(volume, currency)
+        ),
     },
     {
       label: t("price"),
-      value: Number.isFinite(price) ? (
-        toValueFormat(price, currency)
-      ) : (
-        <Spin size="small" />
-      ),
+      value:
+        price === undefined ? (
+          <Spin size="small" />
+        ) : (
+          toValueFormat(price, currency, 6)
+        ),
     },
   ];
 

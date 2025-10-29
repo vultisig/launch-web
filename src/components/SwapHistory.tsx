@@ -1,6 +1,6 @@
 import { Empty, Tooltip } from "antd";
 import dayjs from "dayjs";
-import { FC, useEffect, useRef } from "react";
+import { FC, Fragment, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "styled-components";
 import { useAccount } from "wagmi";
@@ -220,10 +220,10 @@ export const SwapHistory = () => {
       </HStack>
       {transactions.length > 0 ? (
         transactions.map((transaction, index) => (
-          <>
+          <Fragment key={transaction.hash}>
             {index > 0 && <Divider />}
-            <Transaction key={transaction.hash} {...transaction} />
-          </>
+            <Transaction {...transaction} />
+          </Fragment>
         ))
       ) : (
         <Empty description={t("noTransactionsFound")} />

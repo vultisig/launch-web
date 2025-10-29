@@ -7,15 +7,15 @@ import {
   Pool,
   TICK_SPACINGS,
 } from "@uniswap/v3-sdk";
-import { Contract, formatEther, formatUnits, parseUnits } from "ethers";
+import { Contract, formatUnits, parseUnits } from "ethers";
 import { useEffect, useState } from "react";
 import { encodeFunctionData, erc20Abi } from "viem";
 import { useAccount, useWalletClient } from "wagmi";
 
 import { useCore } from "@/hooks/useCore";
 import { getGasSettings } from "@/storage/gasSettings";
-import { LAUNCH_LIST_ABI } from "@/utils/abis/launchList";
 import { api } from "@/utils/api";
+import { launchListABI } from "@/utils/constants";
 import { contractAddress, defaultTokens } from "@/utils/constants";
 import { getBrowserProvider, getRPCProvider } from "@/utils/providers";
 import { TickerKey, TxStatus, UniswapTokenProps } from "@/utils/types";
@@ -154,17 +154,34 @@ export const useSwapVult = () => {
     }
   };
 
-  const getAddressSpentETH = async (address: string): Promise<number> => {
+  const getAddressSpentUSDC = async (address: string): Promise<number> => {
     const launchListContract = new Contract(
       contractAddress.launchList,
-      LAUNCH_LIST_ABI,
+      launchListABI,
       rpcClient
     );
+
     try {
-      const weiValue = await launchListContract.addressEthSpent(address);
-      return Number(formatEther(weiValue));
+      const usdcValue = await launchListContract.addressUsdcSpent(address);
+      return Number(formatUnits(usdcValue, 6));
     } catch (error) {
-      console.error("Error fetching spent ETH of address:", error);
+      console.error("Error fetching spent USDC of address:", error);
+      return 0;
+    }
+  };
+
+  const getCurrentPhase = async (): Promise<number> => {
+    const launchListContract = new Contract(
+      contractAddress.launchList,
+      launchListABI,
+      rpcClient
+    );
+
+    try {
+      const currentPhase = await launchListContract.currentPhase();
+      return Number(currentPhase);
+    } catch (error) {
+      console.error("Error fetching current phase:", error);
       return 0;
     }
   };
@@ -184,36 +201,6 @@ export const useSwapVult = () => {
     return maxNetworkFeeUsd;
   };
 
-  const getPhase1ETHAllocation = async (): Promise<number> => {
-    const launchListContract = new Contract(
-      contractAddress.launchList,
-      LAUNCH_LIST_ABI,
-      rpcClient
-    );
-    try {
-      const weiValue = await launchListContract.phase1EthLimit();
-      return Number(formatEther(weiValue));
-    } catch (error) {
-      console.error("Error fetching phase1 allocation:", error);
-      return 0;
-    }
-  };
-
-  const getPhase2ETHAllocation = async (): Promise<number> => {
-    const launchListContract = new Contract(
-      contractAddress.launchList,
-      LAUNCH_LIST_ABI,
-      rpcClient
-    );
-    try {
-      const weiValue = await launchListContract.phase2EthLimit();
-      return Number(formatEther(weiValue));
-    } catch (error) {
-      console.error("Error fetching phase2 allocation:", error);
-      return 0;
-    }
-  };
-
   const getPoolConstant = async (
     tokenA: UniswapTokenProps,
     tokenB: UniswapTokenProps
@@ -222,7 +209,7 @@ export const useSwapVult = () => {
       factoryAddress: contractAddress.poolFactory,
       tokenA,
       tokenB,
-      fee: FeeAmount.MEDIUM,
+      fee: FeeAmount.HIGH,
     });
 
     const poolContract = new Contract(
@@ -433,7 +420,7 @@ export const useSwapVult = () => {
   const isAddressWhitelisted = async (address: string): Promise<boolean> => {
     const launchListContract = new Contract(
       contractAddress.launchList,
-      LAUNCH_LIST_ABI,
+      launchListABI,
       rpcClient
     );
 
@@ -511,9 +498,8 @@ export const useSwapVult = () => {
     isWhitelist,
     checkApproval,
     executeSwap,
-    getAddressSpentETH,
-    getPhase1ETHAllocation,
-    getPhase2ETHAllocation,
+    getAddressSpentUSDC,
+    getCurrentPhase,
     getPoolConstants,
     getMaxNetworkFee,
     getPoolPrice,

@@ -9,10 +9,10 @@ import { useAccount } from "wagmi";
 import { SettingsModal } from "@/components/SettingsModal";
 import { SwapFees } from "@/components/SwapFees";
 import { SwapHistory } from "@/components/SwapHistory";
-import { SwapReports } from "@/components/SwapReports";
 import { SwapStats } from "@/components/SwapStats";
 import { SwapVult } from "@/components/SwapVult";
 import { SwapWhitelist } from "@/components/SwapWhitelist";
+import { TradingViewWidget } from "@/components/TradingViewWidget";
 import { useCore } from "@/hooks/useCore";
 import { Stack, VStack } from "@/toolkits/Stack";
 import { api } from "@/utils/api";
@@ -35,33 +35,33 @@ export const SwapPage = () => {
 
   const fetchPrice = async () => {
     const contract = new Contract(
-      contractAddress.wethUsdcPool,
+      contractAddress.vultUsdcPool,
       poolsAbi,
       getRPCProvider()
     );
     const slot0 = await contract.slot0();
     const poolLiquidity = String(await contract.liquidity());
     const pool = new Pool(
-      uniswapTokens.WETH,
       uniswapTokens.USDC,
+      uniswapTokens.VULT,
       FeeAmount.HIGH,
       String(slot0.sqrtPriceX96),
       poolLiquidity,
       Number(slot0.tick)
     );
-    return Number(pool.token1Price.toSignificant(6));
+    return Number(pool.token1Price.toSignificant(8));
   };
 
   useEffect(() => {
     setCurrentPage("swap");
 
-    api.volume(1).then((volume) => {
+    api.volume().then((volume) => {
       setState((prevState) => ({ ...prevState, volume }));
     });
 
     fetchPrice().then((price) => {
       const contract = new Contract(
-        contractAddress.wethToken,
+        contractAddress.vultToken,
         erc20Abi,
         getRPCProvider()
       );
@@ -108,7 +108,7 @@ export const SwapPage = () => {
           <MediaQuery minWidth={1200}>
             <SwapStats marketCap={marketCap} price={price} volume={volume} />
           </MediaQuery>
-          <SwapReports />
+          <TradingViewWidget />
           {isConnected && <SwapHistory />}
         </VStack>
       </Stack>

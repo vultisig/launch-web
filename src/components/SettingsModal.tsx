@@ -126,16 +126,16 @@ export const SettingsModal = () => {
     if (open) {
       api
         .suggestedFees()
-        .then((fees) => {
-          setFees(fees);
+        .then(({ data }) => {
+          setFees(data);
 
           if (
             JSON.stringify(gasSettings) === JSON.stringify(defaultGasSettings)
           ) {
             setGasSettings({
               ...gasSettings,
-              maxFee: Number(fees.medium.suggestedMaxFeePerGas),
-              maxPriorityFee: Number(fees.medium.suggestedMaxPriorityFeePerGas),
+              maxFee: Number(data.medium.suggestedMaxFeePerGas),
+              maxPriorityFee: Number(data.medium.suggestedMaxPriorityFeePerGas),
             });
           }
         })

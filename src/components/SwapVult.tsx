@@ -280,10 +280,9 @@ export const SwapVult = () => {
   return (
     <Form
       form={form}
-      initialValues={{ allocateToken: "USDC", buyToken: "UNI" }}
+      initialValues={{ allocateToken: "USDC", buyToken: "VULT" }}
       onFinish={handleSwap}
       onValuesChange={handleChangeValues}
-      className="swap-vult"
     >
       <VStack
         $style={{
@@ -317,7 +316,7 @@ export const SwapVult = () => {
             ghost
           />
         </HStack>
-        <VStack $style={{ alignItems: "center" }} className="swap">
+        <VStack $style={{ alignItems: "center" }}>
           <VStack
             $style={{
               borderColor: colors.borderNormal.toHex(),

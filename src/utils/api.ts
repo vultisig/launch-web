@@ -1,11 +1,10 @@
 import axios from "axios";
-import { request } from "graphql-request";
 import { v4 as uuidv4 } from "uuid";
 
 import { contractAddress } from "@/utils/constants";
 import { Currency } from "@/utils/currency";
 import { toCamelCase } from "@/utils/functions";
-import { HistoricalPriceProps, SuggestedGasFeeProps } from "@/utils/types";
+import { SuggestedGasFeeProps } from "@/utils/types";
 
 const fetch = axios.create({
   baseURL: `${import.meta.env.VITE_SERVER_ADDRESS}`,
@@ -46,12 +45,12 @@ export const api = {
           isNative
             ? address
             : {
-              data: `0x70a08231000000000000000000000000${address.replace(
-                "0x",
-                ""
-              )}`,
-              to: contract,
-            },
+                data: `0x70a08231000000000000000000000000${address.replace(
+                  "0x",
+                  ""
+                )}`,
+                to: contract,
+              },
           "latest",
         ],
       })
@@ -62,107 +61,10 @@ export const api = {
       })
       .catch(() => 0);
   },
-  historicalPriceByDay: async (
-    endpoint: string,
-    contract: string,
-    start: number,
-    end: number
-  ): Promise<HistoricalPriceProps[]> => {
-    const query = `{
-      tokenDayDatas(
-        orderBy: date
-        orderDirection: desc
-        where: {date_lte: ${start}, date_gte: ${end}, token_: {id: "${contract.toLowerCase()}"}}
-      ) { 
-        date
-        priceUSD
-      }
-    }`;
-    return await request<{
-      tokenDayDatas: { date: number; priceUSD: string }[];
-    }>(endpoint, query)
-      .then(({ tokenDayDatas }) =>
-        tokenDayDatas.map(({ date, priceUSD }) => ({
-          date: date * 1000,
-          price: parseFloat(priceUSD) || 0,
-        }))
-      )
-      .catch(() => []);
-  },
-  historicalPriceByHour: async (
-    endpoint: string,
-    contract: string,
-    start: number,
-    end: number
-  ): Promise<HistoricalPriceProps[]> => {
-    const query = `{
-    tokenHourDatas(
-      orderBy: periodStartUnix
-      orderDirection: desc
-      where: {periodStartUnix_lte: ${start}, periodStartUnix_gte: ${end}, token_: {id: "${contract.toLowerCase()}"}}
-    ) {
-      priceUSD
-      periodStartUnix
-    }
-  }`;
-    return await request<{
-      tokenHourDatas: { periodStartUnix: number; priceUSD: string }[];
-    }>(endpoint, query)
-      .then(({ tokenHourDatas }) =>
-        tokenHourDatas.map(({ periodStartUnix, priceUSD }) => ({
-          date: periodStartUnix * 1000,
-          price: parseFloat(priceUSD) || 0,
-        }))
-      )
-      .catch(() => []);
-  },
-  historicalPrice: async (days: number): Promise<HistoricalPriceProps[]> => {
-    const endpoint = `https://gateway.thegraph.com/api/${import.meta.env.VITE_GRAPH_API_KEY
-      }/subgraphs/id/5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV`;
-
-    const startEpochSec = Math.floor(Date.now() / 1000);
-    const endEpochSec = startEpochSec - 24 * days * 3600;
-
-    if (days > 7) {
-      return await api.historicalPriceByDay(
-        endpoint,
-        contractAddress.uniToken,
-        startEpochSec,
-        endEpochSec
-      );
-    } else {
-      let allData: HistoricalPriceProps[] = [];
-      let currentStart = startEpochSec;
-
-      while (currentStart > endEpochSec) {
-        const data = await api.historicalPriceByHour(
-          endpoint,
-          contractAddress.uniToken,
-          currentStart,
-          endEpochSec
-        );
-
-        if (!data.length) break;
-
-        allData = [...allData, ...data];
-
-        currentStart = data[data.length - 1].date / 3600000;
-
-        await new Promise((resolve) => setTimeout(resolve, 300));
-      }
-
-      return allData;
-    }
-  },
-  suggestedFees: async (): Promise<SuggestedGasFeeProps> => {
-    const endpoint =
-      "https://gas.api.cx.metamask.io/networks/1/suggestedGasFees";
-    const response = await axios.get(endpoint, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    return response.data;
+  suggestedFees: async () => {
+    return fetch.get<SuggestedGasFeeProps>(
+      "https://gas.api.cx.metamask.io/networks/1/suggestedGasFees"
+    );
   },
   values: async (ids: number[], currency: Currency) => {
     const modifedData: Record<string, number> = {};
@@ -176,33 +78,31 @@ export const api = {
         )}&skip_invalid=true&aux=is_active&convert=${currency}`
       )
       .then(({ data }) => {
-        const _currency = currency.toUpperCase()
-        
-
         Object.entries(data.data).forEach(([key, value]) => {
           modifedData[key] =
-            (value.quote[_currency] && value.quote[_currency].price) || 0;
+            (value.quote[currency] && value.quote[currency].price) || 0;
         });
 
         return modifedData;
       })
       .catch(() => modifedData);
   },
-  volume: async (days: number): Promise<number> => {
-    const endpoint = `https://gateway.thegraph.com/api/${import.meta.env.VITE_GRAPH_API_KEY
-      }/subgraphs/id/5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV`;
-    const currentEpochDay = Math.floor(Date.now() / 1000 / 3600 / (24 * days));
-    const query = `{
-      tokenDayData(id: "${contractAddress.uniToken.toLowerCase()}-${currentEpochDay}") {
-        volumeUSD
-      }
-    }`;
-
-    return request<{
-      tokenDayData: { volumeUSD: string };
-    }>(endpoint, query)
-      .then(({ tokenDayData }) =>
-        tokenDayData?.volumeUSD ? parseFloat(tokenDayData.volumeUSD) : 0
+  volume: async (): Promise<number> => {
+    return fetch
+      .get<{ data: { attributes: { volumeUsd: { h24: string | null } } } }>(
+        `/geckoterminal/api/v2/networks/eth/pools/${contractAddress.vultUsdcPool}`,
+        {
+          params: {
+            include: "base_token",
+            include_volume_breakdown: false,
+            include_composition: false,
+          },
+        }
+      )
+      .then(({ data }) =>
+        data?.data?.attributes?.volumeUsd?.h24
+          ? Number(data.data.attributes.volumeUsd.h24)
+          : 0
       )
       .catch(() => 0);
   },

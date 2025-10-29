@@ -1,7 +1,10 @@
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "styled-components";
+import { useAccount } from "wagmi";
 
 import { useCore } from "@/hooks/useCore";
+import { useSwapVult } from "@/hooks/useSwapVult";
 import { ChartAreaIcon } from "@/icons/ChartAreaIcon";
 import { ChartPieIcon } from "@/icons/ChartPieIcon";
 import { CheckCheckIcon } from "@/icons/CheckCheckIcon";
@@ -10,8 +13,19 @@ import { toValueFormat } from "@/utils/functions";
 
 export const SwapFees = () => {
   const { t } = useTranslation();
+  const [usedAllocation, setUsedAllocation] = useState<number>(0);
   const { currency } = useCore();
+  const { address, isConnected } = useAccount();
+  const { getAddressSpentUSDC } = useSwapVult();
   const colors = useTheme();
+
+  useEffect(() => {
+    if (address && isConnected) {
+      getAddressSpentUSDC(address).then((usedAllocation) => {
+        setUsedAllocation(usedAllocation);
+      });
+    }
+  }, [address, isConnected]);
 
   const fees = [
     {
@@ -24,14 +38,18 @@ export const SwapFees = () => {
       label: t("totalWlAllocation"),
       value: toValueFormat(1000, currency),
     },
-    {
-      icon: ChartPieIcon,
-      label: t("usedAllocation"),
-      value: `${toValueFormat(0, currency)} / ${toValueFormat(
-        10000,
-        currency
-      )}`,
-    },
+    ...(isConnected
+      ? [
+          {
+            icon: ChartPieIcon,
+            label: t("usedAllocation"),
+            value: `${toValueFormat(
+              usedAllocation,
+              currency
+            )} / ${toValueFormat(10000, currency)}`,
+          },
+        ]
+      : []),
   ];
 
   return (
