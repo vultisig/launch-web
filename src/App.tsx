@@ -6,7 +6,6 @@ import { WagmiProvider } from "wagmi";
 import { i18nInstance } from "@/i18n/config";
 import { DefaultLayout } from "@/layouts/Default";
 import { NotFoundPage } from "@/pages/NotFound";
-import { PoolPage } from "@/pages/Pool";
 import { SwapPage } from "@/pages/Swap";
 import { AntdProvider } from "@/providers/antd";
 import { CoreProvider } from "@/providers/core";
@@ -37,10 +36,6 @@ export const App = () => {
                       <Route
                         element={<SwapPage />}
                         path={routeTree.swap.path}
-                      />
-                      <Route
-                        element={<PoolPage />}
-                        path={routeTree.pool.path}
                       />
                     </Route>
                     <Route

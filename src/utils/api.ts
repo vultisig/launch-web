@@ -7,7 +7,7 @@ import { toCamelCase } from "@/utils/functions";
 import { SuggestedGasFeeProps } from "@/utils/types";
 
 const fetch = axios.create({
-  baseURL: `${import.meta.env.VITE_SERVER_ADDRESS}`,
+  baseURL: import.meta.env.VITE_SERVER_ADDRESS,
   headers: { accept: "application/json" },
 });
 
@@ -37,7 +37,7 @@ export const api = {
     isNative: boolean
   ) => {
     return fetch
-      .post<{ result: string }>("/eth/", {
+      .post<{ result: string }>(import.meta.env.VITE_RPC_MAINNET, {
         id: uuidv4(),
         jsonrpc: "2.0",
         method: isNative ? "eth_getBalance" : "eth_call",

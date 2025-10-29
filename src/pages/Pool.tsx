@@ -5,11 +5,9 @@ import { useTheme } from "styled-components";
 import { useAccount } from "wagmi";
 
 import { LinearChart } from "@/components/LinearChart";
-import { useChartData } from "@/hooks/useChartData";
 import { useCore } from "@/hooks/useCore";
 import { ChevronDownIcon } from "@/icons/ChevronDownIcon";
 import { Button } from "@/toolkits/Button";
-import { Spin } from "@/toolkits/Spin";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
 import { defaultTokens } from "@/utils/constants";
 import { toAmountFormat, toValueFormat } from "@/utils/functions";
@@ -28,7 +26,6 @@ export const PoolPage = () => {
   const { t } = useTranslation();
   const [range, setRange] = useState<Range>("full");
   const [period, setPeriod] = useState<Period>(defaultPeriod);
-  const { data, loading } = useChartData(period);
   const { currency, setCurrentPage, tokens } = useCore();
   const { isConnected } = useAccount();
   const [form] = Form.useForm<CustomSwapFormProps>();
@@ -309,16 +306,12 @@ export const PoolPage = () => {
                       backgroundColor: colors.bgTertiary.toHex(),
                     }}
                   >
-                    {value === loading ? (
-                      <Spin size="small" />
-                    ) : (
-                      periodNames[value]
-                    )}
+                    {periodNames[value]}
                   </VStack>
                 ))}
               </HStack>
               <Stack $style={{ width: "100%" }}>
-                <LinearChart data={loading ? [] : data} />
+                <LinearChart data={[]} />
               </Stack>
             </VStack>
           </VStack>
@@ -474,7 +467,7 @@ export const PoolPage = () => {
 
                     return (
                       <LinearChart
-                        data={loading ? [] : data}
+                        data={[]}
                         yAxisPlotBands={[
                           { from: Number(minPrice), to: Number(maxPrice) },
                         ]}
