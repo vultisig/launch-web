@@ -7,15 +7,6 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
-      "~variables": path.resolve(__dirname, "src/styles/_variables"),
-      "~animations": path.resolve(__dirname, "src/styles/_animations"),
-    },
-  },
-  css: {
-    preprocessorOptions: {
-      scss: {
-        additionalData: `@use "~variables" as *;`,
-      },
     },
   },
 });

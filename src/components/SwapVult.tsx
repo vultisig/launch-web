@@ -2,7 +2,7 @@ import { Form, Input, InputNumber, Tooltip } from "antd";
 import { debounce } from "lodash";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "styled-components";
+import styled, { useTheme } from "styled-components";
 import { useAccount } from "wagmi";
 
 import { TokenDropdown } from "@/components/TokenDropdown";
@@ -318,9 +318,20 @@ export const SwapVult = () => {
             ghost
           />
         </HStack>
-        <div className="swap">
-          <div className="item">
-            <span className="title">{t("iWantToAllocate")}</span>
+        <VStack $style={{ alignItems: "center" }} className="swap">
+          <VStack
+            $style={{
+              borderColor: colors.borderNormal.toHex(),
+              borderStyle: "solid",
+              borderWidth: "1px",
+              borderRadius: "12px",
+              padding: "16px",
+              width: "100%",
+            }}
+          >
+            <Stack as="span" $style={{ fontSize: "12px", fontWeight: "500" }}>
+              {t("iWantToAllocate")}
+            </Stack>
             <Form.Item<SwapFormProps>
               shouldUpdate={(prevValues, curValues) =>
                 prevValues.allocateToken !== curValues.allocateToken
@@ -334,9 +345,11 @@ export const SwapVult = () => {
 
                 return (
                   <>
-                    <div className="balance">
+                    <HStack
+                      $style={{ gap: "8px", justifyContent: "space-between" }}
+                    >
                       <Form.Item<SwapFormProps> name="allocateAmount" noStyle>
-                        <InputNumber
+                        <SwapInput
                           controls={false}
                           formatter={(value = 0) => toNumberFormat(value)}
                           min={0}
@@ -348,23 +361,38 @@ export const SwapVult = () => {
                         ticker={ticker}
                         onChange={(value) => handleChangeToken(value, false)}
                       />
-                    </div>
-                    <div className="price">
-                      <span>{toValueFormat(amount * value, currency)}</span>
+                    </HStack>
+                    <HStack
+                      $style={{
+                        justifyContent: "space-between",
+                        marginTop: "8px",
+                      }}
+                    >
+                      <Stack
+                        as="span"
+                        $style={{ color: colors.textTertiary.toHex() }}
+                      >
+                        {toValueFormat(amount * value, currency)}
+                      </Stack>
                       {isConnected && (
                         <Tooltip title={t("clickToUseFullAmount")}>
-                          <span
-                            className="available-balance clickable"
+                          <HStack
                             onClick={() => handleUseFullAmount(ticker)}
+                            $style={{
+                              color: colors.textTertiary.toHex(),
+                              cursor: "pointer",
+                              gap: "4px",
+                            }}
+                            $hover={{ color: colors.textSecondary.toHex() }}
                           >
-                            {t("available")}:{" "}
-                            <span className="balance-amount">
+                            <Stack as="span">{`${t("available")}:`}</Stack>
+                            <Stack as="span" $style={{ fontWeight: "600" }}>
                               {toAmountFormat(tokens[ticker].balance)}
-                            </span>
-                          </span>
+                            </Stack>
+                          </HStack>
                         </Tooltip>
                       )}
-                    </div>
+                    </HStack>
                   </>
                 );
               }}
@@ -372,12 +400,39 @@ export const SwapVult = () => {
             <Form.Item<SwapFormProps> name="allocateToken" noStyle>
               <Input type="hidden" />
             </Form.Item>
-          </div>
-          <div className="switch" onClick={handleSwitchToken}>
-            {loading ? <Spin /> : <ArrowDownUpIcon />}
-          </div>
-          <div className="item">
-            <span className="title">{t("toBuy")}</span>
+          </VStack>
+          <Stack
+            as={Button}
+            icon={
+              loading ? (
+                <Spin size="small" />
+              ) : (
+                <ArrowDownUpIcon fontSize={20} />
+              )
+            }
+            onClick={handleSwitchToken}
+            $style={{
+              borderRadius: "12px !important",
+              height: "36px !important",
+              margin: "-14px 0",
+              padding: "0 !important",
+              width: "36px",
+              zIndex: "1",
+            }}
+          />
+          <VStack
+            $style={{
+              borderColor: colors.borderNormal.toHex(),
+              borderStyle: "solid",
+              borderWidth: "1px",
+              borderRadius: "12px",
+              padding: "16px",
+              width: "100%",
+            }}
+          >
+            <Stack as="span" $style={{ fontSize: "12px", fontWeight: "500" }}>
+              {t("toBuy")}
+            </Stack>
             <Form.Item<SwapFormProps>
               shouldUpdate={(prevValues, curValues) =>
                 prevValues.buyToken !== curValues.buyToken
@@ -391,31 +446,49 @@ export const SwapVult = () => {
 
                 return (
                   <>
-                    <div className="balance">
+                    <HStack
+                      $style={{ gap: "8px", justifyContent: "space-between" }}
+                    >
                       <Form.Item<SwapFormProps> name="buyAmount" noStyle>
-                        <InputNumber
+                        <SwapInput
                           controls={false}
                           formatter={(value = 0) => toNumberFormat(value)}
                           min={0}
                           placeholder="0"
-                          readOnly={loading}
+                          readOnly
                         />
                       </Form.Item>
                       <TokenDropdown
                         ticker={ticker}
                         onChange={(value) => handleChangeToken(value, true)}
                       />
-                    </div>
-                    <div className="price">
-                      <span>{toValueFormat(amount * value, currency)}</span>
+                    </HStack>
+                    <HStack
+                      $style={{
+                        justifyContent: "space-between",
+                        marginTop: "8px",
+                      }}
+                    >
+                      <Stack
+                        as="span"
+                        $style={{ color: colors.textTertiary.toHex() }}
+                      >
+                        {toValueFormat(amount * value, currency)}
+                      </Stack>
                       {isConnected && (
-                        <span>
-                          {`${t("amount")}: ${toAmountFormat(
-                            tokens[ticker].balance
-                          )}`}
-                        </span>
+                        <HStack
+                          $style={{
+                            color: colors.textTertiary.toHex(),
+                            gap: "4px",
+                          }}
+                        >
+                          <Stack as="span">{`${t("amount")}:`}</Stack>
+                          <Stack as="span" $style={{ fontWeight: "600" }}>
+                            {toAmountFormat(tokens[ticker].balance)}
+                          </Stack>
+                        </HStack>
                       )}
-                    </div>
+                    </HStack>
                   </>
                 );
               }}
@@ -423,8 +496,8 @@ export const SwapVult = () => {
             <Form.Item<SwapFormProps> name="buyToken" noStyle>
               <Input type="hidden" />
             </Form.Item>
-          </div>
-        </div>
+          </VStack>
+        </VStack>
         <Form.Item<SwapFormProps>
           shouldUpdate={(prevValues, curValues) =>
             prevValues.allocateAmount !== curValues.allocateAmount ||
@@ -438,42 +511,74 @@ export const SwapVult = () => {
             const { allocateAmount, allocateToken, buyAmount, buyToken } =
               getFieldsValue();
 
+            const items =
+              allocateAmount && buyAmount
+                ? [
+                    {
+                      color: colors.success.toHex(),
+                      label: t("maxSlippage"),
+                      value: `${gasSettings.slippage}%`,
+                    },
+                    {
+                      label: t("minReceived"),
+                      value: buyAmount * (1 - gasSettings.slippage / 100),
+                    },
+                    {
+                      color: colors.success.toHex(),
+                      label: t("networkFeeEst"),
+                      value: gasSettings.speed,
+                    },
+                    {
+                      label: t("maxNetworkFee"),
+                      value: toValueFormat(maxNetworkFee, currency, 6),
+                    },
+                    {
+                      color: colors.error.toHex(),
+                      label: t("priceImpact"),
+                      value: `${priceImpact}%`,
+                    },
+                    {
+                      color: colors.success.toHex(),
+                      label: t("route"),
+                      value: `${allocateToken} → ${buyToken}`,
+                    },
+                  ]
+                : [];
+
             return loading ? (
               <Button disabled>{t("loading")}</Button>
             ) : (
               <>
-                {allocateAmount && buyAmount ? (
-                  <div className="info">
-                    <div className="item">
-                      <span className="label">{t("maxSlippage")}</span>
-                      <span className="value success">{`${gasSettings.slippage}%`}</span>
-                    </div>
-                    <div className="item">
-                      <span className="label">{t("minReceived")}</span>
-                      <span className="value">
-                        {buyAmount * (1 - gasSettings.slippage / 100)}
-                      </span>
-                    </div>
-                    <div className="item">
-                      <span className="label">{t("networkFeeEst")}</span>
-                      <span className="value success">{gasSettings.speed}</span>
-                    </div>
-                    <div className="item">
-                      <span className="label">{t("maxNetworkFee")}</span>
-                      <span className="value">
-                        {toValueFormat(maxNetworkFee, currency, 6)}
-                      </span>
-                    </div>
-                    <div className="item">
-                      <span className="label">{t("priceImpact")}</span>
-                      <span className="value error">{`${priceImpact}%`}</span>
-                    </div>
-                    <div className="item">
-                      <span className="label">{t("route")}</span>
-                      <span className="value success">{`${allocateToken} → ${buyToken}`}</span>
-                    </div>
-                  </div>
-                ) : null}
+                {items.length > 0 && (
+                  <VStack $style={{ gap: "12px" }}>
+                    {items.map(({ color, label, value }, index) => (
+                      <HStack
+                        key={index}
+                        $style={{
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <Stack
+                          as="span"
+                          $style={{ fontWeight: "500", lineHeight: "24px" }}
+                        >
+                          {label}
+                        </Stack>
+                        <Stack
+                          as="span"
+                          $style={{
+                            fontWeight: "500",
+                            lineHeight: "24px",
+                            ...(color ? { color } : {}),
+                          }}
+                        >
+                          {value}
+                        </Stack>
+                      </HStack>
+                    ))}
+                  </VStack>
+                )}
                 {isConnected ? (
                   <>
                     <HStack
@@ -529,3 +634,18 @@ export const SwapVult = () => {
     </Form>
   );
 };
+
+const SwapInput = styled(InputNumber)`
+  border: none;
+  box-shadow: none;
+  outline: none;
+  width: 100%;
+
+  .ant-input-number-input {
+    color: ${({ theme }) => theme.textSecondary.toHex()};
+    font-size: 22px;
+    font-weight: 500;
+    height: 40px;
+    padding: 0;
+  }
+`;

@@ -4,8 +4,5 @@
 @use "@fontsource/righteous/latin.css" as righteous;
 @use "@fontsource/roboto-mono/latin.css" as roboto;
 
-@use "_variables";
 @use "_normalize";
 @use "_global";
-
-@use "../components/swap-vult";

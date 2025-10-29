@@ -7,11 +7,11 @@ import { erc20Abi } from "viem";
 import { useAccount } from "wagmi";
 
 import { SettingsModal } from "@/components/SettingsModal";
-import { SwapVult } from "@/components/swap-vult";
 import { SwapFees } from "@/components/SwapFees";
 import { SwapHistory } from "@/components/SwapHistory";
 import { SwapReports } from "@/components/SwapReports";
 import { SwapStats } from "@/components/SwapStats";
+import { SwapVult } from "@/components/SwapVult";
 import { SwapWhitelist } from "@/components/SwapWhitelist";
 import { useCore } from "@/hooks/useCore";
 import { Stack, VStack } from "@/toolkits/Stack";
