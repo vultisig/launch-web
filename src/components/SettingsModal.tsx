@@ -82,6 +82,7 @@ export const SettingsModal = () => {
 
   const handleReset = () => {
     form.setFieldsValue({
+      mode: defaultGasSettings.mode,
       slippage: defaultGasSettings.slippage,
       speed: defaultGasSettings.speed,
       gasLimit: defaultGasSettings.gasLimit,

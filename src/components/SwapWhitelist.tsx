@@ -1,7 +1,7 @@
 import { Form, Input } from "antd";
 import { isAddress } from "ethers";
 import { debounce } from "lodash";
-import { FC, useState } from "react";
+import { FC, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "styled-components";
 
@@ -26,26 +26,33 @@ export const SwapWhitelist: FC = () => {
   const { isAddressWhitelisted } = useSwapVult();
   const [form] = Form.useForm<FormProps>();
   const colors = useTheme();
+  const handleCheck = useMemo(
+    () =>
+      debounce(async ({ address }: FormProps) => {
+        const addr = (address ?? "").trim();
+        if (!addr) {
+          setState((s) => ({ ...s, isValidAddress: false, loading: false }));
+          return;
+        }
+        if (!isAddress(addr)) {
+          setState((s) => ({ ...s, isValidAddress: false, loading: false }));
+          return;
+        }
+        setState((s) => ({ ...s, isValidAddress: true, loading: true }));
+        try {
+          const result = await isAddressWhitelisted(addr);
+          const current = (form.getFieldValue("address") ?? "").trim();
+          if (current === addr) {
+            setState((s) => ({ ...s, isWhitelist: result, loading: false }));
+          }
+        } catch {
+          setState((s) => ({ ...s, loading: false }));
+        }
+      }, 800),
+    [form, isAddressWhitelisted]
+  );
 
-  const handleCheck = debounce(({ address }: FormProps) => {
-    if (isAddress(address)) {
-      setState((prevState) => ({
-        ...prevState,
-        isValidAddress: true,
-        loading: true,
-      }));
-
-      isAddressWhitelisted(address).then((isWhitelist) => {
-        setState((prevState) => ({
-          ...prevState,
-          isWhitelist,
-          loading: false,
-        }));
-      });
-    } else {
-      setState((prevState) => ({ ...prevState, isValidAddress: false }));
-    }
-  }, 800);
+  useEffect(() => () => handleCheck.cancel(), [handleCheck]);
 
   return (
     <Form form={form} onValuesChange={handleCheck}>
