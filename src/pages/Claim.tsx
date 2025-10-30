@@ -115,7 +115,7 @@ export const ClaimPage = () => {
     if (!isConnected) setStep(0);
   }, [isConnected]);
 
-  const getIOUVultBalance = () => {
+  const getIOUVultBalance = useCallback(() => {
     if (address && chainId && chainId === base.id) {
       getBalance(wagmiConfig, {
         address,
@@ -131,7 +131,7 @@ export const ClaimPage = () => {
           message.error("Failed to get IOU vault balance");
         });
     }
-  };
+  }, [address, chainId, message]);
 
   const handleSwitchChain = useCallback(async () => {
     if (isConnected) {
@@ -146,7 +146,7 @@ export const ClaimPage = () => {
       }
       getIOUVultBalance();
     }
-  }, [isConnected, chainId]);
+  }, [isConnected, chainId, message, getIOUVultBalance]);
 
   useEffect(() => {
     handleSwitchChain();
