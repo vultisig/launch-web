@@ -102,14 +102,9 @@ export const WalletDrawer = () => {
           {address}
         </MiddleTruncate>
         <Tooltip title={t("copy")}>
-          <Stack
-            as={Button}
-            onClick={handleCopy}
-            $style={{ flex: "none" }}
-            ghost
-          >
+          <Button onClick={handleCopy} ghost>
             <CopyIcon fontSize={20} />
-          </Stack>
+          </Button>
         </Tooltip>
       </HStack>
       <Divider />
