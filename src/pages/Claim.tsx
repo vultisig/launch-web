@@ -4,15 +4,17 @@ import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "react-responsive";
 import styled, { useTheme } from "styled-components";
 import { useAccount } from "wagmi";
-
+import { switchChain, getBalance } from "wagmi/actions";
 import { useCore } from "@/hooks/useCore";
 import { CheckIcon } from "@/icons/CheckIcon";
 import { Button } from "@/toolkits/Button";
 import { Divider } from "@/toolkits/Divider";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
-import { modalHash } from "@/utils/constants";
+import { baseContractAddress, modalHash } from "@/utils/constants";
 import { vultisigConnect } from "@/utils/extension";
 import { toAmountFormat, toNumberFormat } from "@/utils/functions";
+import { wagmiConfig } from "@/utils/wagmi";
+import { base } from "viem/chains";
 
 const { Content } = Layout;
 
@@ -22,6 +24,7 @@ type StateProps = {
   connecting?: boolean;
   vultisigAddress?: string;
   vultisigConnected?: boolean;
+  iouVultBalance?: bigint;
 };
 
 export const ClaimPage = () => {
@@ -33,10 +36,12 @@ export const ClaimPage = () => {
     connecting,
     vultisigAddress = "",
     vultisigConnected,
+    iouVultBalance,
   } = state;
   const [step, setStep] = useState(0);
   const { message, setCurrentPage, tokens } = useCore();
-  const { address = "", isConnected } = useAccount();
+  const { address = "", isConnected, chainId } = useAccount();
+
   const isDesktop = useMediaQuery({ query: "(min-width: 1200px)" });
   const colors = useTheme();
 
@@ -109,6 +114,43 @@ export const ClaimPage = () => {
   useEffect(() => {
     if (!isConnected) setStep(0);
   }, [isConnected]);
+
+  const getIOUVultBalance = () => {
+    if (address && chainId && chainId === base.id) {
+      getBalance(wagmiConfig, {
+        address,
+        token: baseContractAddress.iouVult,
+      })
+        .then(({ value }) => {
+          setState((prevState) => ({
+            ...prevState,
+            iouVultBalance: value,
+          }));
+        })
+        .catch(() => {
+          message.error("Failed to get IOU vault balance");
+        });
+    }
+  };
+
+  const handleSwitchChain = async () => {
+    if (isConnected) {
+      if (chainId && chainId !== base.id) {
+        try {
+          await switchChain(wagmiConfig, { chainId: base.id });
+        } catch {
+          message.error(
+            "Failed to switch chain. Please switch to BASE chain from your wallet manually and try again."
+          );
+        }
+      }
+      getIOUVultBalance();
+    }
+  };
+
+  useEffect(() => {
+    handleSwitchChain();
+  }, [isConnected, chainId]);
 
   useEffect(() => setCurrentPage("claim"), []);
 
@@ -380,7 +422,6 @@ export const ClaimPage = () => {
                   <AmountInput
                     controls={false}
                     formatter={(value = "") => toNumberFormat(value)}
-                    max={tokens.VULT.balance}
                     min={0}
                     onChange={handleBurnAmount}
                     placeholder="0"
@@ -403,7 +444,7 @@ export const ClaimPage = () => {
                     >
                       <Stack as="span">{`${t("available")}:`}</Stack>
                       <Stack as="span" $style={{ fontWeight: "600" }}>
-                        {toAmountFormat(tokens.VULT.balance)}
+                        {toAmountFormat(Number(iouVultBalance))}
                       </Stack>
                     </HStack>
                   </Tooltip>

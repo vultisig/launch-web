@@ -25,6 +25,10 @@ export const contractAddress = {
   wethUsdcPool: "0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640",
 } as const;
 
+export const baseContractAddress = {
+  iouVult: "0x299A57C1f6761b3dB304dc8B18bb4E60A1CF37b6",
+} as const;
+
 export const defaultTokens: Record<TickerKey, TokenProps> = {
   ETH: {
     balance: 0,
