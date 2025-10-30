@@ -1,5 +1,5 @@
 import { InputNumber, InputNumberProps, Layout, Tooltip } from "antd";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "react-responsive";
 import styled, { useTheme } from "styled-components";
@@ -133,7 +133,7 @@ export const ClaimPage = () => {
     }
   };
 
-  const handleSwitchChain = async () => {
+  const handleSwitchChain = useCallback(async () => {
     if (isConnected) {
       if (chainId && chainId !== base.id) {
         try {
@@ -146,11 +146,11 @@ export const ClaimPage = () => {
       }
       getIOUVultBalance();
     }
-  };
+  }, [isConnected, chainId]);
 
   useEffect(() => {
     handleSwitchChain();
-  }, [isConnected, chainId]);
+  }, [handleSwitchChain]);
 
   useEffect(() => setCurrentPage("claim"), []);
 
@@ -434,7 +434,7 @@ export const ClaimPage = () => {
                   <Tooltip title={t("clickToUseFullAmount")}>
                     <HStack
                       as="span"
-                      onClick={() => handleBurnAmount(tokens.VULT.balance)}
+                      onClick={() => handleBurnAmount(Number(iouVultBalance))}
                       $style={{
                         color: colors.textTertiary.toHex(),
                         cursor: "pointer",
