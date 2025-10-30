@@ -14,6 +14,7 @@ export const en = {
   clearHistory: "Clear history",
   clickToUseFullAmount: "Click to use full amount",
   confirm: "Confirm",
+  connect: "Connect",
   connectWallet: "Connect Wallet",
   connectedWallet: "Connected Wallet",
   copy: "Copy",

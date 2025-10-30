@@ -45,6 +45,12 @@ export const DefaultLayout = () => {
       key: "pool",
       title: t("pool"),
     },
+    {
+      href: routeTree.claim.path,
+      icon: ArrowDownUpIcon,
+      key: "claim",
+      title: t("claim"),
+    },
   ];
 
   return (

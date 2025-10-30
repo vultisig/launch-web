@@ -1,9 +1,16 @@
-export type RouteKey = "basePath" | "notFound" | "pool" | "root" | "swap";
+export type RouteKey =
+  | "basePath"
+  | "claim"
+  | "notFound"
+  | "pool"
+  | "root"
+  | "swap";
 
 export const routeTree = {
   basePath: {
     path: import.meta.env.DEV ? "/" : import.meta.env.VITE_BASE_PATH,
   },
+  claim: { path: "/claim" },
   notFound: { path: "*" },
   pool: { path: "/pool" },
   root: { path: "/" },
