@@ -18,14 +18,14 @@ import { GasSettingsProps, SuggestedGasFeeProps } from "@/utils/types";
 
 type ModeOption = {
   key: GasSettingsProps["mode"];
-  lable: string;
+  label: string;
 };
 
 type SpeedOption = {
   gwei: string;
   key: GasSettingsProps["speed"];
   icon: FC;
-  lable: string;
+  label: string;
   speed: string;
 };
 
@@ -39,42 +39,45 @@ export const SettingsModal = () => {
   const colors = useTheme();
 
   const modeOptions: ModeOption[] = [
-    { key: "BASIC", lable: t("basic") },
-    { key: "ADVANCED", lable: t("advanced") },
+    { key: "BASIC", label: t("basic") },
+    { key: "ADVANCED", label: t("advanced") },
   ];
 
-  const speedOptions: SpeedOption[] = [
-    {
-      gwei: `0 - ${(
-        Number(fees?.high.suggestedMaxFeePerGas) +
-        Number(fees?.high.suggestedMaxPriorityFeePerGas)
-      ).toFixed(6)} Gwei`,
-      icon: TimerIcon,
-      key: "Fast",
-      lable: t("fast"),
-      speed: `~${Number(fees?.high.minWaitTimeEstimate) / 1000}s`,
-    },
-    {
-      gwei: `0 - ${(
-        Number(fees?.medium.suggestedMaxFeePerGas) +
-        Number(fees?.medium.suggestedMaxPriorityFeePerGas)
-      ).toFixed(6)} Gwei`,
-      icon: CarFrontIcon,
-      key: "Standard",
-      lable: t("standard"),
-      speed: `~${Number(fees?.medium.maxWaitTimeEstimate) / 1000}s`,
-    },
-    {
-      gwei: `0 - ${(
-        Number(fees?.low.suggestedMaxFeePerGas) +
-        Number(fees?.low.suggestedMaxPriorityFeePerGas)
-      ).toFixed(6)} Gwei`,
-      icon: HourglassIcon,
-      key: "Slow",
-      lable: t("slow"),
-      speed: `~${Number(fees?.low.maxWaitTimeEstimate) / 1000}s`,
-    },
-  ];
+  const speedOptions: SpeedOption[] = useMemo(() => {
+    if (!fees) return [];
+    return [
+      {
+        gwei: `0 - ${(
+          Number(fees?.high.suggestedMaxFeePerGas) +
+          Number(fees?.high.suggestedMaxPriorityFeePerGas)
+        ).toFixed(6)} Gwei`,
+        icon: TimerIcon,
+        key: "Fast",
+        label: t("fast"),
+        speed: `~${Number(fees?.high.minWaitTimeEstimate) / 1000}s`,
+      },
+      {
+        gwei: `0 - ${(
+          Number(fees?.medium.suggestedMaxFeePerGas) +
+          Number(fees?.medium.suggestedMaxPriorityFeePerGas)
+        ).toFixed(6)} Gwei`,
+        icon: CarFrontIcon,
+        key: "Standard",
+        label: t("standard"),
+        speed: `~${Number(fees?.medium.maxWaitTimeEstimate) / 1000}s`,
+      },
+      {
+        gwei: `0 - ${(
+          Number(fees?.low.suggestedMaxFeePerGas) +
+          Number(fees?.low.suggestedMaxPriorityFeePerGas)
+        ).toFixed(6)} Gwei`,
+        icon: HourglassIcon,
+        key: "Slow",
+        label: t("slow"),
+        speed: `~${Number(fees?.low.maxWaitTimeEstimate) / 1000}s`,
+      },
+    ];
+  }, [fees, t]);
 
   const open = useMemo(() => {
     return hash === modalHash.settings;
@@ -272,9 +275,9 @@ export const SettingsModal = () => {
                   padding: "4px",
                 }}
               >
-                {modeOptions.map(({ key, lable }) => (
+                {modeOptions.map(({ key, label }) => (
                   <ModeRadio key={key} value={key}>
-                    {lable}
+                    {label}
                   </ModeRadio>
                 ))}
               </HStack>
@@ -305,7 +308,7 @@ export const SettingsModal = () => {
                     >
                       <VStack as={Radio.Group} $style={{ gap: "16px" }}>
                         {speedOptions.map(
-                          ({ gwei, icon, key, lable, speed }) => (
+                          ({ gwei, icon, key, label, speed }) => (
                             <SpeedRadio key={key} value={key}>
                               <Stack
                                 as={icon}
@@ -323,7 +326,7 @@ export const SettingsModal = () => {
                                     textTransform: "uppercase",
                                   }}
                                 >
-                                  {lable}
+                                  {label}
                                 </Stack>
                                 <Stack as="span" $style={{ fontWeight: "500" }}>
                                   {speed}

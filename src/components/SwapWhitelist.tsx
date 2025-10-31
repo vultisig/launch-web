@@ -31,11 +31,19 @@ export const SwapWhitelist: FC = () => {
       debounce(async ({ address }: FormProps) => {
         const addr = (address ?? "").trim();
         if (!addr) {
-          setState((s) => ({ ...s, isValidAddress: false, loading: false }));
+          setState({
+            isValidAddress: false,
+            isWhitelist: undefined,
+            loading: false,
+          });
           return;
         }
         if (!isAddress(addr)) {
-          setState((s) => ({ ...s, isValidAddress: false, loading: false }));
+          setState({
+            isValidAddress: false,
+            isWhitelist: undefined,
+            loading: false,
+          });
           return;
         }
         setState((s) => ({ ...s, isValidAddress: true, loading: true }));
@@ -46,7 +54,11 @@ export const SwapWhitelist: FC = () => {
             setState((s) => ({ ...s, isWhitelist: result, loading: false }));
           }
         } catch {
-          setState((s) => ({ ...s, loading: false }));
+          setState((prevState) => ({
+            ...prevState,
+            loading: false,
+            isWhitelist: false,
+          }));
         }
       }, 800),
     [form, isAddressWhitelisted]
