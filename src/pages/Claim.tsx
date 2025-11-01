@@ -3,19 +3,37 @@ import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "react-responsive";
 import styled, { useTheme } from "styled-components";
-import { useAccount } from "wagmi";
-import { switchChain, getBalance } from "wagmi/actions";
+import { useAccount, useSwitchChain } from "wagmi";
+import {
+  getBalance,
+  writeContract,
+  waitForTransactionReceipt,
+  readContract,
+} from "wagmi/actions";
 import { useCore } from "@/hooks/useCore";
 import { CheckIcon } from "@/icons/CheckIcon";
 import { Button } from "@/toolkits/Button";
 import { Divider } from "@/toolkits/Divider";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
-import { baseContractAddress, modalHash } from "@/utils/constants";
-import { vultisigConnect } from "@/utils/extension";
+import {
+  baseContractAddress,
+  BaseMergeAbi,
+  ETHClaimAbi,
+  IOUVultAbi,
+  modalHash,
+} from "@/utils/constants";
+import { vultisigConnect, vultisigPersonalSign } from "@/utils/extension";
 import { toAmountFormat, toNumberFormat } from "@/utils/functions";
 import { wagmiConfig } from "@/utils/wagmi";
-import { base } from "viem/chains";
-import { formatEther } from "viem";
+import { base, mainnet } from "viem/chains";
+import { formatEther, toHex } from "viem";
+import { VultisigWalletProps } from "@/utils/types";
+import { api } from "@/utils/api";
+import { parseEther } from "ethers";
+import {
+  getClaimTransactions,
+  setClaimTransaction,
+} from "@/storage/claimTransaction";
 
 const { Content } = Layout;
 
@@ -23,9 +41,23 @@ type StateProps = {
   burnAmount?: number;
   claimAmount?: number;
   connecting?: boolean;
-  vultisigAddress?: string;
+  vultisigWallet?: VultisigWalletProps & { account: string };
+  isWalletRegistered?: boolean;
   vultisigConnected?: boolean;
   iouVultBalance?: bigint;
+  attestData?: {
+    address: string;
+    signature: string;
+    domain: {
+      name: string;
+      version: string;
+      chainId: number;
+      verifyingContract: string;
+    };
+  };
+  claimLoading?: boolean;
+  burnLoading?: boolean;
+  currentChainId?: typeof base.id | typeof mainnet.id;
 };
 
 export const ClaimPage = () => {
@@ -35,14 +67,36 @@ export const ClaimPage = () => {
     burnAmount,
     claimAmount,
     connecting,
-    vultisigAddress = "",
+    vultisigWallet = {
+      account: "",
+      hexChainCode: "",
+      isFastVault: false,
+      name: "",
+      publicKeyEcdsa: "",
+      publicKeyEddsa: "",
+      uid: "",
+    },
     vultisigConnected,
+    isWalletRegistered = false,
     iouVultBalance,
+    attestData = {
+      address: "",
+      signature: "",
+      domain: {
+        name: "",
+        version: "",
+        chainId: 0,
+        verifyingContract: "",
+      },
+    },
+    currentChainId = base.id,
+    claimLoading = false,
+    burnLoading = false,
   } = state;
   const [step, setStep] = useState(0);
   const { message, setCurrentPage, tokens } = useCore();
   const { address = "", isConnected, chainId } = useAccount();
-
+  const { switchChainAsync } = useSwitchChain();
   const isDesktop = useMediaQuery({ query: "(min-width: 1200px)" });
   const colors = useTheme();
 
@@ -51,11 +105,11 @@ export const ClaimPage = () => {
       case 0:
         return !isConnected;
       case 1:
-        return !vultisigConnected;
+        return !vultisigConnected || !isWalletRegistered;
       default:
         return false;
     }
-  }, [isConnected, step, vultisigConnected]);
+  }, [isConnected, step, vultisigConnected, isWalletRegistered]);
 
   const handleBurnAmount: InputNumberProps["onChange"] = (value) => {
     setState((prevState) => ({
@@ -64,10 +118,77 @@ export const ClaimPage = () => {
     }));
   };
 
-  const handleBurnSubmit = () => {
+  const handleBurnSubmit = async () => {
     if (!burnAmount || burnAmount <= 0) return;
+    setState((prevState) => ({ ...prevState, burnLoading: true }));
+    console.log("burnAmount: ", burnAmount);
 
-    console.log("Burning tokens...", burnAmount);
+    //check allowance of the token from the address to the attestData.domain.verifyingContract
+    const allowance = await readContract(wagmiConfig, {
+      address: baseContractAddress.iouVult as `0x${string}`,
+      abi: IOUVultAbi,
+      functionName: "allowance",
+      args: [address, attestData.domain.verifyingContract as `0x${string}`],
+    });
+    console.log("allowance: ", allowance);
+
+    if (Number(formatEther(allowance as bigint)) < burnAmount) {
+      const approveHash = await writeContract(wagmiConfig, {
+        address: baseContractAddress.iouVult as `0x${string}`,
+        abi: IOUVultAbi,
+        functionName: "approve",
+        args: [
+          attestData.domain.verifyingContract as `0x${string}`,
+          parseEther(String(burnAmount)),
+        ],
+      });
+      const approveReceipt = await waitForTransactionReceipt(wagmiConfig, {
+        hash: approveHash,
+      });
+      console.log("approveReceipt: ", approveReceipt);
+      const approveSuccess = approveReceipt.status === "success" ? true : false;
+      if (approveSuccess) {
+        message.success("Tokens approved successfully");
+      } else {
+        message.error("Failed to approve tokens");
+      }
+    }
+    console.log("attest DatA:", attestData);
+
+    console.log("calling merge");
+    const mergeHash = await writeContract(wagmiConfig, {
+      address: attestData.domain.verifyingContract as `0x${string}`,
+      abi: BaseMergeAbi,
+      functionName: "merge",
+      args: [
+        parseEther(String(burnAmount)),
+        vultisigWallet.account,
+        attestData.signature,
+      ],
+    });
+
+    const mergeReceipt = await waitForTransactionReceipt(wagmiConfig, {
+      hash: mergeHash,
+    });
+
+    console.log("mergeReceipt:", mergeReceipt);
+    const success = mergeReceipt.status === "success" ? true : false;
+    if (success) {
+      message.success("Tokens burned successfully");
+      setClaimTransaction(address, {
+        amount: burnAmount,
+        date: Date.now(),
+        hash: mergeHash,
+        status: "success",
+        isClaimed: false,
+        eventId: mergeReceipt.logs.length - 1,
+      });
+      getIOUVultBalance();
+    } else {
+      message.error("Failed to burn tokens");
+    }
+
+    setState((prevState) => ({ ...prevState, burnLoading: false }));
   };
 
   const handleClaimAmount: InputNumberProps["onChange"] = (value) => {
@@ -77,10 +198,63 @@ export const ClaimPage = () => {
     }));
   };
 
-  const handleClaimSubmit = () => {
+  const handleClaimSubmit = async () => {
     if (!claimAmount || claimAmount <= 0) return;
+    setState((prevState) => ({
+      ...prevState,
+      currentChainId: mainnet.id,
+      claimLoading: true,
+    }));
+    const [claimTransaction] = getClaimTransactions(address);
+    if (!claimTransaction) return;
+    const attestBurnResult = await api.attestBurn({
+      txId: claimTransaction.hash,
+      eventId: claimTransaction.eventId,
+    });
 
-    console.log("Claiming tokens...", claimAmount);
+    if (attestBurnResult.success) {
+      console.log("attestBurnResult: ", attestBurnResult);
+      const attestData = attestBurnResult.data;
+      setState((prevState) => ({
+        ...prevState,
+        claimAmount: Number(formatEther(BigInt(attestData.amount))),
+      }));
+
+      try {
+        await switchChainAsync({ chainId: mainnet.id });
+      } catch {
+        message.error("Failed to switch chain to mainnet");
+      }
+
+      const claimHash = await writeContract(wagmiConfig, {
+        address: attestData.domain.verifyingContract as `0x${string}`,
+        abi: ETHClaimAbi,
+        functionName: "claim",
+        args: [
+          attestData.baseTxId,
+          attestData.baseEventId,
+          attestData.amount,
+          attestData.recipient,
+          attestData.signature,
+        ],
+      });
+      console.log("claimHash: ", claimHash);
+      const claimReceipt = await waitForTransactionReceipt(wagmiConfig, {
+        hash: claimHash,
+      });
+      console.log("claimReceipt: ", claimReceipt);
+      const success = claimReceipt.status === "success" ? true : false;
+      if (success) {
+        setClaimTransaction(address, { ...claimTransaction, isClaimed: true });
+        message.success("Tokens claimed successfully");
+      } else {
+        message.error("Failed to claim tokens");
+        setState((prevState) => ({ ...prevState, claimLoading: false }));
+      }
+    } else {
+      message.error("Failed to attest burn");
+      setState((prevState) => ({ ...prevState, claimLoading: false }));
+    }
   };
 
   const handleConnect = () => {
@@ -89,13 +263,12 @@ export const ClaimPage = () => {
     setState((prevState) => ({ ...prevState, connecting: true }));
 
     vultisigConnect()
-      .then((vultisigAddress) => {
+      .then((vultisigWallet) => {
         message.success("Vultisig connected successfully");
-
         setState((prevState) => ({
           ...prevState,
           connecting: false,
-          vultisigAddress,
+          vultisigWallet,
           vultisigConnected: true,
         }));
       })
@@ -105,6 +278,80 @@ export const ClaimPage = () => {
         setState((prevState) => ({ ...prevState, connecting: false }));
       });
   };
+
+  const checkAndRegisterVultisigWallet = useCallback(async () => {
+    if (vultisigWallet.account) {
+      setState((prevState) => ({ ...prevState, connecting: true }));
+      const status = await api.applyStatus(vultisigWallet.publicKeyEcdsa);
+      if (status) {
+        const attestResult = await api.attestAddress(vultisigWallet.account);
+        if (attestResult.success) {
+          setState((prevState) => ({
+            ...prevState,
+            isWalletRegistered: status,
+            connecting: false,
+            attestData: attestResult.data,
+          }));
+        } else {
+          message.error("Failed to verify vultisig wallet");
+          setState((prevState) => ({
+            ...prevState,
+            isWalletRegistered: false,
+            connecting: false,
+          }));
+        }
+      }
+      if (!status) {
+        registerVultisigWallet();
+      }
+    }
+  }, [vultisigWallet]);
+
+  useEffect(() => {
+    checkAndRegisterVultisigWallet();
+  }, [checkAndRegisterVultisigWallet]);
+
+  const registerVultisigWallet = useCallback(async () => {
+    if (vultisigWallet.account && vultisigWallet.uid && !isWalletRegistered) {
+      try {
+        setState((prevState) => ({ ...prevState, connecting: true }));
+        const { message: challengeMessage } = await api.challengeMessage(
+          vultisigWallet.uid
+        );
+        const hexMessage = toHex(challengeMessage);
+        const signature = await vultisigPersonalSign(
+          hexMessage,
+          vultisigWallet.account
+        );
+        await api.registerVultisigWallet(
+          vultisigWallet,
+          challengeMessage,
+          signature
+        );
+
+        const result = await api.attestAddress(vultisigWallet.account);
+
+        if (result.success) {
+          setState((prevState) => ({
+            ...prevState,
+            isWalletRegistered: true,
+            connecting: false,
+            attestData: result.data,
+          }));
+        } else {
+          message.error("Failed to verify vultisig wallet");
+        }
+      } catch {
+        message.error("Failed to register Vultisig wallet");
+        setState((prevState) => ({
+          ...prevState,
+          connecting: false,
+          isWalletRegistered: false,
+          vultisigConnected: false,
+        }));
+      }
+    }
+  }, [vultisigWallet, isWalletRegistered]);
 
   const handleContinue = () => {
     if (disabled) return;
@@ -118,6 +365,7 @@ export const ClaimPage = () => {
 
   const getIOUVultBalance = useCallback(() => {
     if (address && chainId && chainId === base.id) {
+      setState((prevState) => ({ ...prevState, burnLoading: true }));
       getBalance(wagmiConfig, {
         address,
         token: baseContractAddress.iouVult,
@@ -130,15 +378,18 @@ export const ClaimPage = () => {
         })
         .catch(() => {
           message.error("Failed to get IOU vault balance");
+        })
+        .finally(() => {
+          setState((prevState) => ({ ...prevState, burnLoading: false }));
         });
     }
-  }, [address, chainId, message]);
+  }, [address, chainId, message, isConnected]);
 
   const handleSwitchChain = useCallback(async () => {
     if (isConnected) {
-      if (chainId && chainId !== base.id) {
+      if (chainId && chainId !== currentChainId) {
         try {
-          await switchChain(wagmiConfig, { chainId: base.id });
+          await switchChainAsync({ chainId: currentChainId });
         } catch {
           message.error(
             "Failed to switch chain. Please switch to BASE chain from your wallet manually and try again."
@@ -147,7 +398,7 @@ export const ClaimPage = () => {
       }
       getIOUVultBalance();
     }
-  }, [isConnected, chainId, message, getIOUVultBalance]);
+  }, [isConnected, chainId, message, getIOUVultBalance, currentChainId]);
 
   useEffect(() => {
     handleSwitchChain();
@@ -355,7 +606,7 @@ export const ClaimPage = () => {
                       lineHeight: "16px",
                     }}
                   >
-                    {vultisigAddress}
+                    {vultisigWallet.account}
                   </Stack>
                 </HStack>
               ) : (
@@ -413,7 +664,7 @@ export const ClaimPage = () => {
                 >
                   Vultisig Vault
                 </Stack>
-                <Stack as="span">{vultisigAddress}</Stack>
+                <Stack as="span">{vultisigWallet.account}</Stack>
               </VStack>
               <VStack $style={{ gap: "8px" }}>
                 <Stack as="span" $style={{ fontWeight: "500" }}>
@@ -429,7 +680,17 @@ export const ClaimPage = () => {
                     suffix={tokens.VULT.ticker}
                     value={burnAmount}
                   />
-                  <SubmitButton onClick={handleBurnSubmit}>Burn</SubmitButton>
+                  <SubmitButton
+                    onClick={handleBurnSubmit}
+                    disabled={
+                      iouVultBalance === 0n ||
+                      iouVultBalance === undefined ||
+                      burnLoading
+                    }
+                    loading={burnLoading}
+                  >
+                    Burn
+                  </SubmitButton>
                 </HStack>
                 <HStack>
                   <Tooltip title={t("clickToUseFullAmount")}>
@@ -471,7 +732,13 @@ export const ClaimPage = () => {
                     suffix={tokens.VULT.ticker}
                     value={claimAmount}
                   />
-                  <SubmitButton onClick={handleClaimSubmit}>Claim</SubmitButton>
+                  <SubmitButton
+                    onClick={handleClaimSubmit}
+                    disabled={claimLoading}
+                    loading={claimLoading}
+                  >
+                    Claim
+                  </SubmitButton>
                 </HStack>
               </VStack>
             </Stack>
