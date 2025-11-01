@@ -1,5 +1,12 @@
 import { InputNumber, InputNumberProps, Layout, Tooltip } from "antd";
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "react-responsive";
 import styled, { useTheme } from "styled-components";
@@ -95,10 +102,12 @@ export const ClaimPage = () => {
   } = state;
   const [step, setStep] = useState(0);
   const { message, setCurrentPage, tokens } = useCore();
-  const { address = "", isConnected, chainId } = useAccount();
+  const { address = "", isConnected, chainId, connector } = useAccount();
   const { switchChainAsync } = useSwitchChain();
   const isDesktop = useMediaQuery({ query: "(min-width: 1200px)" });
   const colors = useTheme();
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pollingStartTimeRef = useRef<number | null>(null);
 
   const disabled = useMemo(() => {
     switch (step) {
@@ -120,74 +129,87 @@ export const ClaimPage = () => {
 
   const handleBurnSubmit = async () => {
     if (!burnAmount || burnAmount <= 0) return;
-    setState((prevState) => ({ ...prevState, burnLoading: true }));
+    setState((prevState) => ({
+      ...prevState,
+      burnLoading: true,
+      currentChainId: base.id,
+    }));
     console.log("burnAmount: ", burnAmount);
-
-    //check allowance of the token from the address to the attestData.domain.verifyingContract
-    const allowance = await readContract(wagmiConfig, {
-      address: baseContractAddress.iouVult as `0x${string}`,
-      abi: IOUVultAbi,
-      functionName: "allowance",
-      args: [address, attestData.domain.verifyingContract as `0x${string}`],
-    });
-    console.log("allowance: ", allowance);
-
-    if (Number(formatEther(allowance as bigint)) < burnAmount) {
-      const approveHash = await writeContract(wagmiConfig, {
+    try {
+      //check allowance of the token from the address to the attestData.domain.verifyingContract
+      const allowance = await readContract(wagmiConfig, {
         address: baseContractAddress.iouVult as `0x${string}`,
         abi: IOUVultAbi,
-        functionName: "approve",
+        functionName: "allowance",
+        args: [address, attestData.domain.verifyingContract as `0x${string}`],
+      });
+      console.log("allowance: ", allowance);
+
+      if (Number(formatEther(allowance as bigint)) < burnAmount) {
+        const approveHash = await writeContract(wagmiConfig, {
+          address: baseContractAddress.iouVult as `0x${string}`,
+          abi: IOUVultAbi,
+          functionName: "approve",
+          args: [
+            attestData.domain.verifyingContract as `0x${string}`,
+            parseEther(String(burnAmount)),
+          ],
+        });
+        const approveReceipt = await waitForTransactionReceipt(wagmiConfig, {
+          hash: approveHash,
+        });
+        console.log("approveReceipt: ", approveReceipt);
+        const approveSuccess =
+          approveReceipt.status === "success" ? true : false;
+        if (approveSuccess) {
+          message.success("Tokens approved successfully");
+          // Wait 5 seconds after successful approval before continuing
+          await new Promise((resolve) => setTimeout(resolve, 5000));
+        } else {
+          message.error("Failed to approve tokens");
+          setState((prevState) => ({ ...prevState, burnLoading: false }));
+          return;
+        }
+      }
+      console.log("attest DatA:", attestData);
+
+      console.log("calling merge");
+      const mergeHash = await writeContract(wagmiConfig, {
+        address: attestData.domain.verifyingContract as `0x${string}`,
+        abi: BaseMergeAbi,
+        functionName: "merge",
         args: [
-          attestData.domain.verifyingContract as `0x${string}`,
           parseEther(String(burnAmount)),
+          vultisigWallet.account,
+          attestData.signature,
         ],
       });
-      const approveReceipt = await waitForTransactionReceipt(wagmiConfig, {
-        hash: approveHash,
-      });
-      console.log("approveReceipt: ", approveReceipt);
-      const approveSuccess = approveReceipt.status === "success" ? true : false;
-      if (approveSuccess) {
-        message.success("Tokens approved successfully");
-      } else {
-        message.error("Failed to approve tokens");
-      }
-    }
-    console.log("attest DatA:", attestData);
 
-    console.log("calling merge");
-    const mergeHash = await writeContract(wagmiConfig, {
-      address: attestData.domain.verifyingContract as `0x${string}`,
-      abi: BaseMergeAbi,
-      functionName: "merge",
-      args: [
-        parseEther(String(burnAmount)),
-        vultisigWallet.account,
-        attestData.signature,
-      ],
-    });
-
-    const mergeReceipt = await waitForTransactionReceipt(wagmiConfig, {
-      hash: mergeHash,
-    });
-
-    console.log("mergeReceipt:", mergeReceipt);
-    const success = mergeReceipt.status === "success" ? true : false;
-    if (success) {
-      message.success("Tokens burned successfully");
-      setClaimTransaction(address, {
-        amount: burnAmount,
-        date: Date.now(),
+      const mergeReceipt = await waitForTransactionReceipt(wagmiConfig, {
         hash: mergeHash,
-        status: "success",
-        isClaimed: false,
-        eventId: mergeReceipt.logs.length - 1,
       });
-      getIOUVultBalance();
-    } else {
+
+      console.log("mergeReceipt:", mergeReceipt);
+      const success = mergeReceipt.status === "success" ? true : false;
+      if (success) {
+        message.success("Tokens burned successfully");
+        setClaimTransaction(address, {
+          amount: burnAmount,
+          date: Date.now(),
+          hash: mergeHash,
+          status: "success",
+          isClaimed: false,
+          eventId: mergeReceipt.logs.length - 1,
+        });
+        getIOUVultBalance();
+      } else {
+        setState((prevState) => ({ ...prevState, burnLoading: false }));
+        message.error("Failed to burn tokens");
+      }
+    } catch {
+      setState((prevState) => ({ ...prevState, burnLoading: false }));
       message.error("Failed to burn tokens");
     }
-
     setState((prevState) => ({ ...prevState, burnLoading: false }));
   };
 
@@ -205,56 +227,115 @@ export const ClaimPage = () => {
       currentChainId: mainnet.id,
       claimLoading: true,
     }));
-    const [claimTransaction] = getClaimTransactions(address);
-    if (!claimTransaction) return;
-    const attestBurnResult = await api.attestBurn({
-      txId: claimTransaction.hash,
-      eventId: claimTransaction.eventId,
-    });
+    const claimTransactions = getClaimTransactions(address);
+    const claimTransaction = claimTransactions
+      .filter((tx) => !tx.isClaimed)
+      .sort((a, b) => b.date - a.date)[0];
+    if (!claimTransaction) {
+      message.error("No claim transaction found");
+      setState((prevState) => ({ ...prevState, claimLoading: false }));
+      return;
+    }
 
-    if (attestBurnResult.success) {
-      console.log("attestBurnResult: ", attestBurnResult);
-      const attestData = attestBurnResult.data;
-      setState((prevState) => ({
-        ...prevState,
-        claimAmount: Number(formatEther(BigInt(attestData.amount))),
-      }));
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+
+    pollingStartTimeRef.current = Date.now();
+    const TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+
+    const pollAttestBurn = async (): Promise<void> => {
+      if (
+        pollingStartTimeRef.current &&
+        Date.now() - pollingStartTimeRef.current >= TIMEOUT_MS
+      ) {
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
+        }
+        pollingStartTimeRef.current = null;
+        message.error("Timeout: Failed to attest burn within 5 minutes");
+        setState((prevState) => ({ ...prevState, claimLoading: false }));
+        return;
+      }
 
       try {
-        await switchChainAsync({ chainId: mainnet.id });
-      } catch {
-        message.error("Failed to switch chain to mainnet");
-      }
+        const attestBurnResult = await api.attestBurn({
+          txId: claimTransaction.hash,
+          eventId: claimTransaction.eventId,
+        });
 
-      const claimHash = await writeContract(wagmiConfig, {
-        address: attestData.domain.verifyingContract as `0x${string}`,
-        abi: ETHClaimAbi,
-        functionName: "claim",
-        args: [
-          attestData.baseTxId,
-          attestData.baseEventId,
-          attestData.amount,
-          attestData.recipient,
-          attestData.signature,
-        ],
-      });
-      console.log("claimHash: ", claimHash);
-      const claimReceipt = await waitForTransactionReceipt(wagmiConfig, {
-        hash: claimHash,
-      });
-      console.log("claimReceipt: ", claimReceipt);
-      const success = claimReceipt.status === "success" ? true : false;
-      if (success) {
-        setClaimTransaction(address, { ...claimTransaction, isClaimed: true });
-        message.success("Tokens claimed successfully");
-      } else {
-        message.error("Failed to claim tokens");
-        setState((prevState) => ({ ...prevState, claimLoading: false }));
+        if (attestBurnResult.success) {
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
+          }
+          pollingStartTimeRef.current = null;
+
+          console.log("attestBurnResult: ", attestBurnResult);
+          const attestData = attestBurnResult.data;
+          setState((prevState) => ({
+            ...prevState,
+            claimAmount: Number(formatEther(BigInt(attestData.amount))),
+          }));
+
+          // MetaMask doesn't support programmatic chain switching
+          const isMetaMask = connector?.name === "MetaMask";
+
+          if (isMetaMask) {
+            message.warning(
+              "Please switch to Mainnet network manually in your MetaMask wallet to continue claiming."
+            );
+          } else {
+            try {
+              await switchChainAsync({ chainId: mainnet.id });
+            } catch (error) {
+              console.error("Error switching chain:", error);
+              message.error(
+                "Failed to switch chain to Mainnet. Please switch manually from your wallet."
+              );
+            }
+          }
+
+          const claimHash = await writeContract(wagmiConfig, {
+            address: attestData.domain.verifyingContract as `0x${string}`,
+            abi: ETHClaimAbi,
+            functionName: "claim",
+            args: [
+              attestData.baseTxId,
+              attestData.baseEventId,
+              attestData.amount,
+              attestData.recipient,
+              attestData.signature,
+            ],
+          });
+          console.log("claimHash: ", claimHash);
+          const claimReceipt = await waitForTransactionReceipt(wagmiConfig, {
+            hash: claimHash,
+          });
+          console.log("claimReceipt: ", claimReceipt);
+          const success = claimReceipt.status === "success" ? true : false;
+          if (success) {
+            setClaimTransaction(address, {
+              ...claimTransaction,
+              isClaimed: true,
+            });
+            message.success("Tokens claimed successfully");
+            setState((prevState) => ({ ...prevState, claimLoading: false }));
+          } else {
+            message.error("Failed to claim tokens");
+            setState((prevState) => ({ ...prevState, claimLoading: false }));
+          }
+        }
+      } catch (error) {
+        console.error("Error polling attestBurn:", error);
       }
-    } else {
-      message.error("Failed to attest burn");
-      setState((prevState) => ({ ...prevState, claimLoading: false }));
-    }
+    };
+
+    await pollAttestBurn();
+
+    pollingIntervalRef.current = setInterval(pollAttestBurn, 20000);
   };
 
   const handleConnect = () => {
@@ -365,7 +446,7 @@ export const ClaimPage = () => {
 
   const getIOUVultBalance = useCallback(() => {
     if (address && chainId && chainId === base.id) {
-      setState((prevState) => ({ ...prevState, burnLoading: true }));
+      setState((prevState) => ({ ...prevState }));
       getBalance(wagmiConfig, {
         address,
         token: baseContractAddress.iouVult,
@@ -378,9 +459,6 @@ export const ClaimPage = () => {
         })
         .catch(() => {
           message.error("Failed to get IOU vault balance");
-        })
-        .finally(() => {
-          setState((prevState) => ({ ...prevState, burnLoading: false }));
         });
     }
   }, [address, chainId, message, isConnected]);
@@ -388,23 +466,59 @@ export const ClaimPage = () => {
   const handleSwitchChain = useCallback(async () => {
     if (isConnected) {
       if (chainId && chainId !== currentChainId) {
+        const isMetaMask = connector?.name === "MetaMask";
+        if (isMetaMask) {
+          try {
+            await window.ethereum.request({
+              method: "wallet_switchEthereumChain",
+              params: [{ chainId: `0x${currentChainId.toString(16)}` }],
+            });
+            return;
+          } catch (error) {
+            message.error(
+              `Failed to switch chain. Please switch to ${
+                currentChainId === base.id ? "Base" : "Mainnet"
+              } network from your wallet manually and try again.`
+            );
+          }
+        }
+
         try {
           await switchChainAsync({ chainId: currentChainId });
         } catch {
           message.error(
-            "Failed to switch chain. Please switch to BASE chain from your wallet manually and try again."
+            `Failed to switch chain. Please switch to ${
+              currentChainId === base.id ? "Base" : "Mainnet"
+            } network from your wallet manually and try again.`
           );
         }
       }
       getIOUVultBalance();
     }
-  }, [isConnected, chainId, message, getIOUVultBalance, currentChainId]);
+  }, [
+    isConnected,
+    chainId,
+    message,
+    getIOUVultBalance,
+    currentChainId,
+    connector,
+  ]);
 
   useEffect(() => {
     handleSwitchChain();
   }, [handleSwitchChain]);
 
   useEffect(() => setCurrentPage("claim"), []);
+
+  useEffect(() => {
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+      pollingStartTimeRef.current = null;
+    };
+  }, []);
 
   return (
     <VStack
