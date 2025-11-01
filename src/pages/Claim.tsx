@@ -355,7 +355,12 @@ export const ClaimPage = () => {
               pollingIntervalRef.current = null;
             }
             pollingStartTimeRef.current = null;
-            setState((prevState) => ({ ...prevState, claimLoading: false }));
+
+            setState((prevState) => ({
+              ...prevState,
+              claimLoading: false,
+              isPollingAttestBurn: false,
+            }));
           }
         }
       } catch {}
