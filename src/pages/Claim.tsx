@@ -348,7 +348,13 @@ export const ClaimPage = () => {
               message.error("Failed to claim tokens");
               setState((prevState) => ({ ...prevState, claimLoading: false }));
             }
-          } finally {
+          } catch (error) {
+            console.error("Error claiming tokens:", error);
+            if (pollingIntervalRef.current) {
+              clearInterval(pollingIntervalRef.current);
+              pollingIntervalRef.current = null;
+            }
+            pollingStartTimeRef.current = null;
             setState((prevState) => ({ ...prevState, claimLoading: false }));
           }
         }
