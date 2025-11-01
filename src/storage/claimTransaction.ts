@@ -10,7 +10,8 @@ const getAllClaimTransactions = () => {
 };
 
 export const getClaimTransactions = (address: string) => {
-  return getAllClaimTransactions()[address] || [];
+  const key = address.toLowerCase();
+  return getAllClaimTransactions()[key] || [];
 };
 
 export const setClaimTransactions = (
@@ -18,8 +19,8 @@ export const setClaimTransactions = (
   transactions: ClaimTransactionProps[]
 ) => {
   const allTransactions = getAllClaimTransactions();
-
-  allTransactions[address] = transactions;
+  const key = address.toLowerCase();
+  allTransactions[key] = transactions;
 
   setState(storageKeys.claimTransactions, allTransactions);
 };

@@ -136,7 +136,6 @@ export const ClaimPage = () => {
     }));
     console.log("burnAmount: ", burnAmount);
     try {
-      //check allowance of the token from the address to the attestData.domain.verifyingContract
       const allowance = await readContract(wagmiConfig, {
         address: baseContractAddress.iouVult as `0x${string}`,
         abi: IOUVultAbi,
