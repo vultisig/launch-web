@@ -62,6 +62,9 @@ type StateProps = {
   vultisigConnected?: boolean;
   iouVultBalance?: bigint;
   claimableAmount?: number;
+  tokenAllowance?: bigint;
+  needsApproval?: boolean;
+  approveLoading?: boolean;
   attestData?: {
     address: string;
     signature: string;
@@ -100,6 +103,9 @@ export const ClaimPage = () => {
     isWalletRegistered = false,
     iouVultBalance,
     claimableAmount,
+    tokenAllowance,
+    needsApproval,
+    approveLoading = false,
     attestData = {
       address: "",
       signature: "",
@@ -145,15 +151,17 @@ export const ClaimPage = () => {
     }));
   };
 
-  const handleBurnSubmit = async () => {
-    if (!burnAmount || burnAmount <= 0) return;
-    setState((prevState) => ({
-      ...prevState,
-      burnLoading: true,
-      currentChainId: base.id,
-      burnTxHash: undefined, // Clear previous burn tx hash
-    }));
-    console.log("burnAmount: ", burnAmount);
+  const checkTokenAllowance = useCallback(async () => {
+    if (
+      !address ||
+      !burnAmount ||
+      burnAmount <= 0 ||
+      !attestData.domain.verifyingContract ||
+      chainId !== base.id
+    ) {
+      return;
+    }
+
     try {
       const allowance = await readContract(wagmiConfig, {
         address: baseContractAddress.iouVult as `0x${string}`,
@@ -161,37 +169,83 @@ export const ClaimPage = () => {
         functionName: "allowance",
         args: [address, attestData.domain.verifyingContract as `0x${string}`],
       });
-      console.log("allowance: ", allowance);
 
-      if (Number(formatEther(allowance as bigint)) < burnAmount) {
-        const approveHash = await writeContract(wagmiConfig, {
-          chainId: base.id,
-          address: baseContractAddress.iouVult as `0x${string}`,
-          abi: IOUVultAbi,
-          functionName: "approve",
-          args: [
-            attestData.domain.verifyingContract as `0x${string}`,
-            parseEther(String(burnAmount)),
-          ],
-        });
-        const approveReceipt = await waitForTransactionReceipt(wagmiConfig, {
-          hash: approveHash,
-        });
-        console.log("approveReceipt: ", approveReceipt);
-        const approveSuccess =
-          approveReceipt.status === "success" ? true : false;
-        if (approveSuccess) {
-          message.success("Tokens approved successfully");
-          // Wait 5 seconds after successful approval before continuing
-          await new Promise((resolve) => setTimeout(resolve, 5000));
-        } else {
-          message.error("Failed to approve tokens");
-          setState((prevState) => ({ ...prevState, burnLoading: false }));
-          return;
-        }
+      const allowanceAmount = Number(formatEther(allowance as bigint));
+      const needsApprovalCheck = allowanceAmount < burnAmount;
+
+      setState((prevState) => ({
+        ...prevState,
+        tokenAllowance: allowance as bigint,
+        needsApproval: needsApprovalCheck,
+      }));
+    } catch (error) {
+      console.error("Error checking allowance:", error);
+    }
+  }, [address, burnAmount, attestData.domain.verifyingContract, chainId]);
+
+  const handleApprove = async () => {
+    if (!burnAmount || burnAmount <= 0 || !attestData.domain.verifyingContract)
+      return;
+
+    setState((prevState) => ({
+      ...prevState,
+      approveLoading: true,
+      currentChainId: base.id,
+    }));
+
+    try {
+      const approveHash = await writeContract(wagmiConfig, {
+        chainId: base.id,
+        address: baseContractAddress.iouVult as `0x${string}`,
+        abi: IOUVultAbi,
+        functionName: "approve",
+        args: [
+          attestData.domain.verifyingContract as `0x${string}`,
+          parseEther(String(burnAmount)),
+        ],
+      });
+
+      const approveReceipt = await waitForTransactionReceipt(wagmiConfig, {
+        hash: approveHash,
+      });
+
+      const approveSuccess = approveReceipt.status === "success";
+      if (approveSuccess) {
+        message.success("Tokens approved successfully");
+        // Recheck allowance after approval
+        await checkTokenAllowance();
+      } else {
+        message.error("Failed to approve tokens");
       }
-      console.log("attest DatA:", attestData);
+    } catch (error) {
+      console.error("Approve error:", error);
+      message.error("Failed to approve tokens");
+    } finally {
+      setState((prevState) => ({
+        ...prevState,
+        approveLoading: false,
+      }));
+    }
+  };
 
+  const handleBurnSubmit = async () => {
+    if (!burnAmount || burnAmount <= 0) return;
+
+    // Check if approval is needed
+    if (needsApproval) {
+      message.error("Please approve tokens first");
+      return;
+    }
+
+    setState((prevState) => ({
+      ...prevState,
+      burnLoading: true,
+      currentChainId: base.id,
+      burnTxHash: undefined, // Clear previous burn tx hash
+    }));
+
+    try {
+      console.log("attest DatA:", attestData);
       console.log("calling merge");
       const mergeHash = await writeContract(wagmiConfig, {
         address: attestData.domain.verifyingContract as `0x${string}`,
@@ -227,6 +281,8 @@ export const ClaimPage = () => {
         getIOUVultBalance();
         // Reload claim transaction to update claimAmount
         loadClaimTransaction();
+        // Refresh allowance check after successful burn
+        await checkTokenAllowance();
       } else {
         setState((prevState) => ({ ...prevState, burnLoading: false }));
         message.error("Failed to burn tokens");
@@ -617,6 +673,10 @@ export const ClaimPage = () => {
   }, [loadClaimTransaction]);
 
   useEffect(() => {
+    checkTokenAllowance();
+  }, [checkTokenAllowance]);
+
+  useEffect(() => {
     getClaimableAmount();
     
     // Set up polling to refresh claimable amount every 12 seconds
@@ -944,15 +1004,17 @@ export const ClaimPage = () => {
                     value={burnAmount}
                   />
                   <SubmitButton
-                    onClick={handleBurnSubmit}
+                    onClick={needsApproval ? handleApprove : handleBurnSubmit}
                     disabled={
                       iouVultBalance === 0n ||
                       iouVultBalance === undefined ||
-                      burnLoading
+                      (needsApproval ? approveLoading : burnLoading) ||
+                      !burnAmount ||
+                      burnAmount <= 0
                     }
-                    loading={burnLoading}
+                    loading={needsApproval ? approveLoading : burnLoading}
                   >
-                    Burn
+                    {needsApproval ? "Approve" : "Burn"}
                   </SubmitButton>
                 </HStack>
                 <HStack>
