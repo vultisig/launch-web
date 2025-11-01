@@ -21,5 +21,6 @@ export const getBrowserProvider = (): Promise<Provider> => {
 };
 
 export const getRPCProvider = (): Provider => {
+  //Use environment variable for RPC URL
   return new JsonRpcProvider(import.meta.env.VITE_RPC_MAINNET);
 };
