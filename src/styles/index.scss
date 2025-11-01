@@ -4,20 +4,5 @@
 @use "@fontsource/righteous/latin.css" as righteous;
 @use "@fontsource/roboto-mono/latin.css" as roboto;
 
-@use "_variables";
-@use "_animations";
 @use "_normalize";
 @use "_global";
-
-@use "../layouts/default";
-
-@use "../components/middle-truncate";
-@use "../components/swap-fees";
-@use "../components/swap-history";
-@use "../components/swap-settings";
-@use "../components/swap-stats";
-@use "../components/swap-vult";
-@use "../components/swap-whitelist-check";
-@use "../components/token-dropdown";
-
-@use "../pages/swap";

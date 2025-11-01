@@ -1,11 +1,18 @@
-import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
+import { v4 as uuidv4 } from "uuid";
 
-import { ContractAddress, Currency } from "utils/constants";
-import { toCamelCase } from "utils/functions";
+import { contractAddress } from "@/utils/constants";
+import { Currency } from "@/utils/currency";
+import { toCamelCase } from "@/utils/functions";
+import { SuggestedGasFeeProps, VultisigWalletProps } from "@/utils/types";
 
 const fetch = axios.create({
-  baseURL: `${import.meta.env.VITE_SERVER_ADDRESS}`,
+  baseURL: import.meta.env.VITE_SERVER_ADDRESS,
+  headers: { accept: "application/json" },
+});
+
+const fetchTalkApi = axios.create({
+  baseURL: import.meta.env.VITE_TALK_ADDRESS,
   headers: { accept: "application/json" },
 });
 
@@ -27,28 +34,7 @@ fetch.interceptors.response.use(
   }
 );
 
-interface GasFeeEstimate {
-  suggestedMaxPriorityFeePerGas: string;
-  suggestedMaxFeePerGas: string;
-  minWaitTimeEstimate: number;
-  maxWaitTimeEstimate: number;
-}
-
-export interface SuggestedGasFeeData {
-  low: GasFeeEstimate;
-  medium: GasFeeEstimate;
-  high: GasFeeEstimate;
-  estimatedBaseFee: string;
-  networkCongestion: number;
-  latestPriorityFeeRange: [string, string];
-  historicalPriorityFeeRange: [string, string];
-  historicalBaseFeeRange: [string, string];
-  priorityFeeTrend: "up" | "down" | "stable";
-  baseFeeTrend: "up" | "down" | "stable";
-  version: string;
-}
-
-const api = {
+export const api = {
   balance: async (
     address: string,
     decimals: number,
@@ -56,7 +42,7 @@ const api = {
     isNative: boolean
   ) => {
     return fetch
-      .post<{ result: string }>("/eth/", {
+      .post<{ result: string }>(import.meta.env.VITE_RPC_MAINNET, {
         id: uuidv4(),
         jsonrpc: "2.0",
         method: isNative ? "eth_getBalance" : "eth_call",
@@ -80,15 +66,10 @@ const api = {
       })
       .catch(() => 0);
   },
-  suggestedFees: async (): Promise<SuggestedGasFeeData> => {
-    const endpoint =
-      "https://gas.api.cx.metamask.io/networks/1/suggestedGasFees";
-    const response = await axios.get(endpoint, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    return response.data;
+  suggestedFees: async () => {
+    return fetch.get<SuggestedGasFeeProps>(
+      "https://gas.api.cx.metamask.io/networks/1/suggestedGasFees"
+    );
   },
   values: async (ids: number[], currency: Currency) => {
     const modifedData: Record<string, number> = {};
@@ -114,7 +95,7 @@ const api = {
   volume: async (): Promise<number> => {
     return fetch
       .get<{ data: { attributes: { volumeUsd: { h24: string | null } } } }>(
-        `/geckoterminal/api/v2/networks/eth/pools/${ContractAddress.VULT_USDC_POOL}`,
+        `/geckoterminal/api/v2/networks/eth/pools/${contractAddress.vultUsdcPool}`,
         {
           params: {
             include: "base_token",
@@ -130,6 +111,96 @@ const api = {
       )
       .catch(() => 0);
   },
-};
+  applyStatus: async (ecdsa: string) => {
+    const { data } = await fetchTalkApi.get<{ applied: boolean }>(
+      `/whitelist?ecdsa=${ecdsa}`
+    );
+    console.log("status:", data.applied);
+    return data.applied;
+  },
+  challengeMessage: async (uid: string) => {
+    const { data } = await fetchTalkApi.post<{
+      message: string;
+      nonce: string;
+      timestamp: string;
+    }>(`/challenge`, {
+      uid,
+    });
+    return {
+      message: data.message,
+      nonce: data.nonce,
+      timestamp: data.timestamp,
+    };
+  },
 
-export default api;
+  registerVultisigWallet: async (
+    wallet: VultisigWalletProps,
+    message: string,
+    signature: string
+  ) => {
+    const { data } = await fetchTalkApi.post<{
+      id: number;
+      uid: string;
+      name: string;
+      whitelisted: boolean;
+      created_at: string;
+    }>(`/whitelist`, {
+      ...wallet,
+      message,
+      signature,
+    });
+    return data;
+  },
+  attestAddress: async (address: string) => {
+    const { data } = await fetchTalkApi.get<{
+      success: boolean;
+      data: {
+        address: string;
+        signature: string;
+        domain: {
+          name: string;
+          version: string;
+          chainId: number;
+          verifyingContract: string;
+        };
+      };
+    }>(`/attest_address?address=${address}`);
+    return data;
+  },
+  attestBurn: async ({ txId, eventId }: { txId: string; eventId: number }) => {
+    const { data } = await fetchTalkApi.get<{
+      success: boolean;
+      data: {
+        baseTxId: string;
+        baseEventId: string;
+        amount: string;
+        recipient: string;
+        signature: string;
+        blockNumber: number;
+        confirmations: number;
+        domain: {
+          name: string;
+          version: string;
+          chainId: number;
+          verifyingContract: string;
+        };
+      };
+    }>(`/attest_burn?tx_id=${txId}&event_id=${eventId}`);
+    return data;
+  },
+  getBurns: async (address: string) => {
+    const { data } = await fetchTalkApi.get<{
+      success: boolean;
+      data: Array<{
+        baseTxId: string;
+        baseEventId: string;
+        ethTxId: string | null;
+        claimed: boolean;
+        amount: string;
+        recipient: string;
+        blockNumber: number;
+      }>;
+    }>(`/burns?address=${address}`);
+    return data;
+  },
+};
