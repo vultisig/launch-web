@@ -291,28 +291,29 @@ export const ClaimPage = () => {
             isPollingAttestBurn: false,
           }));
 
-          console.log("attestBurnResult: ", attestBurnResult);
           const attestData = attestBurnResult.data;
           setState((prevState) => ({
             ...prevState,
             claimAmount: Number(formatEther(BigInt(attestData.amount))),
           }));
 
-          // MetaMask doesn't support programmatic chain switching
           const isMetaMask = connector?.name === "MetaMask";
 
-          if (isMetaMask) {
-            message.warning(
-              "Please switch to Mainnet network manually in your MetaMask wallet to continue claiming."
-            );
-          } else {
-            try {
-              await switchChainAsync({ chainId: mainnet.id });
-            } catch (error) {
-              console.error("Error switching chain:", error);
-              message.error(
-                "Failed to switch chain to Mainnet. Please switch manually from your wallet."
-              );
+          if (chainId !== mainnet.id) {
+            if (isMetaMask) {
+              await window.ethereum.request({
+                method: "wallet_switchEthereumChain",
+                params: [{ chainId: `0x${mainnet.id.toString(16)}` }],
+              });
+            } else {
+              try {
+                await switchChainAsync({ chainId: mainnet.id });
+              } catch (error) {
+                console.error("Error switching chain:", error);
+                message.error(
+                  "Failed to switch chain to Mainnet. Please switch manually from your wallet."
+                );
+              }
             }
           }
 
