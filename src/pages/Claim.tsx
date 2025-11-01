@@ -148,6 +148,7 @@ export const ClaimPage = () => {
 
       if (Number(formatEther(allowance as bigint)) < burnAmount) {
         const approveHash = await writeContract(wagmiConfig, {
+          chainId: base.id,
           address: baseContractAddress.iouVult as `0x${string}`,
           abi: IOUVultAbi,
           functionName: "approve",
@@ -280,72 +281,74 @@ export const ClaimPage = () => {
         });
 
         if (attestBurnResult.success) {
-          if (pollingIntervalRef.current) {
-            clearInterval(pollingIntervalRef.current);
-            pollingIntervalRef.current = null;
-          }
-          pollingStartTimeRef.current = null;
+          try {
+            if (pollingIntervalRef.current) {
+              clearInterval(pollingIntervalRef.current);
+              pollingIntervalRef.current = null;
+            }
+            pollingStartTimeRef.current = null;
 
-          setState((prevState) => ({
-            ...prevState,
-            isPollingAttestBurn: false,
-          }));
+            setState((prevState) => ({
+              ...prevState,
+              isPollingAttestBurn: false,
+            }));
 
-          const attestData = attestBurnResult.data;
-          setState((prevState) => ({
-            ...prevState,
-            claimAmount: Number(formatEther(BigInt(attestData.amount))),
-          }));
+            const attestData = attestBurnResult.data;
+            setState((prevState) => ({
+              ...prevState,
+              claimAmount: Number(formatEther(BigInt(attestData.amount))),
+            }));
 
-          const isMetaMask = connector?.name === "MetaMask";
+            const isMetaMask = connector?.name === "MetaMask";
 
-          if (chainId !== mainnet.id) {
-            if (isMetaMask) {
-              await window.ethereum.request({
-                method: "wallet_switchEthereumChain",
-                params: [{ chainId: `0x${mainnet.id.toString(16)}` }],
-              });
-            } else {
-              try {
-                await switchChainAsync({ chainId: mainnet.id });
-              } catch (error) {
-                console.error("Error switching chain:", error);
-                message.error(
-                  "Failed to switch chain to Mainnet. Please switch manually from your wallet."
-                );
+            if (chainId !== mainnet.id) {
+              if (isMetaMask) {
+                await connector.switchChain?.({ chainId: mainnet.id });
+              } else {
+                try {
+                  await switchChainAsync({ chainId: mainnet.id });
+                } catch (error) {
+                  console.error("Error switching chain:", error);
+                  message.error(
+                    "Failed to switch chain to Mainnet. Please switch manually from your wallet."
+                  );
+                }
               }
             }
-          }
 
-          const claimHash = await writeContract(wagmiConfig, {
-            address: attestData.domain.verifyingContract as `0x${string}`,
-            abi: ETHClaimAbi,
-            functionName: "claim",
-            args: [
-              attestData.baseTxId,
-              attestData.baseEventId,
-              attestData.amount,
-              attestData.recipient,
-              attestData.signature,
-            ],
-          });
-          console.log("claimHash: ", claimHash);
-          const claimReceipt = await waitForTransactionReceipt(wagmiConfig, {
-            hash: claimHash,
-          });
-          console.log("claimReceipt: ", claimReceipt);
-          const success = claimReceipt.status === "success" ? true : false;
-          if (success) {
-            setClaimTransaction(address, {
-              ...claimTransaction,
-              isClaimed: true,
+            const claimHash = await writeContract(wagmiConfig, {
+              chainId: mainnet.id,
+              address: attestData.domain.verifyingContract as `0x${string}`,
+              abi: ETHClaimAbi,
+              functionName: "claim",
+              args: [
+                attestData.baseTxId,
+                attestData.baseEventId,
+                attestData.amount,
+                attestData.recipient,
+                attestData.signature,
+              ],
             });
-            message.success("Tokens claimed successfully");
-            // Refetch transactions and update claimAmount
-            loadClaimTransaction();
-            setState((prevState) => ({ ...prevState, claimLoading: false }));
-          } else {
-            message.error("Failed to claim tokens");
+            console.log("claimHash: ", claimHash);
+            const claimReceipt = await waitForTransactionReceipt(wagmiConfig, {
+              hash: claimHash,
+            });
+            console.log("claimReceipt: ", claimReceipt);
+            const success = claimReceipt.status === "success" ? true : false;
+            if (success) {
+              setClaimTransaction(address, {
+                ...claimTransaction,
+                isClaimed: true,
+              });
+              message.success("Tokens claimed successfully");
+              // Refetch transactions and update claimAmount
+              loadClaimTransaction();
+              setState((prevState) => ({ ...prevState, claimLoading: false }));
+            } else {
+              message.error("Failed to claim tokens");
+              setState((prevState) => ({ ...prevState, claimLoading: false }));
+            }
+          } finally {
             setState((prevState) => ({ ...prevState, claimLoading: false }));
           }
         }
