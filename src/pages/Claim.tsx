@@ -125,6 +125,7 @@ export const ClaimPage = () => {
   const colors = useTheme();
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const pollingStartTimeRef = useRef<number | null>(null);
+  const claimableAmountIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const disabled = useMemo(() => {
     switch (step) {
@@ -617,7 +618,28 @@ export const ClaimPage = () => {
 
   useEffect(() => {
     getClaimableAmount();
-  }, [getClaimableAmount]);
+    
+    // Set up polling to refresh claimable amount every 12 seconds
+    if (address) {
+      // Clear any existing interval
+      if (claimableAmountIntervalRef.current) {
+        clearInterval(claimableAmountIntervalRef.current);
+      }
+      
+      // Set up new interval
+      claimableAmountIntervalRef.current = setInterval(() => {
+        getClaimableAmount();
+      }, 12000); // 12 seconds
+    }
+    
+    // Cleanup function
+    return () => {
+      if (claimableAmountIntervalRef.current) {
+        clearInterval(claimableAmountIntervalRef.current);
+        claimableAmountIntervalRef.current = null;
+      }
+    };
+  }, [getClaimableAmount, address]);
 
   useEffect(() => setCurrentPage("claim"), []);
 
@@ -626,6 +648,10 @@ export const ClaimPage = () => {
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
         pollingIntervalRef.current = null;
+      }
+      if (claimableAmountIntervalRef.current) {
+        clearInterval(claimableAmountIntervalRef.current);
+        claimableAmountIntervalRef.current = null;
       }
       pollingStartTimeRef.current = null;
     };
