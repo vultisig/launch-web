@@ -1,0 +1,17 @@
+import { FC, SVGProps } from "react";
+
+export const PowerIcon: FC<SVGProps<SVGSVGElement>> = (props) => (
+  <svg
+    fill="none"
+    height="1em"
+    stroke="currentColor"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth="1.5"
+    viewBox="0 0 24 24"
+    width="1em"
+    {...props}
+  >
+    <path d="M12.0002 2V12M18.4003 6.6001C19.6569 7.8572 20.5132 9.45827 20.8611 11.2014C21.209 12.9445 21.0329 14.7516 20.3551 16.3948C19.6774 18.038 18.5282 19.4437 17.0525 20.4346C15.5769 21.4255 13.8408 21.9573 12.0634 21.9628C10.2859 21.9684 8.54654 21.4475 7.06471 20.4659C5.58288 19.4842 4.42491 18.0857 3.73684 16.4468C3.04876 14.8079 2.8614 13.002 3.19837 11.2567C3.53533 9.51145 4.38155 7.90505 5.63029 6.6401" />
+  </svg>
+);

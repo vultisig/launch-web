@@ -1,11 +1,13 @@
-import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
+import { v4 as uuidv4 } from "uuid";
 
-import { ContractAddress, Currency } from "utils/constants";
-import { toCamelCase } from "utils/functions";
+import { contractAddress } from "@/utils/constants";
+import { Currency } from "@/utils/currency";
+import { toCamelCase } from "@/utils/functions";
+import { SuggestedGasFeeProps } from "@/utils/types";
 
 const fetch = axios.create({
-  baseURL: `${import.meta.env.VITE_SERVER_ADDRESS}`,
+  baseURL: import.meta.env.VITE_SERVER_ADDRESS,
   headers: { accept: "application/json" },
 });
 
@@ -27,28 +29,7 @@ fetch.interceptors.response.use(
   }
 );
 
-interface GasFeeEstimate {
-  suggestedMaxPriorityFeePerGas: string;
-  suggestedMaxFeePerGas: string;
-  minWaitTimeEstimate: number;
-  maxWaitTimeEstimate: number;
-}
-
-export interface SuggestedGasFeeData {
-  low: GasFeeEstimate;
-  medium: GasFeeEstimate;
-  high: GasFeeEstimate;
-  estimatedBaseFee: string;
-  networkCongestion: number;
-  latestPriorityFeeRange: [string, string];
-  historicalPriorityFeeRange: [string, string];
-  historicalBaseFeeRange: [string, string];
-  priorityFeeTrend: "up" | "down" | "stable";
-  baseFeeTrend: "up" | "down" | "stable";
-  version: string;
-}
-
-const api = {
+export const api = {
   balance: async (
     address: string,
     decimals: number,
@@ -56,7 +37,7 @@ const api = {
     isNative: boolean
   ) => {
     return fetch
-      .post<{ result: string }>("/eth/", {
+      .post<{ result: string }>(import.meta.env.VITE_RPC_MAINNET, {
         id: uuidv4(),
         jsonrpc: "2.0",
         method: isNative ? "eth_getBalance" : "eth_call",
@@ -80,15 +61,10 @@ const api = {
       })
       .catch(() => 0);
   },
-  suggestedFees: async (): Promise<SuggestedGasFeeData> => {
-    const endpoint =
-      "https://gas.api.cx.metamask.io/networks/1/suggestedGasFees";
-    const response = await axios.get(endpoint, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    return response.data;
+  suggestedFees: async () => {
+    return fetch.get<SuggestedGasFeeProps>(
+      "https://gas.api.cx.metamask.io/networks/1/suggestedGasFees"
+    );
   },
   values: async (ids: number[], currency: Currency) => {
     const modifedData: Record<string, number> = {};
@@ -114,7 +90,7 @@ const api = {
   volume: async (): Promise<number> => {
     return fetch
       .get<{ data: { attributes: { volumeUsd: { h24: string | null } } } }>(
-        `/geckoterminal/api/v2/networks/eth/pools/${ContractAddress.VULT_USDC_POOL}`,
+        `/geckoterminal/api/v2/networks/eth/pools/${contractAddress.vultUsdcPool}`,
         {
           params: {
             include: "base_token",
@@ -131,5 +107,3 @@ const api = {
       .catch(() => 0);
   },
 };
-
-export default api;

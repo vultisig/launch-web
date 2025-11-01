@@ -1,0 +1,9 @@
+{
+  "entry": ["src/main.tsx", "src/styled.d.ts"],
+  "ignore": [],
+  "ignoreDependencies": [
+    "@fontsource/montserrat",
+    "@fontsource/righteous",
+    "@fontsource/roboto-mono"
+  ]
+}
