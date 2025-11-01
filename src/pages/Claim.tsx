@@ -264,7 +264,7 @@ export const ClaimPage = () => {
           pollingIntervalRef.current = null;
         }
         pollingStartTimeRef.current = null;
-        message.error("Timeout: Failed to attest burn within 3 minutes");
+        message.error("Timeout: Failed to attest burn within 5 minutes");
         setState((prevState) => ({
           ...prevState,
           claimLoading: false,
