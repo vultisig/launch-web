@@ -64,6 +64,24 @@ export type TransactionProps = {
   status: TxStatus;
 } & SwapFormProps;
 
+export type ClaimTransactionProps = {
+  amount: number;
+  date: number;
+  hash: string;
+  status: TxStatus;
+  isClaimed: boolean;
+  eventId: number;
+};
+
 export type TxStatus = "failed" | "pending" | "success";
+
+export type VultisigWalletProps = {
+  hexChainCode: string;
+  isFastVault: boolean;
+  name: string;
+  publicKeyEcdsa: string;
+  publicKeyEddsa: string;
+  uid: string;
+};
 
 export { Token as UniswapTokenProps };
