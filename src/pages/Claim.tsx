@@ -286,6 +286,7 @@ export const ClaimPage = () => {
               clearInterval(pollingIntervalRef.current);
               pollingIntervalRef.current = null;
             }
+            pollingIntervalRef.current = null;
             pollingStartTimeRef.current = null;
 
             setState((prevState) => ({
@@ -350,17 +351,6 @@ export const ClaimPage = () => {
             }
           } catch (error) {
             console.error("Error claiming tokens:", error);
-            if (pollingIntervalRef.current) {
-              clearInterval(pollingIntervalRef.current);
-              pollingIntervalRef.current = null;
-            }
-            pollingStartTimeRef.current = null;
-
-            setState((prevState) => ({
-              ...prevState,
-              claimLoading: false,
-              isPollingAttestBurn: false,
-            }));
           }
         }
       } catch {}
