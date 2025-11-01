@@ -61,6 +61,7 @@ type StateProps = {
   isWalletRegistered?: boolean;
   vultisigConnected?: boolean;
   iouVultBalance?: bigint;
+  claimableAmount?: number;
   attestData?: {
     address: string;
     signature: string;
@@ -98,6 +99,7 @@ export const ClaimPage = () => {
     vultisigConnected,
     isWalletRegistered = false,
     iouVultBalance,
+    claimableAmount,
     attestData = {
       address: "",
       signature: "",
@@ -367,6 +369,8 @@ export const ClaimPage = () => {
               message.success("Tokens claimed successfully");
               // Refetch transactions and update claimAmount
               loadClaimTransaction();
+              // Refetch claimable amount after successful claim
+              getClaimableAmount();
               setState((prevState) => ({ ...prevState, claimLoading: false }));
             } else {
               message.error("Failed to claim tokens");
@@ -529,6 +533,39 @@ export const ClaimPage = () => {
     }
   }, [address]);
 
+  const getClaimableAmount = useCallback(() => {
+    if (!address) return;
+    api
+      .getBurns(address)
+      .then((result) => {
+        if (result.success && result.data) {
+          const unclaimedBurns = result.data.filter(
+            (burn: { claimed: boolean }) => !burn.claimed
+          );
+          const totalClaimable = unclaimedBurns.reduce(
+            (sum: number, burn: { amount: string }) => sum + Number(burn.amount),
+            0
+          );
+          setState((prevState) => ({
+            ...prevState,
+            claimableAmount: totalClaimable,
+          }));
+        } else {
+          setState((prevState) => ({
+            ...prevState,
+            claimableAmount: 0,
+          }));
+        }
+      })
+      .catch(() => {
+        message.error("Failed to get claimable amount");
+        setState((prevState) => ({
+          ...prevState,
+          claimableAmount: 0,
+        }));
+      });
+  }, [address, message]);
+
   const handleSwitchChain = useCallback(async () => {
     if (isConnected) {
       if (chainId && chainId !== currentChainId) {
@@ -577,6 +614,10 @@ export const ClaimPage = () => {
   useEffect(() => {
     loadClaimTransaction();
   }, [loadClaimTransaction]);
+
+  useEffect(() => {
+    getClaimableAmount();
+  }, [getClaimableAmount]);
 
   useEffect(() => setCurrentPage("claim"), []);
 
@@ -823,6 +864,17 @@ export const ClaimPage = () => {
               >
                 Claim Overview
               </Stack>
+              <Stack
+                as="span"
+                $style={{
+                  color: colors.textSecondary.toHex(),
+                  fontSize: "13px",
+                  fontWeight: "500",
+                  lineHeight: "16px",
+                }}
+              >
+                Make sure to have Gas on Ethereum and Base available to burn and claim
+              </Stack>
               <VStack $style={{ gap: "8px" }}>
                 <Stack
                   as="span"
@@ -939,7 +991,7 @@ export const ClaimPage = () => {
               )}
               <VStack $style={{ gap: "8px" }}>
                 <Stack as="span" $style={{ fontWeight: "500" }}>
-                  VULT to Claim
+                  $VULT to Claim
                 </Stack>
                 <HStack $style={{ gap: "12px" }}>
                   <AmountInput
@@ -959,6 +1011,34 @@ export const ClaimPage = () => {
                   >
                     {isPollingAttestBurn ? "Confirming burn tx\n (≈2 min)" : "Claim"}
                   </SubmitButton>
+                </HStack>
+                <HStack>
+                  <Tooltip title={t("clickToUseFullAmount")}>
+                    <HStack
+                      as="span"
+                      onClick={() =>
+                        claimableAmount !== undefined &&
+                        claimableAmount > 0 &&
+                        handleClaimAmount(claimableAmount)
+                      }
+                      $style={{
+                        color: colors.textTertiary.toHex(),
+                        cursor: claimableAmount !== undefined && claimableAmount > 0 ? "pointer" : "default",
+                        gap: "4px",
+                      }}
+                      $hover={{
+                        color:
+                          claimableAmount !== undefined && claimableAmount > 0
+                            ? colors.textSecondary.toHex()
+                            : colors.textTertiary.toHex(),
+                      }}
+                    >
+                      <Stack as="span">{`${t("available")}:`}</Stack>
+                      <Stack as="span" $style={{ fontWeight: "600" }}>
+                        {toAmountFormat(claimableAmount ?? 0)}
+                      </Stack>
+                    </HStack>
+                  </Tooltip>
                 </HStack>
               </VStack>
               {claimTxHash && (

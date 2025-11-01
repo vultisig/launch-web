@@ -188,4 +188,19 @@ export const api = {
     }>(`/attest_burn?tx_id=${txId}&event_id=${eventId}`);
     return data;
   },
+  getBurns: async (address: string) => {
+    const { data } = await fetchTalkApi.get<{
+      success: boolean;
+      data: Array<{
+        baseTxId: string;
+        baseEventId: string;
+        ethTxId: string | null;
+        claimed: boolean;
+        amount: string;
+        recipient: string;
+        blockNumber: number;
+      }>;
+    }>(`/burns?address=${address}`);
+    return data;
+  },
 };
