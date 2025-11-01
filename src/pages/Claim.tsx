@@ -65,6 +65,7 @@ type StateProps = {
   claimLoading?: boolean;
   burnLoading?: boolean;
   currentChainId?: typeof base.id | typeof mainnet.id;
+  isPollingAttestBurn?: boolean;
 };
 
 export const ClaimPage = () => {
@@ -99,6 +100,7 @@ export const ClaimPage = () => {
     currentChainId = base.id,
     claimLoading = false,
     burnLoading = false,
+    isPollingAttestBurn = false,
   } = state;
   const [step, setStep] = useState(0);
   const { message, setCurrentPage, tokens } = useCore();
@@ -234,7 +236,11 @@ export const ClaimPage = () => {
       .sort((a, b) => b.date - a.date)[0];
     if (!claimTransaction) {
       message.error("No claim transaction found");
-      setState((prevState) => ({ ...prevState, claimLoading: false }));
+      setState((prevState) => ({
+        ...prevState,
+        claimLoading: false,
+        isPollingAttestBurn: false,
+      }));
       return;
     }
 
@@ -246,6 +252,8 @@ export const ClaimPage = () => {
     pollingStartTimeRef.current = Date.now();
     const TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
+    setState((prevState) => ({ ...prevState, isPollingAttestBurn: true }));
+
     const pollAttestBurn = async (): Promise<void> => {
       if (
         pollingStartTimeRef.current &&
@@ -256,8 +264,12 @@ export const ClaimPage = () => {
           pollingIntervalRef.current = null;
         }
         pollingStartTimeRef.current = null;
-        message.error("Timeout: Failed to attest burn within 5 minutes");
-        setState((prevState) => ({ ...prevState, claimLoading: false }));
+        message.error("Timeout: Failed to attest burn within 3 minutes");
+        setState((prevState) => ({
+          ...prevState,
+          claimLoading: false,
+          isPollingAttestBurn: false,
+        }));
         return;
       }
 
@@ -273,6 +285,11 @@ export const ClaimPage = () => {
             pollingIntervalRef.current = null;
           }
           pollingStartTimeRef.current = null;
+
+          setState((prevState) => ({
+            ...prevState,
+            isPollingAttestBurn: false,
+          }));
 
           console.log("attestBurnResult: ", attestBurnResult);
           const attestData = attestBurnResult.data;
@@ -331,9 +348,7 @@ export const ClaimPage = () => {
             setState((prevState) => ({ ...prevState, claimLoading: false }));
           }
         }
-      } catch (error) {
-        console.error("Error polling attestBurn:", error);
-      }
+      } catch {}
     };
 
     await pollAttestBurn();
@@ -878,7 +893,7 @@ export const ClaimPage = () => {
                     disabled={claimLoading || !claimAmount || claimAmount <= 0}
                     loading={claimLoading}
                   >
-                    Claim
+                    {isPollingAttestBurn ? "Confirming\n (≈2 min)" : "Claim"}
                   </SubmitButton>
                 </HStack>
               </VStack>
