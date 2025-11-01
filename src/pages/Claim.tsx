@@ -103,7 +103,6 @@ export const ClaimPage = () => {
     isWalletRegistered = false,
     iouVultBalance,
     claimableAmount,
-    tokenAllowance,
     needsApproval,
     approveLoading = false,
     attestData = {
