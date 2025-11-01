@@ -809,8 +809,8 @@ export const ClaimPage = () => {
                   Connect Vultisig Wallet
                 </Stack>
                 <Stack as="span">
-                  Connect your Vultisig vault to receive the claimed $VULT
-                  tokens.
+                  Connect your Vultisig vault to receive your claimed $VULT
+                  tokens on Ethereum.
                 </Stack>
               </VStack>
               {vultisigConnected ? (
@@ -873,9 +873,9 @@ export const ClaimPage = () => {
                   lineHeight: "16px",
                 }}
               >
-                Make sure to have Gas on Ethereum and Base available to burn and claim
+                Make sure to have sufficient Gas on Ethereum and Base available to burn and claim.
               </Stack>
-              <VStack $style={{ gap: "8px" }}>
+              <VStack $style={{ gap: "4px" }}>
                 <Stack
                   as="span"
                   $style={{
