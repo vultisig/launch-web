@@ -202,6 +202,8 @@ export const ClaimPage = () => {
           eventId: mergeReceipt.logs.length - 1,
         });
         getIOUVultBalance();
+        // Reload claim transaction to update claimAmount
+        loadClaimTransaction();
       } else {
         setState((prevState) => ({ ...prevState, burnLoading: false }));
         message.error("Failed to burn tokens");
@@ -322,6 +324,8 @@ export const ClaimPage = () => {
               isClaimed: true,
             });
             message.success("Tokens claimed successfully");
+            // Refetch transactions and update claimAmount
+            loadClaimTransaction();
             setState((prevState) => ({ ...prevState, claimLoading: false }));
           } else {
             message.error("Failed to claim tokens");
@@ -463,6 +467,26 @@ export const ClaimPage = () => {
     }
   }, [address, chainId, message, isConnected]);
 
+  const loadClaimTransaction = useCallback(() => {
+    if (!address) return;
+    const claimTransactions = getClaimTransactions(address);
+    const unclaimedTransaction = claimTransactions
+      .filter((tx) => !tx.isClaimed)
+      .sort((a, b) => b.date - a.date)[0];
+
+    if (unclaimedTransaction) {
+      setState((prevState) => ({
+        ...prevState,
+        claimAmount: unclaimedTransaction.amount,
+      }));
+    } else {
+      setState((prevState) => ({
+        ...prevState,
+        claimAmount: undefined,
+      }));
+    }
+  }, [address]);
+
   const handleSwitchChain = useCallback(async () => {
     if (isConnected) {
       if (chainId && chainId !== currentChainId) {
@@ -507,6 +531,10 @@ export const ClaimPage = () => {
   useEffect(() => {
     handleSwitchChain();
   }, [handleSwitchChain]);
+
+  useEffect(() => {
+    loadClaimTransaction();
+  }, [loadClaimTransaction]);
 
   useEffect(() => setCurrentPage("claim"), []);
 
@@ -848,7 +876,7 @@ export const ClaimPage = () => {
                   />
                   <SubmitButton
                     onClick={handleClaimSubmit}
-                    disabled={claimLoading}
+                    disabled={claimLoading || !claimAmount || claimAmount <= 0}
                     loading={claimLoading}
                   >
                     Claim
