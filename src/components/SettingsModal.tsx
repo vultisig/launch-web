@@ -252,7 +252,7 @@ export const SettingsModal = () => {
                 step={0.1}
                 controls={false}
                 suffix={t("custom")}
-                $style={{ flexGrow: 1 }}
+                $style={{ flexGrow: "1" }}
               />
             </Form.Item>
           </HStack>
@@ -317,7 +317,7 @@ export const SettingsModal = () => {
                                   fontSize: "24px",
                                 }}
                               />
-                              <VStack $style={{ flexGrow: 1 }}>
+                              <VStack $style={{ flexGrow: "1" }}>
                                 <Stack
                                   as="span"
                                   $style={{

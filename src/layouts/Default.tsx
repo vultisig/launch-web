@@ -108,7 +108,7 @@ export const DefaultLayout = () => {
               }))}
               mode="horizontal"
               selectedKeys={[currentPage]}
-              $style={{ flexGrow: 1 }}
+              $style={{ flexGrow: "1" }}
             />
           </MediaQuery>
           {isConnected ? (
