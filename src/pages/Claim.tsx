@@ -15,6 +15,7 @@ import { vultisigConnect } from "@/utils/extension";
 import { toAmountFormat, toNumberFormat } from "@/utils/functions";
 import { wagmiConfig } from "@/utils/wagmi";
 import { base } from "viem/chains";
+import { formatEther } from "viem";
 
 const { Content } = Layout;
 
@@ -434,7 +435,11 @@ export const ClaimPage = () => {
                   <Tooltip title={t("clickToUseFullAmount")}>
                     <HStack
                       as="span"
-                      onClick={() => handleBurnAmount(Number(iouVultBalance))}
+                      onClick={() =>
+                        handleBurnAmount(
+                          Number(formatEther(iouVultBalance ?? 0n))
+                        )
+                      }
                       $style={{
                         color: colors.textTertiary.toHex(),
                         cursor: "pointer",
@@ -444,7 +449,9 @@ export const ClaimPage = () => {
                     >
                       <Stack as="span">{`${t("available")}:`}</Stack>
                       <Stack as="span" $style={{ fontWeight: "600" }}>
-                        {toAmountFormat(Number(iouVultBalance))}
+                        {toAmountFormat(
+                          Number(formatEther(iouVultBalance ?? 0n))
+                        )}
                       </Stack>
                     </HStack>
                   </Tooltip>
