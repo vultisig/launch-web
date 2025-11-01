@@ -44,6 +44,15 @@ import {
 
 const { Content } = Layout;
 
+const getExplorerLink = (txHash: string, chainId: number) => {
+  if (chainId === base.id) {
+    return `https://basescan.org/tx/${txHash}`;
+  } else if (chainId === mainnet.id) {
+    return `https://etherscan.io/tx/${txHash}`;
+  }
+  return `https://etherscan.io/tx/${txHash}`; // Default to Etherscan
+};
+
 type StateProps = {
   burnAmount?: number;
   claimAmount?: number;
@@ -66,6 +75,8 @@ type StateProps = {
   burnLoading?: boolean;
   currentChainId?: typeof base.id | typeof mainnet.id;
   isPollingAttestBurn?: boolean;
+  burnTxHash?: string;
+  claimTxHash?: string;
 };
 
 export const ClaimPage = () => {
@@ -101,6 +112,8 @@ export const ClaimPage = () => {
     claimLoading = false,
     burnLoading = false,
     isPollingAttestBurn = false,
+    burnTxHash,
+    claimTxHash,
   } = state;
   const [step, setStep] = useState(0);
   const { message, setCurrentPage, tokens } = useCore();
@@ -135,6 +148,7 @@ export const ClaimPage = () => {
       ...prevState,
       burnLoading: true,
       currentChainId: base.id,
+      burnTxHash: undefined, // Clear previous burn tx hash
     }));
     console.log("burnAmount: ", burnAmount);
     try {
@@ -195,6 +209,10 @@ export const ClaimPage = () => {
       const success = mergeReceipt.status === "success" ? true : false;
       if (success) {
         message.success("Tokens burned successfully");
+        setState((prevState) => ({ 
+          ...prevState, 
+          burnTxHash: mergeHash 
+        }));
         setClaimTransaction(address, {
           amount: burnAmount,
           date: Date.now(),
@@ -230,6 +248,7 @@ export const ClaimPage = () => {
       ...prevState,
       currentChainId: mainnet.id,
       claimLoading: true,
+      claimTxHash: undefined, // Clear previous claim tx hash
     }));
     const claimTransactions = getClaimTransactions(address);
     const claimTransaction = claimTransactions
@@ -336,6 +355,10 @@ export const ClaimPage = () => {
             console.log("claimReceipt: ", claimReceipt);
             const success = claimReceipt.status === "success" ? true : false;
             if (success) {
+              setState((prevState) => ({ 
+                ...prevState, 
+                claimTxHash: claimHash 
+              }));
               setClaimTransaction(address, {
                 ...claimTransaction,
                 isClaimed: true,
@@ -678,9 +701,10 @@ export const ClaimPage = () => {
               }}
             >
               <Stack as="span">
-                To Claim your $VULT tokens from the IOU Merge contract you need
-                to connect your base wallet, burn the IOU tokens and claim the
-                $VULT with your Vultisig wallet.
+                To claim your $VULT tokens from the IOU Merge contract, make
+                sure you have enough ETH on both Base and Ethereum networks to
+                cover gas fees. Then, connect your Base wallet, burn your IOU
+                tokens, and claim your $VULT with your Vultisig wallet.
               </Stack>
               <VStack $style={{ gap: "12px" }}>
                 <Stack
@@ -884,6 +908,40 @@ export const ClaimPage = () => {
                   </Tooltip>
                 </HStack>
               </VStack>
+              {burnTxHash && (
+                <VStack $style={{ gap: "8px" }}>
+                  <Stack as="span" $style={{ fontWeight: "500", color: colors.success.toHex() }}>
+                    ✓ Burn Transaction Hash
+                  </Stack>
+                  <HStack $style={{ alignItems: "center", gap: "8px" }}>
+                    <Stack 
+                      as="span" 
+                      $style={{ 
+                        fontSize: "13px", 
+                        fontFamily: "monospace",
+                        wordBreak: "break-all"
+                      }}
+                    >
+                      {burnTxHash}
+                    </Stack>
+                    <Stack
+                      as="a"
+                      href={getExplorerLink(burnTxHash, base.id)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      $style={{
+                        color: colors.accentFour.toHex(),
+                        fontSize: "13px",
+                        textDecoration: "none",
+                        cursor: "pointer"
+                      }}
+                      $hover={{ textDecoration: "underline" }}
+                    >
+                      View on BaseScan
+                    </Stack>
+                  </HStack>
+                </VStack>
+              )}
               <VStack $style={{ gap: "8px" }}>
                 <Stack as="span" $style={{ fontWeight: "500" }}>
                   VULT to Claim
@@ -902,11 +960,46 @@ export const ClaimPage = () => {
                     onClick={handleClaimSubmit}
                     disabled={claimLoading || !claimAmount || claimAmount <= 0}
                     loading={claimLoading}
+                    style={{ width: claimLoading ? '240px' : '140px' }}
                   >
-                    {isPollingAttestBurn ? "Confirming\n (≈2 min)" : "Claim"}
+                    {isPollingAttestBurn ? "Confirming burn tx\n (≈2 min)" : "Claim"}
                   </SubmitButton>
                 </HStack>
               </VStack>
+              {claimTxHash && (
+                <VStack $style={{ gap: "8px" }}>
+                  <Stack as="span" $style={{ fontWeight: "500", color: colors.success.toHex() }}>
+                    ✓ Claim Transaction Hash
+                  </Stack>
+                  <HStack $style={{ alignItems: "center", gap: "8px" }}>
+                    <Stack 
+                      as="span" 
+                      $style={{ 
+                        fontSize: "13px", 
+                        fontFamily: "monospace",
+                        wordBreak: "break-all"
+                      }}
+                    >
+                      {claimTxHash}
+                    </Stack>
+                    <Stack
+                      as="a"
+                      href={getExplorerLink(claimTxHash, mainnet.id)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      $style={{
+                        color: colors.accentFour.toHex(),
+                        fontSize: "13px",
+                        textDecoration: "none",
+                        cursor: "pointer"
+                      }}
+                      $hover={{ textDecoration: "underline" }}
+                    >
+                      View on Etherscan
+                    </Stack>
+                  </HStack>
+                </VStack>
+              )}
             </Stack>
           </Stack>
           {step < 2 && (
