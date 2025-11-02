@@ -1,4 +1,4 @@
-import { InputNumber, InputNumberProps, Layout, Tooltip } from "antd";
+import { InputNumber, InputNumberProps, Layout, Select, Tooltip } from "antd";
 import {
   Fragment,
   useCallback,
@@ -61,7 +61,18 @@ type StateProps = {
   isWalletRegistered?: boolean;
   vultisigConnected?: boolean;
   iouVultBalance?: bigint;
-  claimableAmount?: number;
+  unclaimedBurns?: Array<{
+    baseTxId: string;
+    baseEventId: string;
+    amount: string;
+    recipient: string;
+    blockNumber: number;
+  }>;
+  selectedBurn?: {
+    baseTxId: string;
+    baseEventId: string;
+    amount: string;
+  };
   tokenAllowance?: bigint;
   needsApproval?: boolean;
   approveLoading?: boolean;
@@ -88,7 +99,6 @@ export const ClaimPage = () => {
   const [state, setState] = useState<StateProps>({});
   const {
     burnAmount,
-    claimAmount,
     connecting,
     vultisigWallet = {
       account: "",
@@ -102,7 +112,8 @@ export const ClaimPage = () => {
     vultisigConnected,
     isWalletRegistered = false,
     iouVultBalance,
-    claimableAmount,
+    unclaimedBurns,
+    selectedBurn,
     needsApproval,
     approveLoading = false,
     attestData = {
@@ -130,7 +141,7 @@ export const ClaimPage = () => {
   const colors = useTheme();
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const pollingStartTimeRef = useRef<number | null>(null);
-  const claimableAmountIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const unclaimedBurnsIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const disabled = useMemo(() => {
     switch (step) {
@@ -293,35 +304,32 @@ export const ClaimPage = () => {
     setState((prevState) => ({ ...prevState, burnLoading: false }));
   };
 
-  const handleClaimAmount: InputNumberProps["onChange"] = (value) => {
-    setState((prevState) => ({
-      ...prevState,
-      claimAmount: typeof value === "number" ? value : undefined,
-    }));
+  const handleClaimBurnSelect = (baseTxId: string) => {
+    const selected = unclaimedBurns?.find((burn) => burn.baseTxId === baseTxId);
+    if (selected) {
+      setState((prevState) => ({
+        ...prevState,
+        selectedBurn: {
+          baseTxId: selected.baseTxId,
+          baseEventId: selected.baseEventId,
+          amount: selected.amount,
+        },
+        claimAmount: Number(formatEther(BigInt(selected.amount))),
+      }));
+    }
   };
 
   const handleClaimSubmit = async () => {
-    if (!claimAmount || claimAmount <= 0) return;
+    if (!selectedBurn) {
+      message.error("Please select a burn transaction to claim");
+      return;
+    }
     setState((prevState) => ({
       ...prevState,
       currentChainId: mainnet.id,
       claimLoading: true,
       claimTxHash: undefined, // Clear previous claim tx hash
     }));
-    const claimTransactions = getClaimTransactions(address);
-    const claimTransaction = claimTransactions
-      .filter((tx) => !tx.isClaimed)
-      .sort((a, b) => b.date - a.date)[0];
-    if (!claimTransaction) {
-      message.error("No claim transaction found");
-      setState((prevState) => ({
-        ...prevState,
-        claimLoading: false,
-        isPollingAttestBurn: false,
-      }));
-      return;
-    }
-
     if (pollingIntervalRef.current) {
       clearInterval(pollingIntervalRef.current);
       pollingIntervalRef.current = null;
@@ -352,9 +360,17 @@ export const ClaimPage = () => {
       }
 
       try {
+        // baseEventId from API might be hex or decimal string, try parsing both ways
+        let eventId: number;
+        if (selectedBurn.baseEventId.startsWith("0x")) {
+          eventId = parseInt(selectedBurn.baseEventId, 16);
+        } else {
+          eventId = parseInt(selectedBurn.baseEventId, 10);
+        }
+
         const attestBurnResult = await api.attestBurn({
-          txId: claimTransaction.hash,
-          eventId: claimTransaction.eventId,
+          txId: selectedBurn.baseTxId,
+          eventId: eventId,
         });
 
         if (attestBurnResult.success) {
@@ -416,17 +432,12 @@ export const ClaimPage = () => {
             if (success) {
               setState((prevState) => ({ 
                 ...prevState, 
-                claimTxHash: claimHash 
+                claimTxHash: claimHash,
+                selectedBurn: undefined,
               }));
-              setClaimTransaction(address, {
-                ...claimTransaction,
-                isClaimed: true,
-              });
               message.success("Tokens claimed successfully");
-              // Refetch transactions and update claimAmount
-              loadClaimTransaction();
-              // Refetch claimable amount after successful claim
-              getClaimableAmount();
+              // Refetch unclaimed burns after successful claim
+              getUnclaimedBurns();
               setState((prevState) => ({ ...prevState, claimLoading: false }));
             } else {
               message.error("Failed to claim tokens");
@@ -589,36 +600,43 @@ export const ClaimPage = () => {
     }
   }, [address]);
 
-  const getClaimableAmount = useCallback(() => {
+  const getUnclaimedBurns = useCallback(() => {
     if (!address) return;
     api
       .getBurns(address)
       .then((result) => {
         if (result.success && result.data) {
-          const unclaimedBurns = result.data.filter(
+          const unclaimedBurnsList = result.data.filter(
             (burn: { claimed: boolean }) => !burn.claimed
-          );
-          const totalClaimable = unclaimedBurns.reduce(
-            (sum: number, burn: { amount: string }) => 
-              sum + Number(formatEther(BigInt(burn.amount))),
-            0
           );
           setState((prevState) => ({
             ...prevState,
-            claimableAmount: totalClaimable,
+            unclaimedBurns: unclaimedBurnsList.map((burn: {
+              baseTxId: string;
+              baseEventId: string;
+              amount: string;
+              recipient: string;
+              blockNumber: number;
+            }) => ({
+              baseTxId: burn.baseTxId,
+              baseEventId: burn.baseEventId,
+              amount: burn.amount,
+              recipient: burn.recipient,
+              blockNumber: burn.blockNumber,
+            })),
           }));
         } else {
           setState((prevState) => ({
             ...prevState,
-            claimableAmount: 0,
+            unclaimedBurns: [],
           }));
         }
       })
       .catch(() => {
-        message.error("Failed to get claimable amount");
+        message.error("Failed to get unclaimed burns");
         setState((prevState) => ({
           ...prevState,
-          claimableAmount: 0,
+          unclaimedBurns: [],
         }));
       });
   }, [address, message]);
@@ -677,29 +695,29 @@ export const ClaimPage = () => {
   }, [checkTokenAllowance]);
 
   useEffect(() => {
-    getClaimableAmount();
+    getUnclaimedBurns();
     
-    // Set up polling to refresh claimable amount every 12 seconds
+    // Set up polling to refresh unclaimed burns every 12 seconds
     if (address) {
       // Clear any existing interval
-      if (claimableAmountIntervalRef.current) {
-        clearInterval(claimableAmountIntervalRef.current);
+      if (unclaimedBurnsIntervalRef.current) {
+        clearInterval(unclaimedBurnsIntervalRef.current);
       }
       
       // Set up new interval
-      claimableAmountIntervalRef.current = setInterval(() => {
-        getClaimableAmount();
+      unclaimedBurnsIntervalRef.current = setInterval(() => {
+        getUnclaimedBurns();
       }, 12000); // 12 seconds
     }
     
     // Cleanup function
     return () => {
-      if (claimableAmountIntervalRef.current) {
-        clearInterval(claimableAmountIntervalRef.current);
-        claimableAmountIntervalRef.current = null;
+      if (unclaimedBurnsIntervalRef.current) {
+        clearInterval(unclaimedBurnsIntervalRef.current);
+        unclaimedBurnsIntervalRef.current = null;
       }
     };
-  }, [getClaimableAmount, address]);
+  }, [getUnclaimedBurns, address]);
 
   useEffect(() => setCurrentPage("claim"), []);
 
@@ -709,9 +727,9 @@ export const ClaimPage = () => {
         clearInterval(pollingIntervalRef.current);
         pollingIntervalRef.current = null;
       }
-      if (claimableAmountIntervalRef.current) {
-        clearInterval(claimableAmountIntervalRef.current);
-        claimableAmountIntervalRef.current = null;
+      if (unclaimedBurnsIntervalRef.current) {
+        clearInterval(unclaimedBurnsIntervalRef.current);
+        unclaimedBurnsIntervalRef.current = null;
       }
       pollingStartTimeRef.current = null;
     };
@@ -1082,51 +1100,30 @@ export const ClaimPage = () => {
                   $VULT to Claim
                 </Stack>
                 <HStack $style={{ gap: "12px" }}>
-                  <AmountInput
-                    controls={false}
-                    formatter={(value = "") => toNumberFormat(value)}
-                    min={0}
-                    onChange={handleClaimAmount}
-                    placeholder="0"
-                    suffix={tokens.VULT.ticker}
-                    value={claimAmount}
+                  <BurnSelect
+                    placeholder="Select burn transaction"
+                    value={selectedBurn?.baseTxId}
+                    onChange={(value) => handleClaimBurnSelect(value as string)}
+                    disabled={claimLoading || !unclaimedBurns || unclaimedBurns.length === 0}
+                    options={
+                      unclaimedBurns?.map((burn) => {
+                        const amount = Number(formatEther(BigInt(burn.amount)));
+                        const txIdShort = burn.baseTxId.slice(0, 10);
+                        return {
+                          value: burn.baseTxId,
+                          label: `${toAmountFormat(amount)} ${tokens.VULT.ticker} (${txIdShort}...)`,
+                        };
+                      }) || []
+                    }
                   />
                   <SubmitButton
                     onClick={handleClaimSubmit}
-                    disabled={claimLoading || !claimAmount || claimAmount <= 0}
+                    disabled={claimLoading || !selectedBurn}
                     loading={claimLoading}
                     style={{ width: claimLoading ? '240px' : '140px' }}
                   >
                     {isPollingAttestBurn ? "Confirming burn tx\n (≈2 min)" : "Claim"}
                   </SubmitButton>
-                </HStack>
-                <HStack>
-                  <Tooltip title={t("clickToUseFullAmount")}>
-                    <HStack
-                      as="span"
-                      onClick={() =>
-                        claimableAmount !== undefined &&
-                        claimableAmount > 0 &&
-                        handleClaimAmount(claimableAmount)
-                      }
-                      $style={{
-                        color: colors.textTertiary.toHex(),
-                        cursor: claimableAmount !== undefined && claimableAmount > 0 ? "pointer" : "default",
-                        gap: "4px",
-                      }}
-                      $hover={{
-                        color:
-                          claimableAmount !== undefined && claimableAmount > 0
-                            ? colors.textSecondary.toHex()
-                            : colors.textTertiary.toHex(),
-                      }}
-                    >
-                      <Stack as="span">{`${t("available")}:`}</Stack>
-                      <Stack as="span" $style={{ fontWeight: "600" }}>
-                        {toAmountFormat(claimableAmount ?? 0)}
-                      </Stack>
-                    </HStack>
-                  </Tooltip>
                 </HStack>
               </VStack>
               {claimTxHash && (
@@ -1190,6 +1187,27 @@ const AmountInput = styled(InputNumber)`
     font-size: 16px;
     font-weight: 500;
     height: 54px;
+  }
+`;
+
+const BurnSelect = styled(Select)`
+  flex-grow: 1;
+  width: 100%;
+
+  .ant-select-selector {
+    background-color: ${({ theme }) => theme.bgPrimary.toHex()} !important;
+    border-radius: 12px !important;
+    height: 56px !important;
+    font-size: 16px !important;
+    font-weight: 500 !important;
+  }
+
+  .ant-select-selection-placeholder {
+    line-height: 54px !important;
+  }
+
+  .ant-select-selection-item {
+    line-height: 54px !important;
   }
 `;
 
