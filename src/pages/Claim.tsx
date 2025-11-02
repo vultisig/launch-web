@@ -161,6 +161,7 @@ export const ClaimPage = () => {
     setState((prevState) => ({
       ...prevState,
       burnAmount: typeof value === "number" ? value : undefined,
+      useMaxAmount: false,
     }));
   };
 
@@ -211,8 +212,11 @@ export const ClaimPage = () => {
     try {
       // Approve the required amount (approve replaces previous allowance, doesn't add)
       // Always approve the full required amount to ensure sufficient allowance
-      console.log("handle approve burn amount", useMaxAmount ? iouVultBalance : parseEther(String(burnAmount)));
-      
+      console.log(
+        "handle approve burn amount",
+        useMaxAmount ? iouVultBalance : parseEther(String(burnAmount))
+      );
+
       const approveHash = await writeContract(wagmiConfig, {
         chainId: base.id,
         address: baseContractAddress.iouVult as `0x${string}`,
