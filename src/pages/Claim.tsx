@@ -16,6 +16,7 @@ import {
   writeContract,
   waitForTransactionReceipt,
   readContract,
+  getTransactionReceipt,
 } from "wagmi/actions";
 import { useCore } from "@/hooks/useCore";
 import { CheckIcon } from "@/icons/CheckIcon";
@@ -360,12 +361,60 @@ export const ClaimPage = () => {
       }
 
       try {
-        // baseEventId from API might be hex or decimal string, try parsing both ways
+        // Fetch transaction receipt to find the event index
+        // baseEventId from API is a hash, we need to find which log index it corresponds to
         let eventId: number;
-        if (selectedBurn.baseEventId.startsWith("0x")) {
-          eventId = parseInt(selectedBurn.baseEventId, 16);
-        } else {
-          eventId = parseInt(selectedBurn.baseEventId, 10);
+        
+        try {
+          const receipt = await getTransactionReceipt(wagmiConfig, {
+            hash: selectedBurn.baseTxId as `0x${string}`,
+            chainId: base.id,
+          });
+          
+          // Default to last log index as fallback
+          eventId = receipt.logs.length - 1;
+
+          // Find the log index that matches the baseEventId hash
+          // The baseEventId should be in one of the indexed topics of the Merge event
+          let foundEventId: number | undefined;
+          
+          for (let i = 0; i < receipt.logs.length; i++) {
+            const log = receipt.logs[i];
+            // The baseEventId should be in one of the indexed topics
+            // Check if any topic matches the baseEventId (case-insensitive comparison)
+            if (log.topics.some(topic => topic.toLowerCase() === selectedBurn.baseEventId.toLowerCase())) {
+              foundEventId = i;
+              break;
+            }
+          }
+
+          // If not found by topic matching, try finding by contract address and use last log index
+          // This is a fallback - the merge event should be one of the last logs
+          if (foundEventId === undefined) {
+            const mergeContractAddress = attestData.domain.verifyingContract.toLowerCase();
+            const relevantLogs = receipt.logs.filter(
+              log => log.address.toLowerCase() === mergeContractAddress
+            );
+            // Use the index of the last relevant log as a fallback
+            if (relevantLogs.length > 0) {
+              const lastRelevantLog = relevantLogs[relevantLogs.length - 1];
+              foundEventId = receipt.logs.indexOf(lastRelevantLog);
+            } else {
+              // Final fallback: use last log index (similar to old implementation)
+              foundEventId = receipt.logs.length - 1;
+            }
+          }
+          
+          eventId = foundEventId;
+        } catch (receiptError) {
+          console.error("Error fetching transaction receipt:", receiptError);
+          message.error("Failed to fetch transaction receipt. Please try again.");
+          setState((prevState) => ({
+            ...prevState,
+            claimLoading: false,
+            isPollingAttestBurn: false,
+          }));
+          return;
         }
 
         const attestBurnResult = await api.attestBurn({
@@ -1200,6 +1249,8 @@ const BurnSelect = styled(Select)`
     height: 56px !important;
     font-size: 16px !important;
     font-weight: 500 !important;
+    display: flex !important;
+    align-items: center !important;
   }
 
   .ant-select-selection-placeholder {
@@ -1208,6 +1259,13 @@ const BurnSelect = styled(Select)`
 
   .ant-select-selection-item {
     line-height: 54px !important;
+  }
+
+  .ant-select-arrow {
+    display: flex !important;
+    align-items: center !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
   }
 `;
 
