@@ -182,7 +182,15 @@ export const ClaimPage = () => {
       });
 
       const allowanceAmount = Number(formatEther(allowance as bigint));
-      const needsApprovalCheck = allowanceAmount < burnAmount;
+      // Check if current allowance is sufficient for the burn amount
+      // Use a small epsilon to handle floating point precision issues
+      const needsApprovalCheck = allowanceAmount < burnAmount - 0.000001;
+
+      console.log("Allowance check:", {
+        allowanceAmount,
+        burnAmount,
+        needsApproval: needsApprovalCheck,
+      });
 
       setState((prevState) => ({
         ...prevState,
@@ -205,6 +213,8 @@ export const ClaimPage = () => {
     }));
 
     try {
+      // Approve the required amount (approve replaces previous allowance, doesn't add)
+      // Always approve the full required amount to ensure sufficient allowance
       const approveHash = await writeContract(wagmiConfig, {
         chainId: base.id,
         address: baseContractAddress.iouVult as `0x${string}`,
@@ -223,8 +233,33 @@ export const ClaimPage = () => {
       const approveSuccess = approveReceipt.status === "success";
       if (approveSuccess) {
         message.success("Tokens approved successfully");
-        // Recheck allowance after approval
-        await checkTokenAllowance();
+        // Wait for blockchain state to update, then retry allowance check
+        let retries = 3;
+        let allowanceUpdated = false;
+        
+        while (retries > 0 && !allowanceUpdated) {
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          await checkTokenAllowance();
+          
+          // Check if approval was successful by reading allowance again
+          try {
+            const updatedAllowance = await readContract(wagmiConfig, {
+              address: baseContractAddress.iouVult as `0x${string}`,
+              abi: IOUVultAbi,
+              functionName: "allowance",
+              args: [address, attestData.domain.verifyingContract as `0x${string}`],
+            });
+            const updatedAllowanceAmount = Number(formatEther(updatedAllowance as bigint));
+            
+            if (updatedAllowanceAmount >= burnAmount - 0.000001) {
+              allowanceUpdated = true;
+            }
+          } catch (error) {
+            console.error("Error checking updated allowance:", error);
+          }
+          
+          retries--;
+        }
       } else {
         message.error("Failed to approve tokens");
       }
@@ -292,7 +327,10 @@ export const ClaimPage = () => {
         getIOUVultBalance();
         // Reload claim transaction to update claimAmount
         loadClaimTransaction();
+        // Wait a bit for blockchain state to update after burn
+        await new Promise((resolve) => setTimeout(resolve, 2000));
         // Refresh allowance check after successful burn
+        // This will update the button to "Approve" if allowance is now insufficient
         await checkTokenAllowance();
       } else {
         setState((prevState) => ({ ...prevState, burnLoading: false }));
