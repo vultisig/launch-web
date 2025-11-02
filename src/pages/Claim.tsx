@@ -343,10 +343,13 @@ export const ClaimPage = () => {
     setState((prevState) => ({ ...prevState, burnLoading: false }));
   };
   const handleMaxAmount = () => {
+    if (iouVultBalance === undefined || iouVultBalance === null) {
+      return;
+    }
     setState((prevState) => ({
       ...prevState,
       useMaxAmount: true,
-      burnAmount: Number(formatEther(iouVultBalance as bigint)),
+      burnAmount: Number(formatEther(iouVultBalance)),
     }));
   };
 
