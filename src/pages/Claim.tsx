@@ -211,6 +211,8 @@ export const ClaimPage = () => {
     try {
       // Approve the required amount (approve replaces previous allowance, doesn't add)
       // Always approve the full required amount to ensure sufficient allowance
+      console.log("handle approve burn amount", useMaxAmount ? iouVultBalance : parseEther(String(burnAmount)));
+      
       const approveHash = await writeContract(wagmiConfig, {
         chainId: base.id,
         address: baseContractAddress.iouVult as `0x${string}`,
@@ -218,7 +220,7 @@ export const ClaimPage = () => {
         functionName: "approve",
         args: [
           attestData.domain.verifyingContract as `0x${string}`,
-          parseEther(String(burnAmount)),
+          useMaxAmount ? iouVultBalance : parseEther(String(burnAmount)),
         ],
       });
 
