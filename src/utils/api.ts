@@ -115,7 +115,6 @@ export const api = {
     const { data } = await fetchTalkApi.get<{ applied: boolean }>(
       `/whitelist?ecdsa=${ecdsa}`
     );
-    console.log("status:", data.applied);
     return data.applied;
   },
   challengeMessage: async (uid: string) => {

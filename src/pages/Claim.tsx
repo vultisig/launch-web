@@ -186,12 +186,6 @@ export const ClaimPage = () => {
       // Use a small epsilon to handle floating point precision issues
       const needsApprovalCheck = allowanceAmount < burnAmount - 0.000001;
 
-      console.log("Allowance check:", {
-        allowanceAmount,
-        burnAmount,
-        needsApproval: needsApprovalCheck,
-      });
-
       setState((prevState) => ({
         ...prevState,
         tokenAllowance: allowance as bigint,
@@ -236,28 +230,33 @@ export const ClaimPage = () => {
         // Wait for blockchain state to update, then retry allowance check
         let retries = 3;
         let allowanceUpdated = false;
-        
+
         while (retries > 0 && !allowanceUpdated) {
           await new Promise((resolve) => setTimeout(resolve, 2000));
           await checkTokenAllowance();
-          
+
           // Check if approval was successful by reading allowance again
           try {
             const updatedAllowance = await readContract(wagmiConfig, {
               address: baseContractAddress.iouVult as `0x${string}`,
               abi: IOUVultAbi,
               functionName: "allowance",
-              args: [address, attestData.domain.verifyingContract as `0x${string}`],
+              args: [
+                address,
+                attestData.domain.verifyingContract as `0x${string}`,
+              ],
             });
-            const updatedAllowanceAmount = Number(formatEther(updatedAllowance as bigint));
-            
+            const updatedAllowanceAmount = Number(
+              formatEther(updatedAllowance as bigint)
+            );
+
             if (updatedAllowanceAmount >= burnAmount - 0.000001) {
               allowanceUpdated = true;
             }
           } catch (error) {
             console.error("Error checking updated allowance:", error);
           }
-          
+
           retries--;
         }
       } else {
@@ -291,8 +290,6 @@ export const ClaimPage = () => {
     }));
 
     try {
-      console.log("attest DatA:", attestData);
-      console.log("calling merge");
       const mergeHash = await writeContract(wagmiConfig, {
         address: attestData.domain.verifyingContract as `0x${string}`,
         abi: BaseMergeAbi,
@@ -308,13 +305,12 @@ export const ClaimPage = () => {
         hash: mergeHash,
       });
 
-      console.log("mergeReceipt:", mergeReceipt);
       const success = mergeReceipt.status === "success" ? true : false;
       if (success) {
         message.success("Tokens burned successfully");
-        setState((prevState) => ({ 
-          ...prevState, 
-          burnTxHash: mergeHash 
+        setState((prevState) => ({
+          ...prevState,
+          burnTxHash: mergeHash,
         }));
         setClaimTransaction(address, {
           amount: burnAmount,
@@ -402,25 +398,30 @@ export const ClaimPage = () => {
         // Fetch transaction receipt to find the event index
         // baseEventId from API is a hash, we need to find which log index it corresponds to
         let eventId: number;
-        
+
         try {
           const receipt = await getTransactionReceipt(wagmiConfig, {
             hash: selectedBurn.baseTxId as `0x${string}`,
             chainId: base.id,
           });
-          
+
           // Default to last log index as fallback
           eventId = receipt.logs.length - 1;
 
           // Find the log index that matches the baseEventId hash
           // The baseEventId should be in one of the indexed topics of the Merge event
           let foundEventId: number | undefined;
-          
+
           for (let i = 0; i < receipt.logs.length; i++) {
             const log = receipt.logs[i];
             // The baseEventId should be in one of the indexed topics
             // Check if any topic matches the baseEventId (case-insensitive comparison)
-            if (log.topics.some(topic => topic.toLowerCase() === selectedBurn.baseEventId.toLowerCase())) {
+            if (
+              log.topics.some(
+                (topic) =>
+                  topic.toLowerCase() === selectedBurn.baseEventId.toLowerCase()
+              )
+            ) {
               foundEventId = i;
               break;
             }
@@ -429,9 +430,10 @@ export const ClaimPage = () => {
           // If not found by topic matching, try finding by contract address and use last log index
           // This is a fallback - the merge event should be one of the last logs
           if (foundEventId === undefined) {
-            const mergeContractAddress = attestData.domain.verifyingContract.toLowerCase();
+            const mergeContractAddress =
+              attestData.domain.verifyingContract.toLowerCase();
             const relevantLogs = receipt.logs.filter(
-              log => log.address.toLowerCase() === mergeContractAddress
+              (log) => log.address.toLowerCase() === mergeContractAddress
             );
             // Use the index of the last relevant log as a fallback
             if (relevantLogs.length > 0) {
@@ -442,11 +444,13 @@ export const ClaimPage = () => {
               foundEventId = receipt.logs.length - 1;
             }
           }
-          
+
           eventId = foundEventId;
         } catch (receiptError) {
           console.error("Error fetching transaction receipt:", receiptError);
-          message.error("Failed to fetch transaction receipt. Please try again.");
+          message.error(
+            "Failed to fetch transaction receipt. Please try again."
+          );
           setState((prevState) => ({
             ...prevState,
             claimLoading: false,
@@ -510,15 +514,13 @@ export const ClaimPage = () => {
                 attestData.signature,
               ],
             });
-            console.log("claimHash: ", claimHash);
             const claimReceipt = await waitForTransactionReceipt(wagmiConfig, {
               hash: claimHash,
             });
-            console.log("claimReceipt: ", claimReceipt);
             const success = claimReceipt.status === "success" ? true : false;
             if (success) {
-              setState((prevState) => ({ 
-                ...prevState, 
+              setState((prevState) => ({
+                ...prevState,
                 claimTxHash: claimHash,
                 selectedBurn: undefined,
               }));
@@ -658,11 +660,6 @@ export const ClaimPage = () => {
         .then(({ value }) => {
           // Validate the balance value
           if (value !== undefined && value !== null) {
-            const formattedValue = formatEther(value);
-            const numValue = parseFloat(formattedValue);
-            console.log("IOU Balance - Raw (wei):", value.toString());
-            console.log("IOU Balance - Formatted (tokens):", formattedValue);
-            console.log("IOU Balance - Number:", numValue);
             setState((prevState) => ({
               ...prevState,
               iouVultBalance: value,
@@ -707,19 +704,21 @@ export const ClaimPage = () => {
           );
           setState((prevState) => ({
             ...prevState,
-            unclaimedBurns: unclaimedBurnsList.map((burn: {
-              baseTxId: string;
-              baseEventId: string;
-              amount: string;
-              recipient: string;
-              blockNumber: number;
-            }) => ({
-              baseTxId: burn.baseTxId,
-              baseEventId: burn.baseEventId,
-              amount: burn.amount,
-              recipient: burn.recipient,
-              blockNumber: burn.blockNumber,
-            })),
+            unclaimedBurns: unclaimedBurnsList.map(
+              (burn: {
+                baseTxId: string;
+                baseEventId: string;
+                amount: string;
+                recipient: string;
+                blockNumber: number;
+              }) => ({
+                baseTxId: burn.baseTxId,
+                baseEventId: burn.baseEventId,
+                amount: burn.amount,
+                recipient: burn.recipient,
+                blockNumber: burn.blockNumber,
+              })
+            ),
           }));
         } else {
           setState((prevState) => ({
@@ -792,20 +791,20 @@ export const ClaimPage = () => {
 
   useEffect(() => {
     getUnclaimedBurns();
-    
+
     // Set up polling to refresh unclaimed burns every 12 seconds
     if (address) {
       // Clear any existing interval
       if (unclaimedBurnsIntervalRef.current) {
         clearInterval(unclaimedBurnsIntervalRef.current);
       }
-      
+
       // Set up new interval
       unclaimedBurnsIntervalRef.current = setInterval(() => {
         getUnclaimedBurns();
       }, 12000); // 12 seconds
     }
-    
+
     // Cleanup function
     return () => {
       if (unclaimedBurnsIntervalRef.current) {
@@ -1073,7 +1072,8 @@ export const ClaimPage = () => {
                   lineHeight: "16px",
                 }}
               >
-                Make sure to have sufficient Gas on Ethereum and Base available to burn and claim.
+                Make sure to have sufficient Gas on Ethereum and Base available
+                to burn and claim.
               </Stack>
               <VStack $style={{ gap: "4px" }}>
                 <Stack
@@ -1157,7 +1157,10 @@ export const ClaimPage = () => {
                               const balanceString = formatEther(iouVultBalance);
                               const balanceNumber = parseFloat(balanceString);
                               // Ensure we have a valid number
-                              if (isNaN(balanceNumber) || !isFinite(balanceNumber)) {
+                              if (
+                                isNaN(balanceNumber) ||
+                                !isFinite(balanceNumber)
+                              ) {
                                 return "0";
                               }
                               return toAmountFormat(balanceNumber);
@@ -1170,16 +1173,22 @@ export const ClaimPage = () => {
               </VStack>
               {burnTxHash && (
                 <VStack $style={{ gap: "8px" }}>
-                  <Stack as="span" $style={{ fontWeight: "500", color: colors.success.toHex() }}>
+                  <Stack
+                    as="span"
+                    $style={{
+                      fontWeight: "500",
+                      color: colors.success.toHex(),
+                    }}
+                  >
                     ✓ Burn Transaction Hash
                   </Stack>
                   <HStack $style={{ alignItems: "center", gap: "8px" }}>
-                    <Stack 
-                      as="span" 
-                      $style={{ 
-                        fontSize: "13px", 
+                    <Stack
+                      as="span"
+                      $style={{
+                        fontSize: "13px",
                         fontFamily: "monospace",
-                        wordBreak: "break-all"
+                        wordBreak: "break-all",
                       }}
                     >
                       {burnTxHash}
@@ -1193,7 +1202,7 @@ export const ClaimPage = () => {
                         color: colors.accentFour.toHex(),
                         fontSize: "13px",
                         textDecoration: "none",
-                        cursor: "pointer"
+                        cursor: "pointer",
                       }}
                       $hover={{ textDecoration: "underline" }}
                     >
@@ -1211,13 +1220,19 @@ export const ClaimPage = () => {
                     placeholder="Select burn transaction"
                     value={selectedBurn?.baseTxId}
                     onChange={(value) => handleClaimBurnSelect(value as string)}
-                    disabled={claimLoading || !unclaimedBurns || unclaimedBurns.length === 0}
+                    disabled={
+                      claimLoading ||
+                      !unclaimedBurns ||
+                      unclaimedBurns.length === 0
+                    }
                     options={
                       unclaimedBurns?.map((burn) => {
                         const amount = Number(formatEther(BigInt(burn.amount)));
                         return {
                           value: burn.baseTxId,
-                          label: `${toAmountFormat(amount)} ${tokens.VULT.ticker}`,
+                          label: `${toAmountFormat(amount)} ${
+                            tokens.VULT.ticker
+                          }`,
                         };
                       }) || []
                     }
@@ -1226,24 +1241,32 @@ export const ClaimPage = () => {
                     onClick={handleClaimSubmit}
                     disabled={claimLoading || !selectedBurn}
                     loading={claimLoading}
-                    style={{ width: claimLoading ? '240px' : '140px' }}
+                    style={{ width: claimLoading ? "240px" : "140px" }}
                   >
-                    {isPollingAttestBurn ? "Confirming burn tx\n (≈2 min)" : "Claim"}
+                    {isPollingAttestBurn
+                      ? "Confirming burn tx\n (≈2 min)"
+                      : "Claim"}
                   </SubmitButton>
                 </HStack>
               </VStack>
               {claimTxHash && (
                 <VStack $style={{ gap: "8px" }}>
-                  <Stack as="span" $style={{ fontWeight: "500", color: colors.success.toHex() }}>
+                  <Stack
+                    as="span"
+                    $style={{
+                      fontWeight: "500",
+                      color: colors.success.toHex(),
+                    }}
+                  >
                     ✓ Claim Transaction Hash
                   </Stack>
                   <HStack $style={{ alignItems: "center", gap: "8px" }}>
-                    <Stack 
-                      as="span" 
-                      $style={{ 
-                        fontSize: "13px", 
+                    <Stack
+                      as="span"
+                      $style={{
+                        fontSize: "13px",
                         fontFamily: "monospace",
-                        wordBreak: "break-all"
+                        wordBreak: "break-all",
                       }}
                     >
                       {claimTxHash}
@@ -1257,7 +1280,7 @@ export const ClaimPage = () => {
                         color: colors.accentFour.toHex(),
                         fontSize: "13px",
                         textDecoration: "none",
-                        cursor: "pointer"
+                        cursor: "pointer",
                       }}
                       $hover={{ textDecoration: "underline" }}
                     >
@@ -1299,6 +1322,7 @@ const AmountInput = styled(InputNumber)`
 const BurnSelect = styled(Select)`
   flex-grow: 1;
   width: 100%;
+  height: auto;
 
   .ant-select-selector {
     background-color: ${({ theme }) => theme.bgPrimary.toHex()} !important;
