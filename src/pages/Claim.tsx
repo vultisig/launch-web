@@ -93,6 +93,7 @@ type StateProps = {
   isPollingAttestBurn?: boolean;
   burnTxHash?: string;
   claimTxHash?: string;
+  useMaxAmount?: boolean;
 };
 
 export const ClaimPage = () => {
@@ -133,6 +134,7 @@ export const ClaimPage = () => {
     isPollingAttestBurn = false,
     burnTxHash,
     claimTxHash,
+    useMaxAmount = false,
   } = state;
   const [step, setStep] = useState(0);
   const { message, setCurrentPage, tokens } = useCore();
@@ -290,12 +292,28 @@ export const ClaimPage = () => {
     }));
 
     try {
+      console.log(
+        "burn input",
+        useMaxAmount ? iouVultBalance : parseEther(String(burnAmount))
+      );
+
+      console.log({
+        address: attestData.domain.verifyingContract as `0x${string}`,
+        abi: BaseMergeAbi,
+        functionName: "merge",
+        args: [
+          useMaxAmount ? iouVultBalance : parseEther(String(burnAmount)),
+          vultisigWallet.account,
+          attestData.signature,
+        ],
+      });
+
       const mergeHash = await writeContract(wagmiConfig, {
         address: attestData.domain.verifyingContract as `0x${string}`,
         abi: BaseMergeAbi,
         functionName: "merge",
         args: [
-          parseEther(String(burnAmount)),
+          useMaxAmount ? iouVultBalance : parseEther(String(burnAmount)),
           vultisigWallet.account,
           attestData.signature,
         ],
@@ -337,6 +355,13 @@ export const ClaimPage = () => {
       message.error("Failed to burn tokens");
     }
     setState((prevState) => ({ ...prevState, burnLoading: false }));
+  };
+  const handleMaxAmount = () => {
+    setState((prevState) => ({
+      ...prevState,
+      useMaxAmount: true,
+      burnAmount: Number(formatEther(iouVultBalance as bigint)),
+    }));
   };
 
   const handleClaimBurnSelect = (baseTxId: string) => {
@@ -1161,13 +1186,7 @@ export const ClaimPage = () => {
                   <Tooltip title={t("clickToUseFullAmount")}>
                     <HStack
                       as="span"
-                      onClick={() =>
-                        handleBurnAmount(
-                          iouVultBalance !== undefined
-                            ? parseFloat(formatEther(iouVultBalance))
-                            : 0
-                        )
-                      }
+                      onClick={handleMaxAmount}
                       $style={{
                         color: colors.textTertiary.toHex(),
                         cursor: "pointer",
