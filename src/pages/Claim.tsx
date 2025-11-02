@@ -212,10 +212,6 @@ export const ClaimPage = () => {
     try {
       // Approve the required amount (approve replaces previous allowance, doesn't add)
       // Always approve the full required amount to ensure sufficient allowance
-      console.log(
-        "handle approve burn amount",
-        useMaxAmount ? iouVultBalance : parseEther(String(burnAmount))
-      );
 
       const approveHash = await writeContract(wagmiConfig, {
         chainId: base.id,
@@ -298,22 +294,6 @@ export const ClaimPage = () => {
     }));
 
     try {
-      console.log(
-        "burn input",
-        useMaxAmount ? iouVultBalance : parseEther(String(burnAmount))
-      );
-
-      console.log({
-        address: attestData.domain.verifyingContract as `0x${string}`,
-        abi: BaseMergeAbi,
-        functionName: "merge",
-        args: [
-          useMaxAmount ? iouVultBalance : parseEther(String(burnAmount)),
-          vultisigWallet.account,
-          attestData.signature,
-        ],
-      });
-
       const mergeHash = await writeContract(wagmiConfig, {
         address: attestData.domain.verifyingContract as `0x${string}`,
         abi: BaseMergeAbi,
