@@ -4,10 +4,15 @@ import { v4 as uuidv4 } from "uuid";
 import { contractAddress } from "@/utils/constants";
 import { Currency } from "@/utils/currency";
 import { toCamelCase } from "@/utils/functions";
-import { SuggestedGasFeeProps } from "@/utils/types";
+import { SuggestedGasFeeProps, VultisigWalletProps } from "@/utils/types";
 
 const fetch = axios.create({
   baseURL: import.meta.env.VITE_SERVER_ADDRESS,
+  headers: { accept: "application/json" },
+});
+
+const fetchTalkApi = axios.create({
+  baseURL: import.meta.env.VITE_TALK_ADDRESS,
   headers: { accept: "application/json" },
 });
 
@@ -105,5 +110,96 @@ export const api = {
           : 0
       )
       .catch(() => 0);
+  },
+  applyStatus: async (ecdsa: string) => {
+    const { data } = await fetchTalkApi.get<{ applied: boolean }>(
+      `/whitelist?ecdsa=${ecdsa}`
+    );
+    return data.applied;
+  },
+  challengeMessage: async (uid: string) => {
+    const { data } = await fetchTalkApi.post<{
+      message: string;
+      nonce: string;
+      timestamp: string;
+    }>(`/challenge`, {
+      uid,
+    });
+    return {
+      message: data.message,
+      nonce: data.nonce,
+      timestamp: data.timestamp,
+    };
+  },
+
+  registerVultisigWallet: async (
+    wallet: VultisigWalletProps,
+    message: string,
+    signature: string
+  ) => {
+    const { data } = await fetchTalkApi.post<{
+      id: number;
+      uid: string;
+      name: string;
+      whitelisted: boolean;
+      created_at: string;
+    }>(`/whitelist`, {
+      ...wallet,
+      message,
+      signature,
+    });
+    return data;
+  },
+  attestAddress: async (address: string) => {
+    const { data } = await fetchTalkApi.get<{
+      success: boolean;
+      data: {
+        address: string;
+        signature: string;
+        domain: {
+          name: string;
+          version: string;
+          chainId: number;
+          verifyingContract: string;
+        };
+      };
+    }>(`/attest_address?address=${address}`);
+    return data;
+  },
+  attestBurn: async ({ txId, eventId }: { txId: string; eventId: number }) => {
+    const { data } = await fetchTalkApi.get<{
+      success: boolean;
+      data: {
+        baseTxId: string;
+        baseEventId: string;
+        amount: string;
+        recipient: string;
+        signature: string;
+        blockNumber: number;
+        confirmations: number;
+        domain: {
+          name: string;
+          version: string;
+          chainId: number;
+          verifyingContract: string;
+        };
+      };
+    }>(`/attest_burn?tx_id=${txId}&event_id=${eventId}`);
+    return data;
+  },
+  getBurns: async (address: string) => {
+    const { data } = await fetchTalkApi.get<{
+      success: boolean;
+      data: Array<{
+        baseTxId: string;
+        baseEventId: string;
+        ethTxId: string | null;
+        claimed: boolean;
+        amount: string;
+        recipient: string;
+        blockNumber: number;
+      }>;
+    }>(`/burns?address=${address}`);
+    return data;
   },
 };
