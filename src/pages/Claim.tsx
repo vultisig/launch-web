@@ -375,7 +375,7 @@ export const ClaimPage = () => {
 
     setState((prevState) => ({ ...prevState, isPollingAttestBurn: true }));
 
-    const pollAttestBurn = async (): Promise<void> => {
+    const pollAttestBurn = async (): Promise<boolean> => {
       if (
         pollingStartTimeRef.current &&
         Date.now() - pollingStartTimeRef.current >= TIMEOUT_MS
@@ -391,7 +391,7 @@ export const ClaimPage = () => {
           claimLoading: false,
           isPollingAttestBurn: false,
         }));
-        return;
+        return false; // Indicate polling should stop
       }
 
       try {
@@ -456,7 +456,13 @@ export const ClaimPage = () => {
             claimLoading: false,
             isPollingAttestBurn: false,
           }));
-          return;
+          // Clear intervals on error
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
+          }
+          pollingStartTimeRef.current = null;
+          return false; // Indicate polling should stop
         }
 
         const attestBurnResult = await api.attestBurn({
@@ -470,7 +476,6 @@ export const ClaimPage = () => {
               clearInterval(pollingIntervalRef.current);
               pollingIntervalRef.current = null;
             }
-            pollingIntervalRef.current = null;
             pollingStartTimeRef.current = null;
 
             setState((prevState) => ({
@@ -533,15 +538,36 @@ export const ClaimPage = () => {
               setState((prevState) => ({ ...prevState, claimLoading: false }));
             }
           } catch (error) {
+            if (pollingIntervalRef.current)
+              clearInterval(pollingIntervalRef.current);
+
+            pollingIntervalRef.current = null;
+            pollingStartTimeRef.current = null;
+            setState((prevState) => ({ ...prevState, claimLoading: false }));
+            message.error("Failed to claim tokens");
             console.error("Error claiming tokens:", error);
+            return false; // Indicate polling should stop
           }
+          return false; // Successfully completed, no need to continue polling
         }
-      } catch {}
+        return true; // Continue polling - attestBurn not successful yet
+      } catch (error) {
+        return true; // Indicate polling should continue
+      }
     };
 
-    await pollAttestBurn();
+    const shouldContinuePolling = await pollAttestBurn();
 
-    pollingIntervalRef.current = setInterval(pollAttestBurn, 20000);
+    // Only set interval if polling should continue
+    if (shouldContinuePolling && !pollingIntervalRef.current) {
+      pollingIntervalRef.current = setInterval(async () => {
+        const shouldContinue = await pollAttestBurn();
+        if (!shouldContinue && pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
+        }
+      }, 20000);
+    }
   };
 
   const handleConnect = () => {

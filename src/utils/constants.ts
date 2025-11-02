@@ -26,7 +26,7 @@ export const contractAddress = {
 } as const;
 
 export const baseContractAddress = {
-  iouVult: "0x192396df2ffc53f7f1c0c9f8cf9415e0f2b41697",
+  iouVult: "0x299A57C1f6761b3dB304dc8B18bb4E60A1CF37b6",
 } as const;
 
 export const defaultTokens: Record<TickerKey, TokenProps> = {
