@@ -93,6 +93,7 @@ type StateProps = {
   isPollingAttestBurn?: boolean;
   burnTxHash?: string;
   claimTxHash?: string;
+  useMaxAmount?: boolean;
 };
 
 export const ClaimPage = () => {
@@ -133,6 +134,7 @@ export const ClaimPage = () => {
     isPollingAttestBurn = false,
     burnTxHash,
     claimTxHash,
+    useMaxAmount = false,
   } = state;
   const [step, setStep] = useState(0);
   const { message, setCurrentPage, tokens } = useCore();
@@ -159,6 +161,7 @@ export const ClaimPage = () => {
     setState((prevState) => ({
       ...prevState,
       burnAmount: typeof value === "number" ? value : undefined,
+      useMaxAmount: false,
     }));
   };
 
@@ -209,6 +212,7 @@ export const ClaimPage = () => {
     try {
       // Approve the required amount (approve replaces previous allowance, doesn't add)
       // Always approve the full required amount to ensure sufficient allowance
+
       const approveHash = await writeContract(wagmiConfig, {
         chainId: base.id,
         address: baseContractAddress.iouVult as `0x${string}`,
@@ -216,7 +220,7 @@ export const ClaimPage = () => {
         functionName: "approve",
         args: [
           attestData.domain.verifyingContract as `0x${string}`,
-          parseEther(String(burnAmount)),
+          useMaxAmount ? iouVultBalance : parseEther(String(burnAmount)),
         ],
       });
 
@@ -295,7 +299,7 @@ export const ClaimPage = () => {
         abi: BaseMergeAbi,
         functionName: "merge",
         args: [
-          parseEther(String(burnAmount)),
+          useMaxAmount ? iouVultBalance : parseEther(String(burnAmount)),
           vultisigWallet.account,
           attestData.signature,
         ],
@@ -337,6 +341,16 @@ export const ClaimPage = () => {
       message.error("Failed to burn tokens");
     }
     setState((prevState) => ({ ...prevState, burnLoading: false }));
+  };
+  const handleMaxAmount = () => {
+    if (iouVultBalance === undefined || iouVultBalance === null) {
+      return;
+    }
+    setState((prevState) => ({
+      ...prevState,
+      useMaxAmount: true,
+      burnAmount: Number(formatEther(iouVultBalance)),
+    }));
   };
 
   const handleClaimBurnSelect = (baseTxId: string) => {
@@ -1161,13 +1175,7 @@ export const ClaimPage = () => {
                   <Tooltip title={t("clickToUseFullAmount")}>
                     <HStack
                       as="span"
-                      onClick={() =>
-                        handleBurnAmount(
-                          iouVultBalance !== undefined
-                            ? parseFloat(formatEther(iouVultBalance))
-                            : 0
-                        )
-                      }
+                      onClick={handleMaxAmount}
                       $style={{
                         color: colors.textTertiary.toHex(),
                         cursor: "pointer",
