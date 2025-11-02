@@ -618,12 +618,21 @@ export const ClaimPage = () => {
         token: baseContractAddress.iouVult,
       })
         .then(({ value }) => {
-          setState((prevState) => ({
-            ...prevState,
-            iouVultBalance: value,
-          }));
+          // Validate the balance value
+          if (value !== undefined && value !== null) {
+            const formattedValue = formatEther(value);
+            const numValue = parseFloat(formattedValue);
+            console.log("IOU Balance - Raw (wei):", value.toString());
+            console.log("IOU Balance - Formatted (tokens):", formattedValue);
+            console.log("IOU Balance - Number:", numValue);
+            setState((prevState) => ({
+              ...prevState,
+              iouVultBalance: value,
+            }));
+          }
         })
-        .catch(() => {
+        .catch((error) => {
+          console.error("Error fetching IOU balance:", error);
           message.error("Failed to get IOU vault balance");
         });
     }
@@ -1090,7 +1099,9 @@ export const ClaimPage = () => {
                       as="span"
                       onClick={() =>
                         handleBurnAmount(
-                          Number(formatEther(iouVultBalance ?? 0n))
+                          iouVultBalance !== undefined
+                            ? parseFloat(formatEther(iouVultBalance))
+                            : 0
                         )
                       }
                       $style={{
@@ -1102,9 +1113,18 @@ export const ClaimPage = () => {
                     >
                       <Stack as="span">{`${t("available")}:`}</Stack>
                       <Stack as="span" $style={{ fontWeight: "600" }}>
-                        {toAmountFormat(
-                          Number(formatEther(iouVultBalance ?? 0n))
-                        )}
+                        {iouVultBalance !== undefined && iouVultBalance !== null
+                          ? (() => {
+                              // Convert bigint to string first to avoid precision loss
+                              const balanceString = formatEther(iouVultBalance);
+                              const balanceNumber = parseFloat(balanceString);
+                              // Ensure we have a valid number
+                              if (isNaN(balanceNumber) || !isFinite(balanceNumber)) {
+                                return "0";
+                              }
+                              return toAmountFormat(balanceNumber);
+                            })()
+                          : "0"}
                       </Stack>
                     </HStack>
                   </Tooltip>
@@ -1157,10 +1177,9 @@ export const ClaimPage = () => {
                     options={
                       unclaimedBurns?.map((burn) => {
                         const amount = Number(formatEther(BigInt(burn.amount)));
-                        const txIdShort = burn.baseTxId.slice(0, 10);
                         return {
                           value: burn.baseTxId,
-                          label: `${toAmountFormat(amount)} ${tokens.VULT.ticker} (${txIdShort}...)`,
+                          label: `${toAmountFormat(amount)} ${tokens.VULT.ticker}`,
                         };
                       }) || []
                     }
@@ -1251,6 +1270,7 @@ const BurnSelect = styled(Select)`
     font-weight: 500 !important;
     display: flex !important;
     align-items: center !important;
+    padding: 0 40px 0 16px !important;
   }
 
   .ant-select-selection-placeholder {
@@ -1262,10 +1282,19 @@ const BurnSelect = styled(Select)`
   }
 
   .ant-select-arrow {
-    display: flex !important;
-    align-items: center !important;
+    margin-top: 0 !important;
     top: 50% !important;
     transform: translateY(-50%) !important;
+    right: 16px !important;
+    height: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .ant-select-selection-search {
+    display: flex !important;
+    align-items: center !important;
   }
 `;
 
