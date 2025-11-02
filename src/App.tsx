@@ -1,92 +1,60 @@
-import { ConfigProvider, theme } from "antd";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useState } from "react";
+import { I18nextProvider } from "react-i18next";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { WagmiProvider } from "wagmi";
 
-import {
-  backgroundPrimary,
-  backgroundSecondary,
-  backgroundTertiary,
-  borderNormal,
-  buttonPrimary,
-  buttonPrimaryHover,
-  buttonSecondary,
-} from "colors";
-import { config } from "utils/wagmi-config";
+import { i18nInstance } from "@/i18n/config";
+import { DefaultLayout } from "@/layouts/Default";
+import { ClaimPage } from "@/pages/Claim";
+import { NotFoundPage } from "@/pages/NotFound";
+import { SwapPage } from "@/pages/Swap";
+import { AntdProvider } from "@/providers/antd";
+import { CoreProvider } from "@/providers/core";
+import { StyledProvider } from "@/providers/styled";
+import { routeTree } from "@/utils/routes";
+import { wagmiConfig } from "@/utils/wagmi";
 
-import BaseContext from "context";
-import Routes from "routes";
-
-const Component = () => {
-  const queryClient = new QueryClient();
+export const App = () => {
+  const [queryClient] = useState(() => new QueryClient());
 
   return (
-    <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>
-        <ConfigProvider
-          theme={{
-            algorithm: theme.darkAlgorithm,
-            components: {
-              Button: {
-                colorBgContainer: backgroundTertiary,
-                colorBorder: borderNormal,
-                borderColorDisabled: backgroundTertiary,
-                colorBgContainerDisabled: backgroundTertiary,
-              },
-              Divider: {
-                colorSplit: borderNormal,
-              },
-              Drawer: {
-                colorBgElevated: backgroundSecondary,
-                colorSplit: borderNormal,
-              },
-              Input: {
-                activeBorderColor: buttonSecondary,
-                activeShadow: buttonSecondary,
-                colorBgContainer: backgroundSecondary,
-                colorBorder: borderNormal,
-                hoverBorderColor: buttonSecondary,
-              },
-              InputNumber: {
-                activeBorderColor: buttonSecondary,
-                activeShadow: buttonSecondary,
-                colorBgContainer: backgroundSecondary,
-                colorBorder: borderNormal,
-                hoverBorderColor: buttonSecondary,
-              },
-              Layout: {
-                bodyBg: backgroundPrimary,
-              },
-              Message: {
-                contentBg: backgroundTertiary,
-              },
-              Modal: {
-                contentBg: backgroundSecondary,
-                headerBg: backgroundSecondary,
-              },
-              Popover: {
-                colorBgElevated: backgroundSecondary,
-              },
-              Tabs: {
-                colorBorderSecondary: borderNormal,
-              },
-              Tooltip: {
-                colorBgSpotlight: backgroundTertiary,
-              },
-            },
-            token: {
-              colorPrimary: buttonPrimary,
-              colorPrimaryHover: buttonPrimaryHover,
-              fontFamily: "inherit",
-            },
-          }}
-        >
-          <BaseContext>
-            <Routes />
-          </BaseContext>
-        </ConfigProvider>
-      </QueryClientProvider>
-    </WagmiProvider>
+    <I18nextProvider i18n={i18nInstance}>
+      <WagmiProvider config={wagmiConfig}>
+        <QueryClientProvider client={queryClient}>
+          <CoreProvider>
+            <StyledProvider>
+              <AntdProvider>
+                <BrowserRouter>
+                  <Routes>
+                    <Route
+                      path={routeTree.root.path}
+                      element={<DefaultLayout />}
+                    >
+                      <Route
+                        element={<Navigate to={routeTree.swap.path} replace />}
+                        index
+                      />
+                      <Route
+                        element={<SwapPage />}
+                        path={routeTree.swap.path}
+                      />
+                      <Route
+                        element={<ClaimPage />}
+                        path={routeTree.claim.path}
+                      />
+                    </Route>
+                    <Route
+                      path={routeTree.notFound.path}
+                      element={<NotFoundPage />}
+                    />
+                  </Routes>
+                </BrowserRouter>
+              </AntdProvider>
+            </StyledProvider>
+          </CoreProvider>
+        </QueryClientProvider>
+      </WagmiProvider>
+    </I18nextProvider>
   );
 };
-
-export default Component;
