@@ -599,7 +599,8 @@ export const ClaimPage = () => {
             (burn: { claimed: boolean }) => !burn.claimed
           );
           const totalClaimable = unclaimedBurns.reduce(
-            (sum: number, burn: { amount: string }) => sum + Number(burn.amount),
+            (sum: number, burn: { amount: string }) => 
+              sum + Number(formatEther(BigInt(burn.amount))),
             0
           );
           setState((prevState) => ({
