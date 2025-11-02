@@ -115,7 +115,6 @@ export const api = {
     const { data } = await fetchTalkApi.get<{ applied: boolean }>(
       `/whitelist?ecdsa=${ecdsa}`
     );
-    console.log("status:", data.applied);
     return data.applied;
   },
   challengeMessage: async (uid: string) => {
@@ -186,6 +185,21 @@ export const api = {
         };
       };
     }>(`/attest_burn?tx_id=${txId}&event_id=${eventId}`);
+    return data;
+  },
+  getBurns: async (address: string) => {
+    const { data } = await fetchTalkApi.get<{
+      success: boolean;
+      data: Array<{
+        baseTxId: string;
+        baseEventId: string;
+        ethTxId: string | null;
+        claimed: boolean;
+        amount: string;
+        recipient: string;
+        blockNumber: number;
+      }>;
+    }>(`/burns?address=${address}`);
     return data;
   },
 };
