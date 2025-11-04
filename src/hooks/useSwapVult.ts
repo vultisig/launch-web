@@ -15,10 +15,10 @@ import { useAccount, useWalletClient } from "wagmi";
 import { useCore } from "@/hooks/useCore";
 import { getGasSettings } from "@/storage/gasSettings";
 import { api } from "@/utils/api";
-import { launchListABI } from "@/utils/constants";
+import { launchListABI, TxStatus } from "@/utils/constants";
 import { contractAddress, defaultTokens } from "@/utils/constants";
 import { getBrowserProvider, getRPCProvider } from "@/utils/providers";
-import { TickerKey, TxStatus, UniswapTokenProps } from "@/utils/types";
+import { TickerKey, UniswapTokenProps } from "@/utils/types";
 
 export const useSwapVult = () => {
   const [state, setState] = useState({ isWhitelist: false });
@@ -333,10 +333,10 @@ export const useSwapVult = () => {
     const receipt = await provider.getTransactionReceipt(txHash);
 
     if (!receipt) {
-      return "pending";
+      return TxStatus.PENDING;
     }
 
-    return receipt.status === 1 ? "success" : "failed";
+    return receipt.status === 1 ? TxStatus.SUCCESS : TxStatus.FAILED;
   };
 
   const getTxStatuses = async (txHashes: string[]): Promise<TxStatus[]> => {
@@ -351,7 +351,11 @@ export const useSwapVult = () => {
     );
 
     return receipts.map((receipt) =>
-      receipt === null ? "pending" : receipt.status === 1 ? "success" : "failed"
+      receipt === null
+        ? TxStatus.PENDING
+        : receipt.status === 1
+        ? TxStatus.SUCCESS
+        : TxStatus.FAILED
     );
   };
 
@@ -475,13 +479,13 @@ export const useSwapVult = () => {
     try {
       const receipt = await provider.waitForTransaction(txHash);
       if (receipt) {
-        return receipt.status === 1 ? "success" : "failed";
+        return receipt.status === 1 ? TxStatus.SUCCESS : TxStatus.FAILED;
       }
     } catch (error) {
       console.error("Error waiting for transaction:", error);
     }
 
-    return "pending"; // If an error occurs or receipt is null, assume pending
+    return TxStatus.PENDING; // If an error occurs or receipt is null, assume pending
   };
 
   useEffect(() => {

@@ -9,7 +9,7 @@ import { TickerKey } from "@/utils/types";
 
 type TokenDropdownProps = {
   ticker: TickerKey;
-  onChange: (ticker: TickerKey) => void;
+  onChange?: (ticker: TickerKey) => void;
 };
 
 export const TokenDropdown: FC<TokenDropdownProps> = ({ ticker, onChange }) => {
@@ -28,7 +28,7 @@ export const TokenDropdown: FC<TokenDropdownProps> = ({ ticker, onChange }) => {
         />
       ),
       label: ticker,
-      onClick: () => onChange(ticker),
+      onClick: () => onChange?.(ticker),
     }));
 
   return defaultTokens[ticker]?.isAirdropToken ? (
@@ -58,18 +58,26 @@ export const TokenDropdown: FC<TokenDropdownProps> = ({ ticker, onChange }) => {
           alignItems: "center",
           backgroundColor: colors.bgTertiary.toHex(),
           borderRadius: "20px",
+          justifyContent: "space-between",
           cursor: "pointer",
           gap: "4px",
           padding: "8px",
         }}
       >
-        <Stack
-          as="img"
-          alt={ticker}
-          src={`/tokens/${ticker.toLowerCase()}.svg`}
-          $style={{ height: "24px", width: "24px" }}
-        />
-        <span className="ticker">{ticker}</span>
+        <HStack
+          $style={{
+            alignItems: "center",
+            gap: "4px",
+          }}
+        >
+          <Stack
+            as="img"
+            alt={ticker}
+            src={`/tokens/${ticker.toLowerCase()}.svg`}
+            $style={{ height: "24px", width: "24px" }}
+          />
+          <span className="ticker">{ticker}</span>
+        </HStack>
         <Stack as={ChevronDownIcon} $style={{ fontSize: "24px" }} />
       </HStack>
     </Dropdown>

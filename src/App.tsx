@@ -14,6 +14,7 @@ import { CoreProvider } from "@/providers/core";
 import { StyledProvider } from "@/providers/styled";
 import { routeTree } from "@/utils/routes";
 import { wagmiConfig } from "@/utils/wagmi";
+import { PoolPage } from "./pages/Pool";
 
 export const App = () => {
   const [queryClient] = useState(() => new QueryClient());
@@ -38,6 +39,10 @@ export const App = () => {
                       <Route
                         element={<SwapPage />}
                         path={routeTree.swap.path}
+                      />
+                      <Route
+                        element={<PoolPage />}
+                        path={routeTree.pool.path}
                       />
                       <Route
                         element={<ClaimPage />}

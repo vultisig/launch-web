@@ -1,10 +1,14 @@
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
-
+import { request } from "graphql-request";
 import { contractAddress } from "@/utils/constants";
 import { Currency } from "@/utils/currency";
 import { toCamelCase } from "@/utils/functions";
-import { SuggestedGasFeeProps, VultisigWalletProps } from "@/utils/types";
+import {
+  HistoricalPriceProps,
+  SuggestedGasFeeProps,
+  VultisigWalletProps,
+} from "@/utils/types";
 
 const fetch = axios.create({
   baseURL: import.meta.env.VITE_SERVER_ADDRESS,
@@ -65,6 +69,102 @@ export const api = {
         return result ? result / Math.pow(10, decimals) : 0;
       })
       .catch(() => 0);
+  },
+  historicalPriceByDay: async (
+    endpoint: string,
+    contract: string,
+    start: number,
+    end: number
+  ): Promise<HistoricalPriceProps[]> => {
+    const query = `{
+      tokenDayDatas(
+        orderBy: date
+        orderDirection: desc
+        where: {date_lte: ${start}, date_gte: ${end}, token_: {id: "${contract.toLowerCase()}"}}
+      ) { 
+        date
+        priceUSD
+      }
+    }`;
+    return await request<{
+      tokenDayDatas: { date: number; priceUSD: string }[];
+    }>(endpoint, query)
+      .then(({ tokenDayDatas }) =>
+        tokenDayDatas.map(({ date, priceUSD }) => ({
+          date: date * 1000,
+          price: parseFloat(priceUSD) || 0,
+        }))
+      )
+      .catch(() => []);
+  },
+  historicalPriceByHour: async (
+    endpoint: string,
+    contract: string,
+    start: number,
+    end: number
+  ): Promise<HistoricalPriceProps[]> => {
+    const query = `{
+    tokenHourDatas(
+      orderBy: periodStartUnix
+      orderDirection: desc
+      where: {periodStartUnix_lte: ${start}, periodStartUnix_gte: ${end}, token_: {id: "${contract.toLowerCase()}"}}
+    ) {
+      priceUSD
+      periodStartUnix
+    }
+  }`;
+    return await request<{
+      tokenHourDatas: { periodStartUnix: number; priceUSD: string }[];
+    }>(endpoint, query)
+      .then(({ tokenHourDatas }) =>
+        tokenHourDatas.map(({ periodStartUnix, priceUSD }) => ({
+          date: periodStartUnix * 1000,
+          price: parseFloat(priceUSD) || 0,
+        }))
+      )
+      .catch(() => []);
+  },
+  historicalPrice: async (
+    contract: string,
+    days: number
+  ): Promise<HistoricalPriceProps[]> => {
+    const endpoint = `https://gateway.thegraph.com/api/${
+      import.meta.env.VITE_GRAPH_API_KEY
+    }/subgraphs/id/5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV`;
+
+    const startEpochSec = Math.floor(Date.now() / 1000);
+    const endEpochSec = startEpochSec - 24 * days * 3600;
+
+    if (days > 7) {
+      return await api.historicalPriceByDay(
+        endpoint,
+        contract,
+        startEpochSec,
+        endEpochSec
+      );
+    } else {
+      let allData: HistoricalPriceProps[] = [];
+      let currentStart = startEpochSec;
+
+      while (currentStart > endEpochSec) {
+        const data = await api.historicalPriceByHour(
+          endpoint,
+          contract,
+          currentStart,
+          endEpochSec
+        );
+
+        if (!data.length) break;
+
+        allData = [...allData, ...data];
+
+        currentStart = data[data.length - 1].date / 3600000;
+
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      }
+
+      return allData;
+    }
   },
   suggestedFees: async () => {
     return fetch.get<SuggestedGasFeeProps>(

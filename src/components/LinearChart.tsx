@@ -18,8 +18,8 @@ type LinearChartProps = {
 
 export const LinearChart: FC<LinearChartProps> = ({
   data,
-  xAxisPlotBands = [],
-  yAxisPlotBands = [],
+  xAxisPlotBands,
+  yAxisPlotBands,
 }) => {
   const { t } = useTranslation();
   const colors = useTheme();
@@ -55,19 +55,27 @@ export const LinearChart: FC<LinearChartProps> = ({
       type: "datetime",
       lineColor: colors.bgTertiary.toHex(),
       tickColor: colors.bgTertiary.toHex(),
-      plotBands: xAxisPlotBands.map((plotBand) => ({
-        ...plotBand,
-        color: colors.success.toRgba(0.1),
-      })),
+      plotBands:
+        xAxisPlotBands && xAxisPlotBands.length > 0
+          ? xAxisPlotBands.map((plotBand) => ({
+              ...plotBand,
+              color: colors.success.toRgba(0.1),
+            }))
+          : undefined,
     },
     yAxis: {
       labels: { style: { color: colors.textPrimary.toHex() } },
       title: { text: undefined },
       gridLineColor: colors.bgTertiary.toHex(),
-      plotBands: yAxisPlotBands.map((plotBand) => ({
-        ...plotBand,
-        color: colors.success.toRgba(0.1),
-      })),
+      plotBands:
+        yAxisPlotBands && yAxisPlotBands.length > 0
+          ? yAxisPlotBands.map((plotBand) => ({
+              ...plotBand,
+              from: Number(plotBand.from),
+              to: Number(plotBand.to),
+              color: colors.success.toRgba(0.1),
+            }))
+          : undefined,
     },
   };
 

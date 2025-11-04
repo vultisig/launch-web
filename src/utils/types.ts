@@ -1,5 +1,6 @@
 import { Token } from "@uniswap/sdk-core";
 import * as CSS from "csstype";
+import { TxStatus } from "./constants";
 
 type GasFeeEstimate = {
   suggestedMaxPriorityFeePerGas: string;
@@ -42,12 +43,19 @@ export type SwapFormProps = {
   buyToken: TickerKey;
 };
 
+export type CreateLPTokensFormProps = {
+  amount0: number;
+  amount1: number;
+  token0: TickerKey;
+  token1: TickerKey;
+};
+
 export type TickerKey = "ETH" | "VULT" | "UNI" | "USDC" | "WETH";
 
 export type TokenProps = {
   balance: number;
   cmcId: number;
-  contractAddress: string;
+  contractAddress?: string;
   decimals: number;
   isAirdropToken: boolean;
   isNative: boolean;
@@ -72,8 +80,6 @@ export type ClaimTransactionProps = {
   isClaimed: boolean;
   eventId: number;
 };
-
-export type TxStatus = "failed" | "pending" | "success";
 
 export type VultisigWalletProps = {
   hexChainCode: string;

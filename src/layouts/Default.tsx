@@ -40,7 +40,7 @@ export const DefaultLayout = () => {
       title: t("swap"),
     },
     {
-      href: "#",
+      href: routeTree.pool.path,
       icon: DatabaseIcon,
       key: "pool",
       title: t("pool"),

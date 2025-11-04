@@ -138,7 +138,7 @@ export const CoreProvider: FC<{ children: ReactNode }> = ({ children }) => {
               .balance(
                 address,
                 token.decimals,
-                token.contractAddress,
+                token.contractAddress ?? "",
                 token.isNative
               )
               .then((balance) => ({ balance, ticker: token.ticker }))
