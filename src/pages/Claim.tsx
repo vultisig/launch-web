@@ -29,6 +29,7 @@ import {
   ETHClaimAbi,
   IOUVultAbi,
   modalHash,
+  TxStatus,
 } from "@/utils/constants";
 import { vultisigConnect, vultisigPersonalSign } from "@/utils/extension";
 import { toAmountFormat, toNumberFormat } from "@/utils/functions";
@@ -320,7 +321,7 @@ export const ClaimPage = () => {
           amount: burnAmount,
           date: Date.now(),
           hash: mergeHash,
-          status: "success",
+          status: TxStatus.SUCCESS,
           isClaimed: false,
           eventId: mergeReceipt.logs.length - 1,
         });

@@ -76,7 +76,7 @@ export const HStack = styled.div<StackProps>`
   ${({ $style, ...props }) =>
     stackPropertiesToString({
       ...props,
-      $style: { ...($style || {}), display: "flex", flexDirection: "row" },
+      $style: { display: "flex", flexDirection: "row", ...($style || {}) },
     })}
 `;
 

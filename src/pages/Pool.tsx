@@ -1,69 +1,354 @@
-import { Dropdown, Form, FormProps, Input, Layout, MenuProps } from "antd";
-import { useEffect, useState } from "react";
+import { Form, Input, Layout, message } from "antd";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "styled-components";
 import { useAccount } from "wagmi";
 
 import { LinearChart } from "@/components/LinearChart";
 import { useCore } from "@/hooks/useCore";
-import { ChevronDownIcon } from "@/icons/ChevronDownIcon";
+
 import { Button } from "@/toolkits/Button";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
-import { defaultTokens } from "@/utils/constants";
+import {
+  contractAddress,
+  defaultTokens,
+  feeTierOptions,
+  TxStatus,
+  uniswapTokens,
+} from "@/utils/constants";
 import { toAmountFormat, toValueFormat } from "@/utils/functions";
 import { defaultPeriod, Period, periodNames, periods } from "@/utils/period";
-import { SwapFormProps } from "@/utils/types";
+import { CreateLPTokensFormProps, TickerKey } from "@/utils/types";
+import { useAddLiquidity } from "@/hooks/useAddLiquidity";
+import IUniswapV3PoolABI from "@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json";
+import { Contract } from "ethers";
+import { getRPCProvider } from "@/utils/providers";
+import { Spin } from "@/toolkits/Spin";
+import { useChartData } from "@/hooks/useChartData";
+import { computePoolAddress, FeeAmount } from "@uniswap/v3-sdk";
+
+import { debounce } from "lodash";
 
 const { Content } = Layout;
 
 type Range = "full" | "custom";
-type CustomSwapFormProps = {
+type CreateLPPositionProps = {
   maxPrice: number;
   minPrice: number;
-} & SwapFormProps;
+} & CreateLPTokensFormProps;
+
+type StateProps = {
+  createPositionButtonTitle: string;
+  createPositionButtonLoading: boolean;
+  feeTier: FeeAmount;
+  token0: TickerKey;
+  token1: TickerKey;
+  token0Price: number;
+};
 
 export const PoolPage = () => {
   const { t } = useTranslation();
   const [range, setRange] = useState<Range>("full");
   const [period, setPeriod] = useState<Period>(defaultPeriod);
+  const [state, setState] = useState<StateProps>({
+    createPositionButtonTitle: t("addLiquidity"),
+    createPositionButtonLoading: false,
+    feeTier: FeeAmount.HIGH,
+    token0: defaultTokens.VULT.ticker,
+    token1: defaultTokens.USDC.ticker,
+    token0Price: 0,
+  });
+
+  const {
+    createPositionButtonTitle,
+    createPositionButtonLoading,
+    token0,
+    token1,
+    token0Price,
+  } = state;
+  const { data, loading } = useChartData(token0, period);
   const { currency, setCurrentPage, tokens } = useCore();
   const { isConnected } = useAccount();
-  const [form] = Form.useForm<CustomSwapFormProps>();
+  const [form] = Form.useForm<CreateLPPositionProps>();
   const colors = useTheme();
-
-  const items: MenuProps["items"] = Object.values(defaultTokens).map(
-    ({ ticker }) => ({
-      key: ticker,
-      icon: (
-        <Stack
-          as="img"
-          alt={ticker}
-          src={`/tokens/${ticker.toLowerCase()}.svg`}
-          $style={{ height: "20px", width: "20px" }}
-        />
-      ),
-      label: ticker,
-    })
-  );
-
-  const onFinishSuccess: FormProps<CustomSwapFormProps>["onFinish"] = (
-    values
-  ) => {
-    console.log("values", values);
-  };
 
   useEffect(() => setCurrentPage("pool"), []);
 
+  const {
+    prepareMint,
+    getApprovalRequirements,
+    approveAll,
+    executeMint,
+    getTxStatuses,
+  } = useAddLiquidity();
+
+  const pool = useMemo(() => {
+    const poolAddress = computePoolAddress({
+      factoryAddress: contractAddress.poolFactory,
+      tokenA: token0 === "ETH" ? uniswapTokens.WETH : uniswapTokens[token0],
+      tokenB: token1 === "ETH" ? uniswapTokens.WETH : uniswapTokens[token1],
+      fee: FeeAmount.HIGH,
+    });
+    return new Contract(poolAddress, IUniswapV3PoolABI.abi, getRPCProvider());
+  }, [token0, token1]);
+
+  const contractToken0 = useMemo(() => {
+    const fetchToken0 = async () => {
+      const token0Addr = await pool.token0();
+      return Object.values(defaultTokens).find(
+        (token) =>
+          token.contractAddress?.toLowerCase() === token0Addr.toLowerCase()
+      )!;
+    };
+    return fetchToken0();
+  }, [pool]);
+
+  const contractToken1 = useMemo(() => {
+    const fetchToken1 = async () => {
+      const token1Addr = await pool.token1();
+      return Object.values(defaultTokens).find(
+        (token) =>
+          token.contractAddress?.toLowerCase() === token1Addr.toLowerCase()
+      )!;
+    };
+    return fetchToken1();
+  }, [pool]);
+
+  const poolPrice = useMemo(async () => {
+    const decimalsToken0 = (await contractToken0).decimals;
+    const decimalsToken1 = (await contractToken1).decimals;
+    const decimalAdjustment = 10 ** (decimalsToken0 - decimalsToken1);
+    const { sqrtPriceX96 } = await pool.slot0();
+    const price = (Number(sqrtPriceX96) / 2 ** 96) ** 2 * decimalAdjustment;
+    const token0Price =
+      token0 === (await contractToken0).ticker
+        ? price.toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 5,
+          })
+        : (1 / price).toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 5,
+          });
+
+    setState((prevState) => ({
+      ...prevState,
+      token0Price: parseFloat(token0Price),
+    }));
+    return price;
+  }, [pool, contractToken0, contractToken1]);
+
+  const updateTokensRatio = async ({
+    amount0,
+    amount1,
+  }: {
+    amount0?: number;
+    amount1?: number;
+  }) => {
+    const price = await poolPrice;
+    if (!amount0 && !amount1) {
+      form.setFieldsValue({
+        amount0: undefined,
+        amount1: undefined,
+      });
+      return;
+    }
+
+    if (amount0) {
+      form.setFieldsValue({
+        amount1: Number(
+          Number(
+            token0 === (await contractToken0).ticker
+              ? amount0 * price
+              : amount0 / price
+          ).toFixed(5)
+        ),
+      });
+    } else if (amount1) {
+      form.setFieldsValue({
+        amount0: Number(
+          Number(
+            token1 === (await contractToken1).ticker
+              ? amount1 / price
+              : amount1 * price
+          ).toFixed(5)
+        ),
+      });
+    }
+  };
+
+  const handleCreatePosition = async () => {
+    const { amount0, token0, amount1, token1 } = form.getFieldsValue();
+    console.log({ amount0, token0, amount1, token1 });
+
+    if (amount0 && amount1 && amount0 > 0 && amount1 > 0) {
+      setState({ ...state, createPositionButtonLoading: true });
+      const mintPayload = await prepareMint(
+        Number(amount0).toFixed(uniswapTokens.UNI.decimals).toString(),
+        Number(amount1).toFixed(uniswapTokens.USDC.decimals).toString(),
+        defaultTokens.UNI,
+        defaultTokens.USDC
+      );
+      console.log("mintPayload", mintPayload);
+      const approvalRequirements = await getApprovalRequirements(mintPayload);
+      if (approvalRequirements.length > 0) {
+        setState({
+          ...state,
+          createPositionButtonLoading: true,
+          createPositionButtonTitle: "Waiting for token approvals...",
+        });
+        const approvalHashes = await approveAll(
+          approvalRequirements,
+          true
+        ).catch((error) => {
+          console.error("Error approving tokens:", error);
+          setState({ ...state, createPositionButtonLoading: false });
+          return;
+        });
+        if (approvalHashes) {
+          await waitForTxConfirmation(approvalHashes);
+        }
+      }
+      try {
+        // check if all approval requirements are met
+        if (
+          (await getApprovalRequirements(mintPayload)).every(
+            (requirement) => requirement.needed === false
+          )
+        ) {
+          const txHash = await executeMint(mintPayload);
+
+          if (txHash) {
+            console.log("txHash mint success", txHash);
+
+            await waitForTxConfirmation([txHash]);
+            setState({
+              ...state,
+              createPositionButtonLoading: false,
+              createPositionButtonTitle: t("addLiquidity"),
+            });
+            message.success(t("transactionSuccess"));
+          } else {
+            setState({
+              ...state,
+              createPositionButtonLoading: false,
+              createPositionButtonTitle: t("addLiquidity"),
+            });
+            message.error(t("transactionFailed"));
+          }
+        } else {
+          message.error("Approval requirements not met");
+        }
+      } catch {
+        setState({
+          ...state,
+          createPositionButtonLoading: false,
+          createPositionButtonTitle: t("addLiquidity"),
+        });
+        message.error(t("transactionFailed"));
+      }
+    }
+  };
+
+  const waitForTxConfirmation = async (
+    txHashes: string[],
+    startedAt = Date.now(),
+    retryCount = 0
+  ) => {
+    const MAX_RETRIES = 180;
+    const POLL_INTERVAL_MS = 1000;
+    const TIMEOUT_MS = 180_000;
+
+    if (retryCount >= MAX_RETRIES || Date.now() - startedAt >= TIMEOUT_MS) {
+      setState((prevState) => ({
+        ...prevState,
+        approving: false,
+        needsApproval: true,
+      }));
+      message.error(t("transactionTimeout"));
+      return;
+    }
+
+    try {
+      const statuses = await getTxStatuses(txHashes);
+
+      // Check if all transactions are successful
+      const allSuccessful = statuses.every(
+        (status) => status === TxStatus.SUCCESS
+      );
+      const anyFailed = statuses.some((status) => status === TxStatus.FAILED);
+      const anyPending = statuses.some((status) => status === TxStatus.PENDING);
+
+      if (allSuccessful) {
+        setState((prevState) => ({
+          ...prevState,
+          needsApproval: false,
+          createPositionButtonLoading: true,
+          createPositionButtonTitle: t("executingAddLiquidity"),
+        }));
+
+        return;
+      }
+
+      if (anyFailed) {
+        setState((prevState) => ({
+          ...prevState,
+          needsApproval: true,
+          createPositionButtonLoading: false,
+          createPositionButtonTitle: t("addLiquidity"),
+        }));
+
+        return;
+      }
+
+      if (anyPending) {
+        setState((prevState) => ({
+          ...prevState,
+          createPositionButtonLoading: true,
+        }));
+        setTimeout(() => {
+          waitForTxConfirmation(txHashes, startedAt, retryCount + 1);
+        }, POLL_INTERVAL_MS);
+        return;
+      }
+
+      const backoffDelay = Math.min(
+        POLL_INTERVAL_MS * Math.pow(2, Math.floor(retryCount / 10)),
+        10000
+      );
+      setTimeout(() => {
+        waitForTxConfirmation(txHashes, startedAt, retryCount + 1);
+      }, backoffDelay);
+    } catch (error) {
+      console.error("Error checking transaction status:", error);
+
+      const backoffDelay = Math.min(
+        POLL_INTERVAL_MS * Math.pow(2, Math.floor(retryCount / 5)),
+        10000
+      );
+      setTimeout(() => {
+        waitForTxConfirmation(txHashes, startedAt, retryCount + 1);
+      }, backoffDelay);
+    }
+  };
+
+  const handleSelectFeeTier = (feeTier: FeeAmount) => {
+    setState((prevState) => ({ ...prevState, feeTier }));
+  };
+
+  const handleChangeFormValues = debounce(
+    ({ amount0, amount1, token1 }: CreateLPPositionProps) => {
+      if (token1) {
+        setState((prevState) => ({ ...prevState, token1 }));
+      } else {
+        updateTokensRatio({ amount0, amount1 });
+      }
+    },
+    100
+  );
+
   return (
-    <VStack
-      as={Content}
-      $style={{
-        gap: "24px",
-        maxWidth: "1600px",
-        padding: "24px 16px",
-        width: "100%",
-      }}
-    >
+    <VStack as={Content} $style={{ gap: "24px", maxWidth: "1600px" }}>
       <VStack $style={{ gap: "16px" }}>
         <Stack
           as="span"
@@ -73,7 +358,15 @@ export const PoolPage = () => {
           New Position
         </Stack>
       </VStack>
-      <Form autoComplete="off" form={form} onFinish={onFinishSuccess}>
+      <Form
+        autoComplete="off"
+        form={form}
+        initialValues={{
+          token0: defaultTokens.VULT.ticker,
+          token1: defaultTokens.USDC.ticker,
+        }}
+        onValuesChange={handleChangeFormValues}
+      >
         <Stack
           $style={{ display: "flex", flexDirection: "column", gap: "16px" }}
           $media={{ xl: { $style: { flexDirection: "row" } } }}
@@ -107,82 +400,55 @@ export const PoolPage = () => {
                   padding: "16px 12px",
                 }}
               >
-                <Dropdown menu={{ items }}>
-                  <HStack
+                <HStack
+                  $style={{
+                    alignItems: "center",
+                    gap: "8px",
+                    backgroundColor: colors.bgTertiary.toHex(),
+                    padding: "8px 12px 8px 8px",
+                    borderRadius: "20px",
+                    width: "100%",
+                  }}
+                >
+                  <Stack
+                    as="img"
+                    alt={token0}
+                    src={`/tokens/${token0.toLowerCase()}.svg`}
                     $style={{
-                      alignItems: "center",
-                      backgroundColor: colors.bgTertiary.toHex(),
-                      borderRadius: "20px",
-                      cursor: "pointer",
-                      gap: "8px",
-                      height: "40px",
-                      padding: "0 12px",
-                      width: "100%",
+                      height: "24px",
+                      width: "24px",
                     }}
+                  />
+                  <Stack
+                    as="span"
+                    $style={{ fontSize: "14px", fontWeight: "500" }}
                   >
-                    <Stack
-                      as="img"
-                      alt={defaultTokens.UNI.ticker}
-                      src={`/tokens/${defaultTokens.UNI.ticker.toLowerCase()}.svg`}
-                      $style={{ height: "24px", width: "24px" }}
-                    />
-                    <Stack
-                      as="span"
-                      $style={{
-                        flexGrow: "1",
-                        fontSize: "16px",
-                        fontWeight: "600",
-                      }}
-                    >
-                      {defaultTokens.UNI.ticker}
-                    </Stack>
-                    <Stack
-                      as={ChevronDownIcon}
-                      $style={{
-                        color: colors.textTertiary.toHex(),
-                        fontSize: "24px",
-                      }}
-                    />
-                  </HStack>
-                </Dropdown>
-                <Dropdown menu={{ items }}>
-                  <HStack
-                    $style={{
-                      alignItems: "center",
-                      backgroundColor: colors.bgTertiary.toHex(),
-                      borderRadius: "20px",
-                      cursor: "pointer",
-                      gap: "8px",
-                      height: "40px",
-                      padding: "0 12px",
-                      width: "100%",
-                    }}
+                    {token0}
+                  </Stack>
+                </HStack>
+                <HStack
+                  $style={{
+                    alignItems: "center",
+                    gap: "8px",
+                    backgroundColor: colors.bgTertiary.toHex(),
+                    padding: "8px 12px 8px 8px",
+                    borderRadius: "20px",
+                    width: "100%",
+                  }}
+                >
+                  <Stack
+                    as="img"
+                    alt={token1}
+                    src={`/tokens/${token1.toLowerCase()}.svg`}
+                    $style={{ height: "24px", width: "24px" }}
+                  />
+                  <Stack
+                    as="span"
+                    $style={{ fontSize: "14px", fontWeight: "500" }}
                   >
-                    <Stack
-                      as="img"
-                      alt={defaultTokens.USDC.ticker}
-                      src={`/tokens/${defaultTokens.USDC.ticker.toLowerCase()}.svg`}
-                      $style={{ height: "24px", width: "24px" }}
-                    />
-                    <Stack
-                      as="span"
-                      $style={{
-                        flexGrow: "1",
-                        fontSize: "16px",
-                        fontWeight: "600",
-                      }}
-                    >
-                      {defaultTokens.USDC.ticker}
-                    </Stack>
-                    <Stack
-                      as={ChevronDownIcon}
-                      $style={{
-                        color: colors.textTertiary.toHex(),
-                        fontSize: "24px",
-                      }}
-                    />
-                  </HStack>
-                </Dropdown>
+                    {token1}
+                  </Stack>
+                </HStack>
               </HStack>
               <VStack $style={{ gap: "12px" }}>
                 <Stack
@@ -209,16 +475,19 @@ export const PoolPage = () => {
                 </Stack>
               </VStack>
               <HStack $style={{ flexWrap: "nowrap", gap: "12px" }}>
-                {[0.01, 0.03, 0.5, 1].map((value, index) => (
+                {feeTierOptions.map(({ value, label, description }, index) => (
                   <VStack
                     key={index}
+                    onClick={() => handleSelectFeeTier(value)}
                     $style={{
-                      backgroundColor: !index
-                        ? colors.bgTertiary.toHex()
-                        : colors.bgSecondary.toHex(),
-                      borderColor: !index
-                        ? colors.accentFour.toHex()
-                        : colors.borderNormal.toHex(),
+                      backgroundColor:
+                        value === state.feeTier
+                          ? colors.bgTertiary.toHex()
+                          : colors.bgSecondary.toHex(),
+                      borderColor:
+                        value === state.feeTier
+                          ? colors.accentFour.toHex()
+                          : colors.borderNormal.toHex(),
                       borderStyle: "solid",
                       borderWidth: "1px",
                       borderRadius: "12px",
@@ -239,17 +508,18 @@ export const PoolPage = () => {
                         lineHeight: "20px",
                       }}
                     >
-                      {`${value}%`}
+                      {`${label}`}
                     </Stack>
                     <Stack
                       as="span"
                       $style={{
-                        fontSize: "14px",
+                        fontSize: "12px",
                         fontWeight: "500",
                         lineHeight: "18px",
                       }}
                     >
-                      $3.26 TVL0% select
+                      {description}
+                      {/* $3.26 TVL 0% select */}
                     </Stack>
                   </VStack>
                 ))}
@@ -272,7 +542,7 @@ export const PoolPage = () => {
                   lineHeight: "20px",
                 }}
               >
-                Current price: 1,997.9 {defaultTokens.UNI.ticker} ($1,998.03)
+                Current price: {token0Price} {token1} (${token0Price})
               </Stack>
               <HStack
                 $style={{
@@ -306,12 +576,16 @@ export const PoolPage = () => {
                       backgroundColor: colors.bgTertiary.toHex(),
                     }}
                   >
-                    {periodNames[value]}
+                    {value === loading ? (
+                      <Spin size="small" />
+                    ) : (
+                      periodNames[value]
+                    )}
                   </VStack>
                 ))}
               </HStack>
               <Stack $style={{ width: "100%" }}>
-                <LinearChart data={[]} />
+                <LinearChart data={loading ? [] : data} />
               </Stack>
             </VStack>
           </VStack>
@@ -365,11 +639,11 @@ export const PoolPage = () => {
                   Full range
                 </VStack>
                 <VStack
-                  onClick={() => setRange("custom")}
+                  // onClick={() => setRange("custom")}
                   $style={{
                     alignItems: "center",
                     borderRadius: "22px",
-                    cursor: "pointer",
+                    cursor: "not-allowed",
                     fontSize: "16px",
                     height: "42px",
                     justifyContent: "center",
@@ -410,7 +684,7 @@ export const PoolPage = () => {
                   as="span"
                   $style={{ fontSize: "20px", fontWeight: "500" }}
                 >
-                  {`Current price: 1,997.9 ${defaultTokens.UNI.ticker} per ${defaultTokens.USDC.ticker}`}
+                  {`Current price: ${token0Price} ${token0} per ${token1}`}
                 </Stack>
                 <HStack
                   $style={{
@@ -455,7 +729,7 @@ export const PoolPage = () => {
                 </HStack>
               </HStack>
               <Stack $style={{ width: "100%" }}>
-                <Form.Item<CustomSwapFormProps>
+                <Form.Item<CreateLPPositionProps>
                   shouldUpdate={(prevValues, currentValues) =>
                     prevValues.maxPrice !== currentValues.maxPrice ||
                     prevValues.minPrice !== currentValues.minPrice
@@ -467,7 +741,7 @@ export const PoolPage = () => {
 
                     return (
                       <LinearChart
-                        data={[]}
+                        data={loading ? [] : data}
                         yAxisPlotBands={[
                           { from: Number(minPrice), to: Number(maxPrice) },
                         ]}
@@ -506,9 +780,10 @@ export const PoolPage = () => {
                   >
                     Min price
                   </Stack>
-                  <Form.Item<CustomSwapFormProps> name="minPrice" noStyle>
+                  <Form.Item<CreateLPPositionProps> name="minPrice" noStyle>
                     <Stack
                       as={Input}
+                      disabled={range === "full"}
                       placeholder="0"
                       $style={{
                         backgroundColor: "transparent !important",
@@ -530,7 +805,7 @@ export const PoolPage = () => {
                       lineHeight: "16px",
                     }}
                   >
-                    {`${defaultTokens.UNI.ticker} per ${defaultTokens.USDC.ticker}`}
+                    {`${token0} per ${token1}`}
                   </Stack>
                 </VStack>
                 <VStack
@@ -552,10 +827,11 @@ export const PoolPage = () => {
                   >
                     Max price
                   </Stack>
-                  <Form.Item<CustomSwapFormProps> name="maxPrice" noStyle>
+                  <Form.Item<CreateLPPositionProps> name="maxPrice" noStyle>
                     <Stack
+                      disabled={range === "full"}
                       as={Input}
-                      placeholder="0"
+                      placeholder={range === "full" ? "∞" : "0"}
                       $style={{
                         backgroundColor: "transparent !important",
                         border: "none",
@@ -576,7 +852,7 @@ export const PoolPage = () => {
                       lineHeight: "16px",
                     }}
                   >
-                    {`${defaultTokens.UNI.ticker} per ${defaultTokens.USDC.ticker}`}
+                    {`${token0} per ${token1}`}
                   </Stack>
                 </VStack>
               </HStack>
@@ -629,10 +905,7 @@ export const PoolPage = () => {
                       justifyContent: "space-between",
                     }}
                   >
-                    <Form.Item<CustomSwapFormProps>
-                      name="allocateAmount"
-                      noStyle
-                    >
+                    <Form.Item<CreateLPPositionProps> name="amount0" noStyle>
                       <Stack
                         as={Input}
                         placeholder="0"
@@ -650,15 +923,15 @@ export const PoolPage = () => {
                     <HStack $style={{ alignItems: "center", gap: "8px" }}>
                       <Stack
                         as="img"
-                        alt={defaultTokens.UNI.ticker}
-                        src={`/tokens/${defaultTokens.UNI.ticker.toLowerCase()}.svg`}
+                        alt={token0}
+                        src={`/tokens/${token0.toLowerCase()}.svg`}
                         $style={{ height: "24px", width: "24px" }}
                       />
                       <Stack
                         as="span"
                         $style={{ fontSize: "14px", fontWeight: "500" }}
                       >
-                        {defaultTokens.UNI.ticker}
+                        {token0}
                       </Stack>
                     </HStack>
                   </HStack>
@@ -688,7 +961,7 @@ export const PoolPage = () => {
                           }}
                         >
                           {`${t("amount")}: ${toAmountFormat(
-                            tokens[defaultTokens.UNI.ticker].balance
+                            tokens[token0].balance
                           )}`}
                         </Stack>
                         <Stack
@@ -730,7 +1003,7 @@ export const PoolPage = () => {
                       justifyContent: "space-between",
                     }}
                   >
-                    <Form.Item<CustomSwapFormProps> name="buyAmount" noStyle>
+                    <Form.Item<CreateLPPositionProps> name="amount1" noStyle>
                       <Stack
                         as={Input}
                         placeholder="0"
@@ -748,15 +1021,15 @@ export const PoolPage = () => {
                     <HStack $style={{ alignItems: "center", gap: "8px" }}>
                       <Stack
                         as="img"
-                        alt={defaultTokens.USDC.ticker}
-                        src={`/tokens/${defaultTokens.USDC.ticker.toLowerCase()}.svg`}
+                        alt={token1}
+                        src={`/tokens/${token1.toLowerCase()}.svg`}
                         $style={{ height: "24px", width: "24px" }}
                       />
                       <Stack
                         as="span"
                         $style={{ fontSize: "14px", fontWeight: "500" }}
                       >
-                        {defaultTokens.USDC.ticker}
+                        {token1}
                       </Stack>
                     </HStack>
                   </HStack>
@@ -786,7 +1059,7 @@ export const PoolPage = () => {
                           }}
                         >
                           {`${t("amount")}: ${toAmountFormat(
-                            tokens[defaultTokens.USDC.ticker].balance
+                            tokens[token1].balance
                           )}`}
                         </Stack>
                         <Stack
@@ -806,9 +1079,12 @@ export const PoolPage = () => {
               </HStack>
               <Stack
                 as={Button}
+                loading={createPositionButtonLoading}
+                disabled={createPositionButtonLoading}
                 $style={{ fontSize: "16px", fontWeight: "600 !important" }}
+                onClick={handleCreatePosition}
               >
-                Add Liquidity
+                {createPositionButtonTitle}
               </Stack>
             </VStack>
           </VStack>

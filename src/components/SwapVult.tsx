@@ -16,7 +16,7 @@ import { SettingsIcon } from "@/icons/SettingsIcon";
 import { Button } from "@/toolkits/Button";
 import { Spin } from "@/toolkits/Spin";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
-import { modalHash, uniswapTokens } from "@/utils/constants";
+import { modalHash, TxStatus, uniswapTokens } from "@/utils/constants";
 import {
   toAmountFormat,
   toNumberFormat,
@@ -121,8 +121,8 @@ export const SwapVult = () => {
   const handleSwap = () => {
     if (address && !approving && !swapping) {
       const values = form.getFieldsValue();
-      const tokenIn = uniswapTokens[values.allocateToken];
-      const tokenOut = uniswapTokens[values.buyToken];
+      const tokenIn = values.allocateToken === "ETH" ? uniswapTokens.WETH : uniswapTokens[values.allocateToken];
+      const tokenOut = values.buyToken === "ETH" ? uniswapTokens.WETH : uniswapTokens[values.buyToken];
 
       if (needsApproval) {
         setState((prevState) => ({ ...prevState, approving: true }));
@@ -154,7 +154,7 @@ export const SwapVult = () => {
                   ...values,
                   date: date.getTime(),
                   hash: txHash,
-                  status: "pending",
+                  status: TxStatus.PENDING,
                 },
               ]);
             }
@@ -231,8 +231,8 @@ export const SwapVult = () => {
     amountIn: number,
     reverse: boolean
   ) => {
-    const tokenA = uniswapTokens[tickerA];
-    const tokenB = uniswapTokens[tickerB];
+    const tokenA = tickerA === "ETH" ? uniswapTokens.WETH : uniswapTokens[tickerA];
+    const tokenB = tickerB === "ETH" ? uniswapTokens.WETH : uniswapTokens[tickerB];
 
     setState((prevState) => ({ ...prevState, loading: true }));
 
