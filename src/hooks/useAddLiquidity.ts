@@ -1,7 +1,8 @@
-import { FeeAmount } from "@uniswap/v3-sdk";
+import { FeeAmount, TICK_SPACINGS } from "@uniswap/v3-sdk";
+import { Token } from "@uniswap/sdk-core";
 import { Contract, parseUnits } from "ethers";
 import { encodeFunctionData, erc20Abi, maxUint256 } from "viem";
-import { useAccount, useWalletClient } from "wagmi";
+import { useAccount, useSwitchChain, useWalletClient } from "wagmi";
 
 import { getGasSettings } from "@/storage/gasSettings";
 import {
@@ -13,6 +14,7 @@ import { getBrowserProvider, getRPCProvider } from "@/utils/providers";
 import { TokenProps } from "@/utils/types";
 import { waitForTransactionReceipt } from "wagmi/actions";
 import { wagmiConfig } from "@/utils/wagmi";
+import { mainnet } from "viem/chains";
 
 type MintParams = {
   token0: `0x${string}`;
@@ -64,19 +66,107 @@ const fullRangeTicks = (fee: number) => {
   return { tickLower, tickUpper, tickSpacing: spacing };
 };
 
+/**
+ * Convert price to tick, aligned to tick spacing
+ * Price is in terms of token0/token1 (e.g., VULT per USDC)
+ */
+const priceToTick = (
+  price: number,
+  fee: number,
+  token0: Token,
+  token1: Token,
+  swapped: boolean
+): number => {
+  const spacing = TICK_SPACINGS[fee as keyof typeof TICK_SPACINGS];
+  if (!spacing) throw new Error(`Unsupported fee tier: ${fee}`);
+
+  // Price is in terms of token0/token1
+  // If tokens were swapped during sorting, we need to invert the price
+  const actualPrice = swapped ? 1 / price : price;
+
+  // Calculate tick from price
+  // In Uniswap V3: price = 1.0001^tick
+  // So: tick = log(price) / log(1.0001)
+  // We need to account for decimal differences between tokens
+  const decimalAdjustment = Math.pow(10, token0.decimals - token1.decimals);
+  const adjustedPrice = actualPrice * decimalAdjustment;
+
+  // Calculate tick: tick = floor(log(price) / log(1.0001))
+  const tick = Math.floor(Math.log(adjustedPrice) / Math.log(1.0001));
+
+  // Align to tick spacing (round down for lower, round up for upper)
+  const alignedTick = Math.floor(tick / spacing) * spacing;
+
+  return alignedTick;
+};
+
+/**
+ * Calculate ticks from price range
+ * Note: When tokens are swapped, prices invert, so min/max must be swapped
+ */
+const calculateTicksFromPriceRange = (
+  minPrice: number | undefined,
+  maxPrice: number | undefined,
+  fee: number,
+  token0: Token,
+  token1: Token,
+  swapped: boolean
+): { tickLower: number; tickUpper: number } => {
+  if (minPrice === undefined || maxPrice === undefined) {
+    return fullRangeTicks(fee);
+  }
+
+  const spacing = TICK_SPACINGS[fee as keyof typeof TICK_SPACINGS];
+  if (!spacing) throw new Error(`Unsupported fee tier: ${fee}`);
+
+  // When tokens are swapped, prices are inverted
+  // So if minPrice < maxPrice in original terms, after inversion:
+  // 1/maxPrice < 1/minPrice, meaning the order is reversed
+  // Therefore, we need to swap min and max when calculating ticks if swapped
+  const priceForLowerTick = swapped ? maxPrice : minPrice;
+  const priceForUpperTick = swapped ? minPrice : maxPrice;
+
+  const tickLower = priceToTick(
+    priceForLowerTick,
+    fee,
+    token0,
+    token1,
+    swapped
+  );
+  const tickUpper = priceToTick(
+    priceForUpperTick,
+    fee,
+    token0,
+    token1,
+    swapped
+  );
+
+  // Ensure tickLower < tickUpper
+  if (tickLower >= tickUpper) {
+    throw new Error("Min price must be less than max price");
+  }
+
+  return { tickLower, tickUpper };
+};
+
 export const useAddLiquidity = () => {
-  const { address } = useAccount();
+  const { address, chainId } = useAccount();
   const { data: walletClient } = useWalletClient();
   const gasSetting = getGasSettings();
   const rpcClient = getRPCProvider();
-
+  const { switchChainAsync } = useSwitchChain();
   const NFPM = contractAddress.nonfungiblePositionManager as `0x${string}`;
 
   const prepareMint = async (
     rawAmountA: string,
     rawAmountB: string,
     tokenA: TokenProps,
-    tokenB: TokenProps
+    tokenB: TokenProps,
+    options?: {
+      minPrice?: number;
+      maxPrice?: number;
+      fee?: FeeAmount;
+    }
   ): Promise<PreparedMint> => {
     if (!address || !walletClient) throw new Error("wallet not ready");
 
@@ -100,16 +190,48 @@ export const useAddLiquidity = () => {
     const amount0Min = (amount0Desired * (bps - slippageBps)) / bps;
     const amount1Min = (amount1Desired * (bps - slippageBps)) / bps;
 
-    const { tickLower, tickUpper, tickSpacing } = fullRangeTicks(
-      FeeAmount.MEDIUM
+    const fee = options?.fee ?? FeeAmount.HIGH;
+
+    // Create Token objects for price-to-tick conversion
+    const token0Uniswap = new Token(
+      1, // ChainId.MAINNET
+      token0Addr,
+      swapped ? tokenB.decimals : tokenA.decimals,
+      swapped ? tokenB.ticker : tokenA.ticker,
+      swapped ? tokenB.name : tokenA.name
     );
-    console.log("tickLower", tickLower);
-    console.log("tickUpper", tickUpper);
-    console.log("tickSpacing", tickSpacing);
+    const token1Uniswap = new Token(
+      1, // ChainId.MAINNET
+      token1Addr,
+      swapped ? tokenA.decimals : tokenB.decimals,
+      swapped ? tokenA.ticker : tokenB.ticker,
+      swapped ? tokenA.name : tokenB.name
+    );
+
+    // Calculate ticks based on price range or use full range
+    let tickLower: number;
+    let tickUpper: number;
+    if (options?.minPrice !== undefined && options?.maxPrice !== undefined) {
+      const ticks = calculateTicksFromPriceRange(
+        options.minPrice,
+        options.maxPrice,
+        fee,
+        token0Uniswap,
+        token1Uniswap,
+        swapped
+      );
+      tickLower = ticks.tickLower;
+      tickUpper = ticks.tickUpper;
+    } else {
+      const fullRange = fullRangeTicks(fee);
+      tickLower = fullRange.tickLower;
+      tickUpper = fullRange.tickUpper;
+    }
+
     const params: MintParams = {
       token0: token0Addr,
       token1: token1Addr,
-      fee: FeeAmount.MEDIUM,
+      fee,
       tickLower,
       tickUpper,
       amount0Desired,
@@ -177,7 +299,11 @@ export const useAddLiquidity = () => {
     approveExact = false
   ): Promise<`0x${string}`> {
     if (!walletClient) throw new Error("wallet not ready");
+    if (chainId !== mainnet.id) {
+      await switchChainAsync({ chainId: mainnet.id });
+    }
     const hash = await walletClient.writeContract({
+      chain: mainnet,
       abi: erc20Abi,
       address: token,
       functionName: "approve",
@@ -207,8 +333,11 @@ export const useAddLiquidity = () => {
       functionName: "mint",
       args: [prep.params],
     });
-
+    if (chainId !== mainnet.id) {
+      await switchChainAsync({ chainId: mainnet.id });
+    }
     const txHash = await walletClient.sendTransaction({
+      chain: mainnet,
       to: NFPM,
       data: calldata,
       value: prep.value,

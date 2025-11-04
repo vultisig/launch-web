@@ -1,6 +1,8 @@
-import { Form, Input, Layout, message } from "antd";
+import { Form, Input, Layout } from "antd";
+import { useWatch } from "antd/es/form/Form";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { useTheme } from "styled-components";
 import { useAccount } from "wagmi";
 
@@ -13,6 +15,7 @@ import {
   contractAddress,
   defaultTokens,
   feeTierOptions,
+  modalHash,
   TxStatus,
   uniswapTokens,
 } from "@/utils/constants";
@@ -50,6 +53,7 @@ export const PoolPage = () => {
   const { t } = useTranslation();
   const [range, setRange] = useState<Range>("full");
   const [period, setPeriod] = useState<Period>(defaultPeriod);
+
   const [state, setState] = useState<StateProps>({
     createPositionButtonTitle: t("addLiquidity"),
     createPositionButtonLoading: false,
@@ -67,10 +71,15 @@ export const PoolPage = () => {
     token0Price,
   } = state;
   const { data, loading } = useChartData(token0, period);
-  const { currency, setCurrentPage, tokens } = useCore();
+  const { currency, setCurrentPage, tokens, message } = useCore();
   const { isConnected } = useAccount();
   const [form] = Form.useForm<CreateLPPositionProps>();
   const colors = useTheme();
+  const navigate = useNavigate();
+
+  // Watch form values for TVL calculation
+  const minPrice = useWatch("minPrice", form);
+  const maxPrice = useWatch("maxPrice", form);
 
   useEffect(() => setCurrentPage("pool"), []);
 
@@ -178,17 +187,57 @@ export const PoolPage = () => {
   };
 
   const handleCreatePosition = async () => {
-    const { amount0, token0, amount1, token1 } = form.getFieldsValue();
-    console.log({ amount0, token0, amount1, token1 });
+    const { amount0, token0, amount1, token1, minPrice, maxPrice } =
+      form.getFieldsValue();
 
     if (amount0 && amount1 && amount0 > 0 && amount1 > 0) {
+      // Validate custom range if selected
+      if (range === "custom") {
+        const min = minPrice ?? 0;
+        const max = maxPrice ?? Infinity;
+        if (min >= max || min < 0 || (max !== Infinity && max <= 0)) {
+          message.error(
+            "Invalid price range. Min price must be less than max price and both must be positive."
+          );
+          return;
+        }
+      }
+
       setState({ ...state, createPositionButtonLoading: true });
-      const mintPayload = await prepareMint(
-        Number(amount0).toFixed(uniswapTokens.UNI.decimals).toString(),
-        Number(amount1).toFixed(uniswapTokens.USDC.decimals).toString(),
-        defaultTokens.UNI,
-        defaultTokens.USDC
-      );
+
+      // Get the actual token objects from state
+      const tokenA = defaultTokens[token0 || state.token0];
+      const tokenB = defaultTokens[token1 || state.token1];
+
+      let mintPayload;
+      try {
+        mintPayload = await prepareMint(
+          Number(amount0).toFixed(tokenA.decimals).toString(),
+          Number(amount1).toFixed(tokenB.decimals).toString(),
+          tokenA,
+          tokenB,
+          {
+            minPrice: range === "custom" ? minPrice : undefined,
+            maxPrice:
+              range === "custom" && maxPrice !== Infinity
+                ? maxPrice
+                : undefined,
+            fee: state.feeTier,
+          }
+        );
+      } catch (error) {
+        console.error("Error preparing mint:", error);
+        setState({
+          ...state,
+          createPositionButtonLoading: false,
+          createPositionButtonTitle: t("addLiquidity"),
+        });
+        message.error(
+          error instanceof Error ? error.message : t("transactionFailed")
+        );
+        return;
+      }
+
       console.log("mintPayload", mintPayload);
       const approvalRequirements = await getApprovalRequirements(mintPayload);
       if (approvalRequirements.length > 0) {
@@ -202,7 +251,14 @@ export const PoolPage = () => {
           true
         ).catch((error) => {
           console.error("Error approving tokens:", error);
-          setState({ ...state, createPositionButtonLoading: false });
+          setState({
+            ...state,
+            createPositionButtonLoading: false,
+            createPositionButtonTitle: t("addLiquidity"),
+          });
+          message.error(
+            error instanceof Error ? error.message : t("transactionFailed")
+          );
           return;
         });
         if (approvalHashes) {
@@ -237,15 +293,23 @@ export const PoolPage = () => {
             message.error(t("transactionFailed"));
           }
         } else {
+          setState({
+            ...state,
+            createPositionButtonLoading: false,
+            createPositionButtonTitle: t("addLiquidity"),
+          });
           message.error("Approval requirements not met");
         }
-      } catch {
+      } catch (error) {
+        console.error("Error executing mint:", error);
         setState({
           ...state,
           createPositionButtonLoading: false,
           createPositionButtonTitle: t("addLiquidity"),
         });
-        message.error(t("transactionFailed"));
+        message.error(
+          error instanceof Error ? error.message : t("transactionFailed")
+        );
       }
     }
   };
@@ -337,15 +401,58 @@ export const PoolPage = () => {
   };
 
   const handleChangeFormValues = debounce(
-    ({ amount0, amount1, token1 }: CreateLPPositionProps) => {
+    ({
+      amount0,
+      amount1,
+      token1,
+      minPrice,
+      maxPrice,
+    }: CreateLPPositionProps) => {
       if (token1) {
         setState((prevState) => ({ ...prevState, token1 }));
+      } else if (minPrice !== undefined || maxPrice !== undefined) {
+        // Validate price range when custom range is selected
+        if (range === "custom") {
+          const currentMin = minPrice ?? form.getFieldValue("minPrice") ?? 0;
+          const currentMax =
+            maxPrice ?? form.getFieldValue("maxPrice") ?? Infinity;
+
+          if (
+            currentMin >= currentMax &&
+            currentMax !== Infinity &&
+            currentMax > 0
+          ) {
+            message.warning("Min price must be less than max price");
+          }
+        }
       } else {
         updateTokensRatio({ amount0, amount1 });
       }
     },
     100
   );
+
+  const handleRangeChange = (newRange: Range) => {
+    setRange(newRange);
+
+    if (newRange === "full") {
+      // Reset to full range values
+      form.setFieldsValue({
+        minPrice: 0,
+        maxPrice: undefined, // Infinity will be represented as undefined
+      });
+    } else {
+      const defaultMin =
+        token0Price > 0 ? parseFloat((token0Price * 0.8).toFixed(6)) : 0;
+      const defaultMax =
+        token0Price > 0 ? parseFloat((token0Price * 1.2).toFixed(6)) : 0;
+
+      form.setFieldsValue({
+        minPrice: defaultMin,
+        maxPrice: defaultMax,
+      });
+    }
+  };
 
   return (
     <VStack as={Content} $style={{ gap: "24px", maxWidth: "1600px" }}>
@@ -364,6 +471,8 @@ export const PoolPage = () => {
         initialValues={{
           token0: defaultTokens.VULT.ticker,
           token1: defaultTokens.USDC.ticker,
+          minPrice: 0,
+          maxPrice: undefined, // Will display as ∞
         }}
         onValuesChange={handleChangeFormValues}
       >
@@ -618,7 +727,7 @@ export const PoolPage = () => {
               >
                 <VStack
                   as="span"
-                  onClick={() => setRange("full")}
+                  onClick={() => handleRangeChange("full")}
                   $style={{
                     alignItems: "center",
                     borderRadius: "22px",
@@ -639,11 +748,11 @@ export const PoolPage = () => {
                   Full range
                 </VStack>
                 <VStack
-                  // onClick={() => setRange("custom")}
+                  onClick={() => handleRangeChange("custom")}
                   $style={{
                     alignItems: "center",
                     borderRadius: "22px",
-                    cursor: "not-allowed",
+                    cursor: "pointer",
                     fontSize: "16px",
                     height: "42px",
                     justifyContent: "center",
@@ -652,6 +761,7 @@ export const PoolPage = () => {
                       ? {
                           backgroundColor: colors.buttonPrimary.toHex(),
                           color: colors.neutral50.toHex(),
+                          fontWeight: "600",
                         }
                       : {}),
                   }}
@@ -669,9 +779,9 @@ export const PoolPage = () => {
                   lineHeight: "18px",
                 }}
               >
-                Providing full range liquidity ensures continuous market
-                participation across all possible prices, offering simplicity
-                but with potential for higher impermanent loss.
+                {range === "full"
+                  ? "Providing full range liquidity ensures continuous market participation across all possible prices, offering simplicity but with potential for higher impermanent loss."
+                  : "Set a custom price range to concentrate your liquidity and potentially earn more fees. This reduces capital efficiency but can minimize impermanent loss if the price stays within your range."}
               </Stack>
               <HStack
                 $style={{
@@ -686,80 +796,98 @@ export const PoolPage = () => {
                 >
                   {`Current price: ${token0Price} ${token0} per ${token1}`}
                 </Stack>
-                <HStack
-                  $style={{
-                    backgroundColor: colors.bgTertiary.toHex(),
-                    borderRadius: "26px",
-                    gap: "4px",
-                    padding: "4px",
-                  }}
-                >
-                  <VStack
-                    as="span"
-                    $style={{
-                      alignItems: "center",
-                      borderRadius: "22px",
-                      cursor: "pointer",
-                      fontSize: "12px",
-                      height: "32px",
-                      justifyContent: "center",
-                      width: "82px",
-                      // active
-                      backgroundColor: colors.buttonPrimary.toHex(),
-                      color: colors.neutral50.toHex(),
-                      fontWeight: "600",
-                    }}
-                  >
-                    {defaultTokens.UNI.ticker}
-                  </VStack>
-                  <VStack
-                    $style={{
-                      alignItems: "center",
-                      borderRadius: "22px",
-                      cursor: "pointer",
-                      fontSize: "12px",
-                      height: "32px",
-                      justifyContent: "center",
-                      width: "82px",
-                    }}
-                    as="span"
-                  >
-                    {defaultTokens.USDC.ticker}
-                  </VStack>
-                </HStack>
               </HStack>
               <Stack $style={{ width: "100%" }}>
-                <Form.Item<CreateLPPositionProps>
-                  shouldUpdate={(prevValues, currentValues) =>
-                    prevValues.maxPrice !== currentValues.maxPrice ||
-                    prevValues.minPrice !== currentValues.minPrice
-                  }
-                  noStyle
-                >
-                  {({ getFieldsValue }) => {
-                    const { maxPrice = 0, minPrice = 0 } = getFieldsValue();
+                {(() => {
+                  const min =
+                    minPrice !== undefined &&
+                    minPrice !== null &&
+                    !isNaN(Number(minPrice))
+                      ? Number(minPrice)
+                      : 0;
+                  const max =
+                    maxPrice === undefined ||
+                    maxPrice === Infinity ||
+                    maxPrice === null ||
+                    isNaN(Number(maxPrice))
+                      ? undefined
+                      : Number(maxPrice);
 
-                    return (
-                      <LinearChart
-                        data={loading ? [] : data}
-                        yAxisPlotBands={[
-                          { from: Number(minPrice), to: Number(maxPrice) },
-                        ]}
-                      />
-                    );
-                  }}
-                </Form.Item>
+                  // Only show plot bands for custom range with valid values
+                  const plotBands =
+                    range === "custom" &&
+                    min >= 0 &&
+                    max !== undefined &&
+                    !isNaN(min) &&
+                    !isNaN(max) &&
+                    max > min
+                      ? [{ from: min, to: max }]
+                      : undefined;
+
+                  return (
+                    <LinearChart
+                      key={`chart-${range}-${min}-${max}`}
+                      data={loading ? [] : data}
+                      yAxisPlotBands={plotBands}
+                    />
+                  );
+                })()}
               </Stack>
-              <Stack
-                as="span"
-                $style={{
-                  fontSize: "16px",
-                  fontWeight: "500",
-                  lineHeight: "20px",
-                }}
-              >
-                TVL in selected range: 100% (Full Range)
-              </Stack>
+              {(() => {
+                const min =
+                  minPrice !== undefined &&
+                  minPrice !== null &&
+                  !isNaN(Number(minPrice))
+                    ? Number(minPrice)
+                    : 0;
+                const max =
+                  maxPrice === undefined ||
+                  maxPrice === Infinity ||
+                  maxPrice === null ||
+                  isNaN(Number(maxPrice))
+                    ? Infinity
+                    : Number(maxPrice);
+
+                // Calculate TVL percentage (simplified - in a real implementation,
+                // you'd query the pool contract for actual liquidity distribution)
+                let tvlPercentage = "100%";
+                let rangeLabel = "Full Range";
+
+                // Check if we have valid custom range values
+                const hasValidCustomRange =
+                  range === "custom" &&
+                  min >= 0 &&
+                  max !== Infinity &&
+                  !isNaN(min) &&
+                  !isNaN(max) &&
+                  max > min;
+
+                if (hasValidCustomRange) {
+                  const currentPrice = token0Price;
+                  const rangeWidth = max - min;
+                  const priceRange = currentPrice * 0.5; // approximate ±50% as "full range"
+                  const calculatedPercentage = Math.min(
+                    100,
+                    Math.max(0, (rangeWidth / priceRange) * 100)
+                  );
+                  tvlPercentage = `${calculatedPercentage.toFixed(1)}%`;
+                  rangeLabel = "Custom Range";
+                }
+
+                return (
+                  <Stack
+                    key={`tvl-${range}-${min}-${max}-${token0Price}`}
+                    as="span"
+                    $style={{
+                      fontSize: "16px",
+                      fontWeight: "500",
+                      lineHeight: "20px",
+                    }}
+                  >
+                    TVL in selected range: {tvlPercentage} ({rangeLabel})
+                  </Stack>
+                );
+              })()}
               <HStack $style={{ gap: "16px" }}>
                 <VStack
                   $style={{
@@ -780,22 +908,50 @@ export const PoolPage = () => {
                   >
                     Min price
                   </Stack>
-                  <Form.Item<CreateLPPositionProps> name="minPrice" noStyle>
+                  {range === "full" ? (
                     <Stack
-                      as={Input}
-                      disabled={range === "full"}
-                      placeholder="0"
+                      as="span"
                       $style={{
-                        backgroundColor: "transparent !important",
-                        border: "none",
-                        borderRadius: "0",
                         fontSize: "22px",
                         fontWeight: "500",
                         height: "32px",
-                        padding: "0",
+                        color: colors.textSecondary.toHex(),
                       }}
-                    />
-                  </Form.Item>
+                    >
+                      0
+                    </Stack>
+                  ) : (
+                    <Form.Item<CreateLPPositionProps>
+                      name="minPrice"
+                      noStyle
+                      normalize={(value) => {
+                        if (!value && value !== 0) return value;
+                        const num = Number(value);
+                        if (isNaN(num)) return value;
+                        return parseFloat(num.toFixed(6));
+                      }}
+                    >
+                      <Input
+                        placeholder="0"
+                        type="number"
+                        min={0}
+                        step="0.000001"
+                        styles={{
+                          input: {
+                            backgroundColor: "transparent",
+                            border: "none",
+                            borderRadius: 0,
+                            fontSize: "22px",
+                            fontWeight: 500,
+                            height: "32px",
+                            padding: 0,
+                          },
+                        }}
+                        className="no-spinner"
+                      />
+                    </Form.Item>
+                  )}
+
                   <Stack
                     as="span"
                     $style={{
@@ -827,22 +983,49 @@ export const PoolPage = () => {
                   >
                     Max price
                   </Stack>
-                  <Form.Item<CreateLPPositionProps> name="maxPrice" noStyle>
+                  {range === "full" ? (
                     <Stack
-                      disabled={range === "full"}
-                      as={Input}
-                      placeholder={range === "full" ? "∞" : "0"}
+                      as="span"
                       $style={{
-                        backgroundColor: "transparent !important",
-                        border: "none",
-                        borderRadius: "0",
                         fontSize: "22px",
                         fontWeight: "500",
                         height: "32px",
-                        padding: "0",
+                        color: colors.textSecondary.toHex(),
                       }}
-                    />
-                  </Form.Item>
+                    >
+                      ∞
+                    </Stack>
+                  ) : (
+                    <Form.Item<CreateLPPositionProps>
+                      name="maxPrice"
+                      noStyle
+                      normalize={(value) => {
+                        if (!value && value !== 0) return value;
+                        const num = Number(value);
+                        if (isNaN(num)) return value;
+                        return parseFloat(num.toFixed(6));
+                      }}
+                    >
+                      <Input
+                        placeholder="0"
+                        type="number"
+                        min={0}
+                        step="0.000001"
+                        styles={{
+                          input: {
+                            backgroundColor: "transparent",
+                            border: "none",
+                            borderRadius: 0,
+                            fontSize: "22px",
+                            fontWeight: 500,
+                            height: "32px",
+                            padding: 0,
+                          },
+                        }}
+                        className="no-spinner"
+                      />
+                    </Form.Item>
+                  )}
                   <Stack
                     as="span"
                     $style={{
@@ -1080,11 +1263,15 @@ export const PoolPage = () => {
               <Stack
                 as={Button}
                 loading={createPositionButtonLoading}
-                disabled={createPositionButtonLoading}
+                disabled={isConnected && createPositionButtonLoading}
                 $style={{ fontSize: "16px", fontWeight: "600 !important" }}
-                onClick={handleCreatePosition}
+                onClick={
+                  isConnected
+                    ? handleCreatePosition
+                    : () => navigate(modalHash.connect)
+                }
               >
-                {createPositionButtonTitle}
+                {isConnected ? createPositionButtonTitle : t("connectWallet")}
               </Stack>
             </VStack>
           </VStack>
