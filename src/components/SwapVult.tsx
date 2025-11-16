@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 import styled, { useTheme } from "styled-components";
 import { useAccount } from "wagmi";
 
-import { TokenDropdown } from "@/components/TokenDropdown";
 import { useCore } from "@/hooks/useCore";
 import { useSwapVult } from "@/hooks/useSwapVult";
 import { ArrowDownUpIcon } from "@/icons/ArrowDownUpIcon";
@@ -66,26 +65,6 @@ export const SwapVult = () => {
     requestApproval,
   } = useSwapVult();
   const colors = useTheme();
-
-  const handleChangeToken = (ticker: TickerKey, reverse: boolean) => {
-    if (!loading) {
-      const values = form.getFieldsValue();
-      const allocateAmount = reverse ? values.allocateAmount : undefined;
-      const allocateToken = reverse ? values.allocateToken : ticker;
-      const buyToken = reverse ? ticker : values.buyToken;
-
-      form.setFieldsValue({
-        allocateAmount,
-        allocateToken,
-        buyAmount: undefined,
-        buyToken,
-      });
-
-      if (allocateAmount) {
-        handleUpdateQuote(allocateToken, buyToken, allocateAmount, false);
-      }
-    }
-  };
 
   const handleChangeValues = debounce(
     ({ allocateAmount, buyAmount }: SwapFormProps, values: SwapFormProps) => {
@@ -355,10 +334,25 @@ export const SwapVult = () => {
                           readOnly={loading}
                         />
                       </Form.Item>
-                      <TokenDropdown
-                        ticker={ticker}
-                        onChange={(value) => handleChangeToken(value, false)}
-                      />
+                      <HStack
+                        $style={{
+                          alignItems: "center",
+                          backgroundColor: colors.bgTertiary.toHex(),
+                          borderRadius: "20px",
+                          gap: "4px",
+                          padding: "8px 12px 8px 8px",
+                        }}
+                      >
+                        <Stack
+                          as="img"
+                          alt={ticker}
+                          src={`/tokens/${ticker.toLowerCase()}.svg`}
+                          $style={{ height: "24px", width: "24px" }}
+                        />
+                        <Stack as="span" $style={{ fontWeight: "500" }}>
+                          {ticker}
+                        </Stack>
+                      </HStack>
                     </HStack>
                     <HStack
                       $style={{
@@ -456,10 +450,25 @@ export const SwapVult = () => {
                           readOnly
                         />
                       </Form.Item>
-                      <TokenDropdown
-                        ticker={ticker}
-                        onChange={(value) => handleChangeToken(value, true)}
-                      />
+                      <HStack
+                        $style={{
+                          alignItems: "center",
+                          backgroundColor: colors.bgTertiary.toHex(),
+                          borderRadius: "20px",
+                          gap: "4px",
+                          padding: "8px 12px 8px 8px",
+                        }}
+                      >
+                        <Stack
+                          as="img"
+                          alt={ticker}
+                          src={`/tokens/${ticker.toLowerCase()}.svg`}
+                          $style={{ height: "24px", width: "24px" }}
+                        />
+                        <Stack as="span" $style={{ fontWeight: "500" }}>
+                          {ticker}
+                        </Stack>
+                      </HStack>
                     </HStack>
                     <HStack
                       $style={{
