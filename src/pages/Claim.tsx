@@ -204,6 +204,10 @@ export const ClaimPage = () => {
     if (!burnAmount || burnAmount <= 0 || !attestData.domain.verifyingContract)
       return;
 
+    if (useMaxAmount && (!iouVultBalance || iouVultBalance === 0n)) {
+      return;
+    }
+
     setState((prevState) => ({
       ...prevState,
       approveLoading: true,
@@ -214,15 +218,16 @@ export const ClaimPage = () => {
       // Approve the required amount (approve replaces previous allowance, doesn't add)
       // Always approve the full required amount to ensure sufficient allowance
 
+      const approveAmount = useMaxAmount
+        ? iouVultBalance!
+        : parseEther(String(burnAmount));
+
       const approveHash = await writeContract(wagmiConfig, {
         chainId: base.id,
         address: baseContractAddress.iouVult as Address,
         abi: IOUVultAbi,
         functionName: "approve",
-        args: [
-          attestData.domain.verifyingContract as Address,
-          useMaxAmount ? iouVultBalance : parseEther(String(burnAmount)),
-        ],
+        args: [attestData.domain.verifyingContract as Address, approveAmount],
       });
 
       const approveReceipt = await waitForTransactionReceipt(wagmiConfig, {
@@ -246,7 +251,10 @@ export const ClaimPage = () => {
               address: baseContractAddress.iouVult as Address,
               abi: IOUVultAbi,
               functionName: "allowance",
-              args: [address, attestData.domain.verifyingContract as Address],
+              args: [
+                address as Address,
+                attestData.domain.verifyingContract as Address,
+              ],
             });
             const updatedAllowanceAmount = Number(
               formatEther(updatedAllowance as bigint)
@@ -278,6 +286,10 @@ export const ClaimPage = () => {
   const handleBurnSubmit = async () => {
     if (!burnAmount || burnAmount <= 0) return;
 
+    if (useMaxAmount && (!iouVultBalance || iouVultBalance === 0n)) {
+      return;
+    }
+
     // Check if approval is needed
     if (needsApproval) {
       message.error("Please approve tokens first");
@@ -292,14 +304,18 @@ export const ClaimPage = () => {
     }));
 
     try {
+      const mergeAmount = useMaxAmount
+        ? iouVultBalance!
+        : parseEther(String(burnAmount));
+
       const mergeHash = await writeContract(wagmiConfig, {
         address: attestData.domain.verifyingContract as Address,
         abi: BaseMergeAbi,
         functionName: "merge",
         args: [
-          useMaxAmount ? iouVultBalance : parseEther(String(burnAmount)),
-          vultisigWallet.account,
-          attestData.signature,
+          mergeAmount,
+          vultisigWallet.account as Address,
+          attestData.signature as `0x${string}`,
         ],
       });
 
@@ -524,11 +540,11 @@ export const ClaimPage = () => {
               abi: ETHClaimAbi,
               functionName: "claim",
               args: [
-                attestData.baseTxId,
-                attestData.baseEventId,
-                attestData.amount,
-                attestData.recipient,
-                attestData.signature,
+                attestData.baseTxId as `0x${string}`,
+                attestData.baseEventId as `0x${string}`,
+                BigInt(attestData.amount),
+                attestData.recipient as `0x${string}`,
+                attestData.signature as `0x${string}`,
               ],
             });
             const claimReceipt = await waitForTransactionReceipt(wagmiConfig, {
