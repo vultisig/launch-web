@@ -235,7 +235,6 @@ export const PoolPage = () => {
         return;
       }
 
-      console.log("mintPayload", mintPayload);
       const approvalRequirements = await getApprovalRequirements(mintPayload);
       if (approvalRequirements.length > 0) {
         setState({
@@ -272,8 +271,6 @@ export const PoolPage = () => {
           const txHash = await executeMint(mintPayload);
 
           if (txHash) {
-            console.log("txHash mint success", txHash);
-
             await waitForTxConfirmation([txHash]);
             setState({
               ...state,
