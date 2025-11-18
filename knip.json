@@ -1,5 +1,5 @@
 {
-  "entry": ["src/main.tsx", "src/styled.d.ts"],
+  "entry": ["src/main.tsx", "src/styled.d.ts", "src/global.d.ts"],
   "ignore": [],
   "ignoreDependencies": [
     "@fontsource/montserrat",

@@ -1,6 +1,7 @@
 export const en = {
   // A
   advanced: "Advanced",
+  addLiquidity: "Add Liquidity",
   allocationFirstHour: "Allocation in the 1st hour",
   amount: "Amount",
   amountStaked: "Amount Staked",
@@ -83,6 +84,10 @@ export const en = {
   totalWlAllocation: "Total WL allocation",
   transactionSettings: "Transaction Settings",
   transactions: "Transactions",
+  transactionSuccess: "Transaction was successful",
+  transactionFailed: "Transaction failed",
+  transactionTimeout: "Transaction timed out",
+  executingAddLiquidity: "Executing add liquidity",
   // U
   usedAllocation: "Used Allocation",
   // V
