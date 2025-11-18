@@ -23,7 +23,7 @@ export const TradingViewWidget = () => {
       hide_legend: true,
       hide_volume: false,
       hotlist: false,
-      interval: "1",
+      interval: "60",
       locale: "en",
       save_image: true,
       style: "1",

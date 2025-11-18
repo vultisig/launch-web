@@ -10,6 +10,7 @@ import {
 import { Contract, formatUnits, parseUnits } from "ethers";
 import { useEffect, useState } from "react";
 import { encodeFunctionData, erc20Abi } from "viem";
+import { mainnet } from "viem/chains";
 import { useAccount, useWalletClient } from "wagmi";
 
 import { useCore } from "@/hooks/useCore";
@@ -133,7 +134,10 @@ export const useSwapVult = () => {
           })
         : swapCallData;
 
+      await walletClient.switchChain(mainnet);
+
       const tx = await walletClient.sendTransaction({
+        chain: mainnet,
         to: contractAddress.swapRouter as `0x${string}`,
         data: callData,
         gas: gasSetting.gasLimit > 0 ? BigInt(gasSetting.gasLimit) : undefined,
@@ -452,7 +456,10 @@ export const useSwapVult = () => {
         parseUnits(String(allocateAmount), tokenDecimals)
       );
 
+      await walletClient.switchChain(mainnet);
+
       const tx = await walletClient.sendTransaction({
+        chain: mainnet,
         to: tokenAddress as `0x${string}`,
         data: approvalData,
         gas: gasSetting.gasLimit > 0 ? BigInt(gasSetting.gasLimit) : undefined,
