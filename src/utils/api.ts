@@ -1,6 +1,7 @@
 import axios from "axios";
-import { v4 as uuidv4 } from "uuid";
 import { request } from "graphql-request";
+import { v4 as uuidv4 } from "uuid";
+
 import { contractAddress } from "@/utils/constants";
 import { Currency } from "@/utils/currency";
 import { toCamelCase } from "@/utils/functions";

@@ -73,7 +73,7 @@ export const LinearChart: FC<LinearChartProps> = ({
               ...plotBand,
               from: Number(plotBand.from),
               to: Number(plotBand.to),
-              color: colors.success.toRgba(0.1),
+              color: colors.accentFour.toRgba(0.1),
             }))
           : undefined,
     },

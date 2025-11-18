@@ -1,4 +1,5 @@
 import { InputNumber, InputNumberProps, Layout, Select, Tooltip } from "antd";
+import { parseEther } from "ethers";
 import {
   Fragment,
   useCallback,
@@ -10,39 +11,38 @@ import {
 import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "react-responsive";
 import styled, { useTheme } from "styled-components";
+import { Address, formatEther, toHex } from "viem";
+import { base, mainnet } from "viem/chains";
 import { useAccount, useSwitchChain } from "wagmi";
 import {
   getBalance,
-  writeContract,
-  waitForTransactionReceipt,
-  readContract,
   getTransactionReceipt,
+  readContract,
+  waitForTransactionReceipt,
+  writeContract,
 } from "wagmi/actions";
+
 import { useCore } from "@/hooks/useCore";
 import { CheckIcon } from "@/icons/CheckIcon";
+import {
+  getClaimTransactions,
+  setClaimTransaction,
+} from "@/storage/claimTransaction";
 import { Button } from "@/toolkits/Button";
 import { Divider } from "@/toolkits/Divider";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
+import { api } from "@/utils/api";
 import {
   baseContractAddress,
   BaseMergeAbi,
   ETHClaimAbi,
   IOUVultAbi,
   modalHash,
-  TxStatus,
 } from "@/utils/constants";
 import { vultisigConnect, vultisigPersonalSign } from "@/utils/extension";
 import { toAmountFormat, toNumberFormat } from "@/utils/functions";
-import { wagmiConfig } from "@/utils/wagmi";
-import { base, mainnet } from "viem/chains";
-import { formatEther, toHex } from "viem";
 import { VultisigWalletProps } from "@/utils/types";
-import { api } from "@/utils/api";
-import { parseEther } from "ethers";
-import {
-  getClaimTransactions,
-  setClaimTransaction,
-} from "@/storage/claimTransaction";
+import { wagmiConfig } from "@/utils/wagmi";
 
 const { Content } = Layout;
 
@@ -179,10 +179,10 @@ export const ClaimPage = () => {
 
     try {
       const allowance = await readContract(wagmiConfig, {
-        address: baseContractAddress.iouVult as `0x${string}`,
+        address: baseContractAddress.iouVult as Address,
         abi: IOUVultAbi,
         functionName: "allowance",
-        args: [address, attestData.domain.verifyingContract as `0x${string}`],
+        args: [address, attestData.domain.verifyingContract as Address],
       });
 
       const allowanceAmount = Number(formatEther(allowance as bigint));
@@ -216,11 +216,11 @@ export const ClaimPage = () => {
 
       const approveHash = await writeContract(wagmiConfig, {
         chainId: base.id,
-        address: baseContractAddress.iouVult as `0x${string}`,
+        address: baseContractAddress.iouVult as Address,
         abi: IOUVultAbi,
         functionName: "approve",
         args: [
-          attestData.domain.verifyingContract as `0x${string}`,
+          attestData.domain.verifyingContract as Address,
           useMaxAmount ? iouVultBalance : parseEther(String(burnAmount)),
         ],
       });
@@ -243,13 +243,10 @@ export const ClaimPage = () => {
           // Check if approval was successful by reading allowance again
           try {
             const updatedAllowance = await readContract(wagmiConfig, {
-              address: baseContractAddress.iouVult as `0x${string}`,
+              address: baseContractAddress.iouVult as Address,
               abi: IOUVultAbi,
               functionName: "allowance",
-              args: [
-                address,
-                attestData.domain.verifyingContract as `0x${string}`,
-              ],
+              args: [address, attestData.domain.verifyingContract as Address],
             });
             const updatedAllowanceAmount = Number(
               formatEther(updatedAllowance as bigint)
@@ -296,7 +293,7 @@ export const ClaimPage = () => {
 
     try {
       const mergeHash = await writeContract(wagmiConfig, {
-        address: attestData.domain.verifyingContract as `0x${string}`,
+        address: attestData.domain.verifyingContract as Address,
         abi: BaseMergeAbi,
         functionName: "merge",
         args: [
@@ -321,7 +318,7 @@ export const ClaimPage = () => {
           amount: burnAmount,
           date: Date.now(),
           hash: mergeHash,
-          status: TxStatus.SUCCESS,
+          status: "success",
           isClaimed: false,
           eventId: mergeReceipt.logs.length - 1,
         });
@@ -416,7 +413,7 @@ export const ClaimPage = () => {
 
         try {
           const receipt = await getTransactionReceipt(wagmiConfig, {
-            hash: selectedBurn.baseTxId as `0x${string}`,
+            hash: selectedBurn.baseTxId as Address,
             chainId: base.id,
           });
 
@@ -523,7 +520,7 @@ export const ClaimPage = () => {
 
             const claimHash = await writeContract(wagmiConfig, {
               chainId: mainnet.id,
-              address: attestData.domain.verifyingContract as `0x${string}`,
+              address: attestData.domain.verifyingContract as Address,
               abi: ETHClaimAbi,
               functionName: "claim",
               args: [
@@ -566,7 +563,7 @@ export const ClaimPage = () => {
           return false; // Successfully completed, no need to continue polling
         }
         return true; // Continue polling - attestBurn not successful yet
-      } catch (error) {
+      } catch {
         return true; // Indicate polling should continue
       }
     };
@@ -788,7 +785,7 @@ export const ClaimPage = () => {
               params: [{ chainId: `0x${currentChainId.toString(16)}` }],
             });
             return;
-          } catch (error) {
+          } catch {
             message.error(
               `Failed to switch chain. Please switch to ${
                 currentChainId === base.id ? "Base" : "Mainnet"

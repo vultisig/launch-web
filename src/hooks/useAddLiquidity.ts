@@ -1,24 +1,23 @@
-import { FeeAmount, TICK_SPACINGS } from "@uniswap/v3-sdk";
 import { Token } from "@uniswap/sdk-core";
+import { FeeAmount, TICK_SPACINGS } from "@uniswap/v3-sdk";
 import { Contract, parseUnits } from "ethers";
-import { encodeFunctionData, erc20Abi, maxUint256 } from "viem";
+import { Address, encodeFunctionData, erc20Abi, maxUint256 } from "viem";
+import { mainnet } from "viem/chains";
 import { useAccount, useSwitchChain, useWalletClient } from "wagmi";
+import { waitForTransactionReceipt } from "wagmi/actions";
 
 import { getGasSettings } from "@/storage/gasSettings";
 import {
   contractAddress,
   NonFungiblePositionManagerAbi,
-  TxStatus,
 } from "@/utils/constants";
 import { getBrowserProvider, getRPCProvider } from "@/utils/providers";
-import { TokenProps } from "@/utils/types";
-import { waitForTransactionReceipt } from "wagmi/actions";
+import { TokenProps, TxStatus } from "@/utils/types";
 import { wagmiConfig } from "@/utils/wagmi";
-import { mainnet } from "viem/chains";
 
 type MintParams = {
-  token0: `0x${string}`;
-  token1: `0x${string}`;
+  token0: Address;
+  token1: Address;
   fee: number;
   tickLower: number;
   tickUpper: number;
@@ -26,15 +25,15 @@ type MintParams = {
   amount1Desired: bigint;
   amount0Min: bigint;
   amount1Min: bigint;
-  recipient: `0x${string}`;
+  recipient: Address;
   deadline: bigint;
 };
 
 type PreparedMint = {
   params: MintParams;
   value: bigint; // native ETH to send
-  token0Addr: `0x${string}`;
-  token1Addr: `0x${string}`;
+  token0Addr: Address;
+  token1Addr: Address;
   amount0Desired: bigint;
   amount1Desired: bigint;
   isWeth0: boolean;
@@ -42,15 +41,15 @@ type PreparedMint = {
 };
 
 type ApprovalNeed = {
-  token: `0x${string}`;
+  token: Address;
   amount: bigint;
   needed: boolean;
 };
 
 function sortTokens(
-  a: `0x${string}`,
-  b: `0x${string}`
-): [`0x${string}`, `0x${string}`, boolean] {
+  a: Address,
+  b: Address
+): [Address, Address, boolean] {
   return a.toLowerCase() < b.toLowerCase() ? [a, b, false] : [b, a, true];
 }
 const fullRangeTicks = (fee: number) => {
@@ -155,7 +154,7 @@ export const useAddLiquidity = () => {
   const gasSetting = getGasSettings();
   const rpcClient = getRPCProvider();
   const { switchChainAsync } = useSwitchChain();
-  const NFPM = contractAddress.nonfungiblePositionManager as `0x${string}`;
+  const NFPM = contractAddress.nonfungiblePositionManager as Address;
 
   const prepareMint = async (
     rawAmountA: string,
@@ -170,8 +169,8 @@ export const useAddLiquidity = () => {
   ): Promise<PreparedMint> => {
     if (!address || !walletClient) throw new Error("wallet not ready");
 
-    const addrA = tokenA.contractAddress as `0x${string}`;
-    const addrB = tokenB.contractAddress as `0x${string}`;
+    const addrA = tokenA.contractAddress as Address;
+    const addrB = tokenB.contractAddress as Address;
 
     const [token0Addr, token1Addr, swapped] = sortTokens(addrA, addrB);
     const isWeth0 =
@@ -238,7 +237,7 @@ export const useAddLiquidity = () => {
       amount1Desired,
       amount0Min,
       amount1Min,
-      recipient: address as `0x${string}`,
+      recipient: address as Address,
       deadline: BigInt(Math.floor(Date.now() / 1000) + 20 * 60),
     };
 
@@ -266,7 +265,7 @@ export const useAddLiquidity = () => {
     if (!prep.isWeth0) {
       const token0Contract = new Contract(prep.token0Addr, erc20Abi, rpcClient);
       const allowance0: bigint = await token0Contract.allowance(
-        address as `0x${string}`,
+        address as Address,
         NFPM
       );
 
@@ -280,7 +279,7 @@ export const useAddLiquidity = () => {
     if (!prep.isWeth1) {
       const token1Contract = new Contract(prep.token1Addr, erc20Abi, rpcClient);
       const allowance1: bigint = await token1Contract.allowance(
-        address as `0x${string}`,
+        address as Address,
         NFPM
       );
       needs.push({
@@ -294,10 +293,10 @@ export const useAddLiquidity = () => {
   };
 
   async function approveToken(
-    token: `0x${string}`,
+    token: Address,
     amount: bigint,
     approveExact = false
-  ): Promise<`0x${string}`> {
+  ): Promise<Address> {
     if (!walletClient) throw new Error("wallet not ready");
     if (chainId !== mainnet.id) {
       await switchChainAsync({ chainId: mainnet.id });
@@ -315,9 +314,9 @@ export const useAddLiquidity = () => {
   const approveAll = async (
     needs: ApprovalNeed[],
     approveExact = false
-  ): Promise<`0x${string}`[]> => {
+  ): Promise<Address[]> => {
     const toApprove = needs.filter((n) => n.needed);
-    const hashes: `0x${string}`[] = [];
+    const hashes: Address[] = [];
     for (const n of toApprove) {
       const h = await approveToken(n.token, n.amount, approveExact);
       hashes.push(h);
@@ -325,7 +324,7 @@ export const useAddLiquidity = () => {
     return hashes;
   };
 
-  const executeMint = async (prep: PreparedMint): Promise<`0x${string}`> => {
+  const executeMint = async (prep: PreparedMint): Promise<Address> => {
     if (!walletClient) throw new Error("wallet not ready");
 
     const calldata = encodeFunctionData({
@@ -366,17 +365,17 @@ export const useAddLiquidity = () => {
       txHashes.map(
         async (txHash) =>
           await waitForTransactionReceipt(wagmiConfig, {
-            hash: txHash as `0x${string}`,
+            hash: txHash as Address,
           })
       )
     );
 
     return receipts.map((receipt) =>
       receipt === null
-        ? TxStatus.PENDING
+        ? "pending"
         : receipt.status === "success"
-        ? TxStatus.SUCCESS
-        : TxStatus.FAILED
+        ? "success"
+        : "failed"
     );
   };
 

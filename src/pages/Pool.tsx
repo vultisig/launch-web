@@ -1,5 +1,9 @@
+import IUniswapV3PoolABI from "@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json";
+import { computePoolAddress, FeeAmount } from "@uniswap/v3-sdk";
 import { Form, Input, Layout } from "antd";
 import { useWatch } from "antd/es/form/Form";
+import { Contract } from "ethers";
+import { debounce } from "lodash";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -7,30 +11,23 @@ import { useTheme } from "styled-components";
 import { useAccount } from "wagmi";
 
 import { LinearChart } from "@/components/LinearChart";
+import { useAddLiquidity } from "@/hooks/useAddLiquidity";
+import { useChartData } from "@/hooks/useChartData";
 import { useCore } from "@/hooks/useCore";
-
 import { Button } from "@/toolkits/Button";
+import { Spin } from "@/toolkits/Spin";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
 import {
   contractAddress,
   defaultTokens,
   feeTierOptions,
   modalHash,
-  TxStatus,
   uniswapTokens,
 } from "@/utils/constants";
 import { toAmountFormat, toValueFormat } from "@/utils/functions";
 import { defaultPeriod, Period, periodNames, periods } from "@/utils/period";
-import { CreateLPTokensFormProps, TickerKey } from "@/utils/types";
-import { useAddLiquidity } from "@/hooks/useAddLiquidity";
-import IUniswapV3PoolABI from "@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json";
-import { Contract } from "ethers";
 import { getRPCProvider } from "@/utils/providers";
-import { Spin } from "@/toolkits/Spin";
-import { useChartData } from "@/hooks/useChartData";
-import { computePoolAddress, FeeAmount } from "@uniswap/v3-sdk";
-
-import { debounce } from "lodash";
+import { CreateLPTokensFormProps, TickerKey } from "@/utils/types";
 
 const { Content } = Layout;
 
@@ -337,11 +334,9 @@ export const PoolPage = () => {
       const statuses = await getTxStatuses(txHashes);
 
       // Check if all transactions are successful
-      const allSuccessful = statuses.every(
-        (status) => status === TxStatus.SUCCESS
-      );
-      const anyFailed = statuses.some((status) => status === TxStatus.FAILED);
-      const anyPending = statuses.some((status) => status === TxStatus.PENDING);
+      const allSuccessful = statuses.every((status) => status === "success");
+      const anyFailed = statuses.some((status) => status === "failed");
+      const anyPending = statuses.some((status) => status === "pending");
 
       if (allSuccessful) {
         setState((prevState) => ({

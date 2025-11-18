@@ -2,9 +2,9 @@ import { SeriesAreaOptions } from "highcharts";
 import { useEffect, useState } from "react";
 
 import { api } from "@/utils/api";
+import { defaultTokens } from "@/utils/constants";
 import { Period } from "@/utils/period";
 import { TickerKey } from "@/utils/types";
-import { defaultTokens } from "@/utils/constants";
 
 export const useChartData = (token: TickerKey, period: Period) => {
   const [data, setData] = useState<SeriesAreaOptions["data"]>([]);
