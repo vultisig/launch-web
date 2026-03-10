@@ -772,7 +772,8 @@ export const ClaimPage = () => {
   }, [address]);
 
   const registerVultisigWallet = useCallback(async () => {
-    if (!vultisigWallet.account || !vultisigWallet.uid || isWalletRegistered) return;
+    if (!vultisigWallet.account || !vultisigWallet.uid || isWalletRegistered)
+      return;
 
     try {
       setState((prev) => ({ ...prev, connecting: true }));
@@ -792,9 +793,7 @@ export const ClaimPage = () => {
         signature,
       );
 
-      const { data, success } = await api.attestAddress(
-        vultisigWallet.account,
-      );
+      const { data, success } = await api.attestAddress(vultisigWallet.account);
 
       if (success) {
         setState((prev) => ({
