@@ -804,6 +804,13 @@ export const ClaimPage = () => {
         }));
       } else {
         message.error("Failed to verify vultisig wallet");
+
+        setState((prev) => ({
+          ...prev,
+          connecting: false,
+          isWalletRegistered: false,
+          attestData: undefined,
+        }));
       }
     } catch {
       message.error("Failed to register Vultisig wallet");
