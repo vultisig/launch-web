@@ -159,43 +159,6 @@ export const ClaimPage = () => {
     }
   }, [isConnected, step, vultisigConnected, isWalletRegistered]);
 
-  const checkAndRegisterVultisigWallet = useCallback(async () => {
-    if (vultisigWallet.account) {
-      setState((prev) => ({ ...prev, connecting: true }));
-
-      try {
-        const status = await api.applyStatus(vultisigWallet.publicKeyEcdsa);
-
-        if (status) {
-          const attestResult = await api.attestAddress(vultisigWallet.account);
-
-          if (attestResult.success) {
-            setState((prev) => ({
-              ...prev,
-              attestData: attestResult.data,
-              connecting: false,
-              isWalletRegistered: status,
-            }));
-          } else {
-            message.error("Failed to verify vultisig wallet");
-
-            setState((prev) => ({
-              ...prev,
-              connecting: false,
-              isWalletRegistered: false,
-            }));
-          }
-        } else {
-          registerVultisigWallet();
-        }
-      } catch {
-        message.error("Failed to check vultisig wallet status");
-
-        setState((prev) => ({ ...prev, connecting: false }));
-      }
-    }
-  }, [vultisigWallet]);
-
   const checkTokenAllowance = useCallback(async () => {
     if (
       !address ||
@@ -722,16 +685,17 @@ export const ClaimPage = () => {
     if (chainId && chainId !== currentChainId) {
       if (isMetaMask) {
         if (!window.ethereum) {
-          message.error("MetaMask is not available. Please install or enable the MetaMask extension.");
+          message.error(
+            "MetaMask is not available. Please install or enable the MetaMask extension.",
+          );
           return;
         }
-        
+
         try {
           await window.ethereum.request({
             method: "wallet_switchEthereumChain",
             params: [{ chainId: `0x${currentChainId.toString(16)}` }],
           });
-          return;
         } catch {
           message.error(
             `Failed to switch chain. Please switch to ${
@@ -739,6 +703,8 @@ export const ClaimPage = () => {
             } network from your wallet manually and try again.`,
           );
         }
+        
+        return;
       }
 
       try {
@@ -828,6 +794,43 @@ export const ClaimPage = () => {
       }));
     }
   }, [vultisigWallet, isWalletRegistered]);
+
+  const checkAndRegisterVultisigWallet = useCallback(async () => {
+    if (vultisigWallet.account) {
+      setState((prev) => ({ ...prev, connecting: true }));
+
+      try {
+        const status = await api.applyStatus(vultisigWallet.publicKeyEcdsa);
+
+        if (status) {
+          const attestResult = await api.attestAddress(vultisigWallet.account);
+
+          if (attestResult.success) {
+            setState((prev) => ({
+              ...prev,
+              attestData: attestResult.data,
+              connecting: false,
+              isWalletRegistered: status,
+            }));
+          } else {
+            message.error("Failed to verify vultisig wallet");
+
+            setState((prev) => ({
+              ...prev,
+              connecting: false,
+              isWalletRegistered: false,
+            }));
+          }
+        } else {
+          registerVultisigWallet();
+        }
+      } catch {
+        message.error("Failed to check vultisig wallet status");
+
+        setState((prev) => ({ ...prev, connecting: false }));
+      }
+    }
+  }, [vultisigWallet, registerVultisigWallet]);
 
   useEffect(() => {
     checkAndRegisterVultisigWallet();
