@@ -1,4 +1,5 @@
 import { InputNumber, InputNumberProps, Layout, Select, Tooltip } from "antd";
+import { parseEther } from "ethers";
 import {
   Fragment,
   useCallback,
@@ -10,19 +11,27 @@ import {
 import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "react-responsive";
 import styled, { useTheme } from "styled-components";
+import { formatEther, toHex } from "viem";
+import { base, mainnet } from "viem/chains";
 import { useAccount, useSwitchChain } from "wagmi";
 import {
   getBalance,
-  writeContract,
-  waitForTransactionReceipt,
-  readContract,
   getTransactionReceipt,
+  readContract,
+  waitForTransactionReceipt,
+  writeContract,
 } from "wagmi/actions";
+
 import { useCore } from "@/hooks/useCore";
 import { CheckIcon } from "@/icons/CheckIcon";
+import {
+  getClaimTransactions,
+  setClaimTransaction,
+} from "@/storage/claimTransaction";
 import { Button } from "@/toolkits/Button";
 import { Divider } from "@/toolkits/Divider";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
+import { api } from "@/utils/api";
 import {
   baseContractAddress,
   BaseMergeAbi,
@@ -32,18 +41,26 @@ import {
 } from "@/utils/constants";
 import { vultisigConnect, vultisigPersonalSign } from "@/utils/extension";
 import { toAmountFormat, toNumberFormat } from "@/utils/functions";
-import { wagmiConfig } from "@/utils/wagmi";
-import { base, mainnet } from "viem/chains";
-import { formatEther, toHex } from "viem";
 import { VultisigWalletProps } from "@/utils/types";
-import { api } from "@/utils/api";
-import { parseEther } from "ethers";
-import {
-  getClaimTransactions,
-  setClaimTransaction,
-} from "@/storage/claimTransaction";
+import { wagmiConfig } from "@/utils/wagmi";
 
 const { Content } = Layout;
+
+const DEFAULT_ATTEST_DATA = {
+  address: "",
+  domain: { chainId: 0, name: "", verifyingContract: "", version: "" },
+  signature: "",
+};
+
+const DEFAULT_VULTISIG_WALLET = {
+  account: "",
+  hexChainCode: "",
+  isFastVault: false,
+  name: "",
+  publicKeyEcdsa: "",
+  publicKeyEddsa: "",
+  uid: "",
+};
 
 const getExplorerLink = (txHash: string, chainId: number) => {
   if (chainId === base.id) {
@@ -55,88 +72,72 @@ const getExplorerLink = (txHash: string, chainId: number) => {
 };
 
 type StateProps = {
-  burnAmount?: number;
-  claimAmount?: number;
-  connecting?: boolean;
-  vultisigWallet?: VultisigWalletProps & { account: string };
-  isWalletRegistered?: boolean;
-  vultisigConnected?: boolean;
-  iouVultBalance?: bigint;
-  unclaimedBurns?: Array<{
-    baseTxId: string;
-    baseEventId: string;
-    amount: string;
-    recipient: string;
-    blockNumber: number;
-  }>;
-  selectedBurn?: {
-    baseTxId: string;
-    baseEventId: string;
-    amount: string;
-  };
-  tokenAllowance?: bigint;
-  needsApproval?: boolean;
   approveLoading?: boolean;
   attestData?: {
     address: string;
-    signature: string;
     domain: {
-      name: string;
-      version: string;
       chainId: number;
+      name: string;
       verifyingContract: string;
+      version: string;
     };
+    signature: string;
   };
-  claimLoading?: boolean;
+  burnAmount?: number;
   burnLoading?: boolean;
-  currentChainId?: typeof base.id | typeof mainnet.id;
-  isPollingAttestBurn?: boolean;
   burnTxHash?: string;
+  claimAmount?: number;
+  claimLoading?: boolean;
   claimTxHash?: string;
+  connecting?: boolean;
+  currentChainId?: typeof base.id | typeof mainnet.id;
+  iouVultBalance?: bigint;
+  isPollingAttestBurn?: boolean;
+  isWalletRegistered?: boolean;
+  needsApproval?: boolean;
+  selectedBurn?: {
+    amount: string;
+    baseEventId: string;
+    baseTxId: string;
+  };
+  step?: number;
+  tokenAllowance?: bigint;
+  unclaimedBurns?: Array<{
+    amount: string;
+    baseEventId: string;
+    baseTxId: string;
+    blockNumber: number;
+    recipient: string;
+  }>;
   useMaxAmount?: boolean;
+  vultisigConnected?: boolean;
+  vultisigWallet?: VultisigWalletProps & { account: string };
 };
 
 export const ClaimPage = () => {
   const { t } = useTranslation();
   const [state, setState] = useState<StateProps>({});
   const {
-    burnAmount,
-    connecting,
-    vultisigWallet = {
-      account: "",
-      hexChainCode: "",
-      isFastVault: false,
-      name: "",
-      publicKeyEcdsa: "",
-      publicKeyEddsa: "",
-      uid: "",
-    },
-    vultisigConnected,
-    isWalletRegistered = false,
-    iouVultBalance,
-    unclaimedBurns,
-    selectedBurn,
-    needsApproval,
     approveLoading = false,
-    attestData = {
-      address: "",
-      signature: "",
-      domain: {
-        name: "",
-        version: "",
-        chainId: 0,
-        verifyingContract: "",
-      },
-    },
-    currentChainId = base.id,
-    claimLoading = false,
+    attestData = DEFAULT_ATTEST_DATA,
+    burnAmount,
     burnLoading = false,
-    isPollingAttestBurn = false,
     burnTxHash,
+    claimLoading = false,
     claimTxHash,
+    connecting,
+    currentChainId = base.id,
+    iouVultBalance,
+    isPollingAttestBurn = false,
+    isWalletRegistered = false,
+    needsApproval,
+    selectedBurn,
+    step = 0,
+    unclaimedBurns,
     useMaxAmount = false,
+    vultisigConnected,
+    vultisigWallet = DEFAULT_VULTISIG_WALLET,
   } = state;
-  const [step, setStep] = useState(0);
   const { message, setCurrentPage, tokens } = useCore();
   const { address = "", isConnected, chainId, connector } = useAccount();
   const { switchChainAsync } = useSwitchChain();
@@ -145,6 +146,7 @@ export const ClaimPage = () => {
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const pollingStartTimeRef = useRef<number | null>(null);
   const unclaimedBurnsIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isMetaMask = connector?.name === "MetaMask";
 
   const disabled = useMemo(() => {
     switch (step) {
@@ -157,14 +159,6 @@ export const ClaimPage = () => {
     }
   }, [isConnected, step, vultisigConnected, isWalletRegistered]);
 
-  const handleBurnAmount: InputNumberProps["onChange"] = (value) => {
-    setState((prevState) => ({
-      ...prevState,
-      burnAmount: typeof value === "number" ? value : undefined,
-      useMaxAmount: false,
-    }));
-  };
-
   const checkTokenAllowance = useCallback(async () => {
     if (
       !address ||
@@ -172,9 +166,8 @@ export const ClaimPage = () => {
       burnAmount <= 0 ||
       !attestData.domain.verifyingContract ||
       chainId !== base.id
-    ) {
+    )
       return;
-    }
 
     try {
       const allowance = await readContract(wagmiConfig, {
@@ -185,34 +178,88 @@ export const ClaimPage = () => {
       });
 
       const allowanceAmount = Number(formatEther(allowance as bigint));
-      // Check if current allowance is sufficient for the burn amount
-      // Use a small epsilon to handle floating point precision issues
       const needsApprovalCheck = allowanceAmount < burnAmount - 0.000001;
 
-      setState((prevState) => ({
-        ...prevState,
-        tokenAllowance: allowance as bigint,
+      setState((prev) => ({
+        ...prev,
         needsApproval: needsApprovalCheck,
+        tokenAllowance: allowance as bigint,
       }));
-    } catch (error) {
-      console.error("Error checking allowance:", error);
+    } catch {
+      message.error("Failed to check token allowance");
     }
-  }, [address, burnAmount, attestData.domain.verifyingContract, chainId]);
+  }, [address, attestData.domain.verifyingContract, burnAmount, chainId]);
+
+  const getIOUVultBalance = useCallback(async () => {
+    if (!address || !chainId || chainId !== base.id) return;
+
+    try {
+      const { value } = await getBalance(wagmiConfig, {
+        address,
+        token: baseContractAddress.iouVult,
+      });
+
+      if (value !== undefined && value !== null) {
+        setState((prev) => ({
+          ...prev,
+          iouVultBalance: value,
+        }));
+      }
+    } catch {
+      message.error("Failed to get IOU vault balance");
+    }
+  }, [address, chainId]);
+
+  const getUnclaimedBurns = useCallback(async () => {
+    if (!address) return;
+
+    try {
+      const { data, success } = await api.getBurns(address);
+
+      if (success && data) {
+        const unclaimedBurnsList = data.filter(
+          (burn: { claimed: boolean }) => !burn.claimed,
+        );
+
+        setState((prev) => ({
+          ...prev,
+          unclaimedBurns: unclaimedBurnsList.map(
+            (burn: {
+              baseTxId: string;
+              baseEventId: string;
+              amount: string;
+              recipient: string;
+              blockNumber: number;
+            }) => ({
+              amount: burn.amount,
+              baseEventId: burn.baseEventId,
+              baseTxId: burn.baseTxId,
+              blockNumber: burn.blockNumber,
+              recipient: burn.recipient,
+            }),
+          ),
+        }));
+      } else {
+        setState((prev) => ({ ...prev, unclaimedBurns: [] }));
+      }
+    } catch {
+      message.error("Failed to get unclaimed burns");
+
+      setState((prev) => ({ ...prev, unclaimedBurns: [] }));
+    }
+  }, [address]);
 
   const handleApprove = async () => {
     if (!burnAmount || burnAmount <= 0 || !attestData.domain.verifyingContract)
       return;
 
-    setState((prevState) => ({
-      ...prevState,
+    setState((prev) => ({
+      ...prev,
       approveLoading: true,
       currentChainId: base.id,
     }));
 
     try {
-      // Approve the required amount (approve replaces previous allowance, doesn't add)
-      // Always approve the full required amount to ensure sufficient allowance
-
       const approveHash = await writeContract(wagmiConfig, {
         chainId: base.id,
         address: baseContractAddress.iouVult as `0x${string}`,
@@ -224,34 +271,33 @@ export const ClaimPage = () => {
         ],
       });
 
-      const approveReceipt = await waitForTransactionReceipt(wagmiConfig, {
+      const { status } = await waitForTransactionReceipt(wagmiConfig, {
         hash: approveHash,
       });
 
-      const approveSuccess = approveReceipt.status === "success";
-      if (approveSuccess) {
-        message.success("Tokens approved successfully");
-        // Wait for blockchain state to update, then retry allowance check
+      if (status === "success") {
         let retries = 3;
         let allowanceUpdated = false;
+
+        message.success("Tokens approved successfully");
 
         while (retries > 0 && !allowanceUpdated) {
           await new Promise((resolve) => setTimeout(resolve, 2000));
           await checkTokenAllowance();
 
-          // Check if approval was successful by reading allowance again
           try {
             const updatedAllowance = await readContract(wagmiConfig, {
-              address: baseContractAddress.iouVult as `0x${string}`,
               abi: IOUVultAbi,
-              functionName: "allowance",
+              address: baseContractAddress.iouVult as `0x${string}`,
               args: [
                 address,
                 attestData.domain.verifyingContract as `0x${string}`,
               ],
+              functionName: "allowance",
             });
+
             const updatedAllowanceAmount = Number(
-              formatEther(updatedAllowance as bigint)
+              formatEther(updatedAllowance as bigint),
             );
 
             if (updatedAllowanceAmount >= burnAmount - 0.000001) {
@@ -267,127 +313,124 @@ export const ClaimPage = () => {
         message.error("Failed to approve tokens");
       }
     } catch (error) {
-      console.error("Approve error:", error);
       message.error("Failed to approve tokens");
+
+      console.error("Approve error:", error);
     } finally {
-      setState((prevState) => ({
-        ...prevState,
-        approveLoading: false,
-      }));
+      setState((prev) => ({ ...prev, approveLoading: false }));
     }
+  };
+
+  const handleBurnAmount: InputNumberProps["onChange"] = (value) => {
+    setState((prev) => ({
+      ...prev,
+      burnAmount: typeof value === "number" ? value : undefined,
+      useMaxAmount: false,
+    }));
   };
 
   const handleBurnSubmit = async () => {
     if (!burnAmount || burnAmount <= 0) return;
 
-    // Check if approval is needed
     if (needsApproval) {
       message.error("Please approve tokens first");
       return;
     }
 
-    setState((prevState) => ({
-      ...prevState,
+    setState((prev) => ({
+      ...prev,
       burnLoading: true,
+      burnTxHash: undefined,
       currentChainId: base.id,
-      burnTxHash: undefined, // Clear previous burn tx hash
     }));
 
     try {
       const mergeHash = await writeContract(wagmiConfig, {
-        address: attestData.domain.verifyingContract as `0x${string}`,
         abi: BaseMergeAbi,
-        functionName: "merge",
+        address: attestData.domain.verifyingContract as `0x${string}`,
         args: [
           useMaxAmount ? iouVultBalance : parseEther(String(burnAmount)),
           vultisigWallet.account,
           attestData.signature,
         ],
+        functionName: "merge",
       });
 
-      const mergeReceipt = await waitForTransactionReceipt(wagmiConfig, {
+      const { logs, status } = await waitForTransactionReceipt(wagmiConfig, {
         hash: mergeHash,
       });
 
-      const success = mergeReceipt.status === "success" ? true : false;
-      if (success) {
+      if (status === "success") {
         message.success("Tokens burned successfully");
-        setState((prevState) => ({
-          ...prevState,
-          burnTxHash: mergeHash,
-        }));
+
+        setState((prev) => ({ ...prev, burnTxHash: mergeHash }));
+
         setClaimTransaction(address, {
           amount: burnAmount,
           date: Date.now(),
           hash: mergeHash,
           status: "success",
           isClaimed: false,
-          eventId: mergeReceipt.logs.length - 1,
+          eventId: logs.length - 1,
         });
         getIOUVultBalance();
-        // Reload claim transaction to update claimAmount
         loadClaimTransaction();
-        // Wait a bit for blockchain state to update after burn
+
         await new Promise((resolve) => setTimeout(resolve, 2000));
-        // Refresh allowance check after successful burn
-        // This will update the button to "Approve" if allowance is now insufficient
         await checkTokenAllowance();
       } else {
-        setState((prevState) => ({ ...prevState, burnLoading: false }));
         message.error("Failed to burn tokens");
       }
     } catch {
-      setState((prevState) => ({ ...prevState, burnLoading: false }));
       message.error("Failed to burn tokens");
+    } finally {
+      setState((prev) => ({ ...prev, burnLoading: false }));
     }
-    setState((prevState) => ({ ...prevState, burnLoading: false }));
-  };
-  const handleMaxAmount = () => {
-    if (iouVultBalance === undefined || iouVultBalance === null) {
-      return;
-    }
-    setState((prevState) => ({
-      ...prevState,
-      useMaxAmount: true,
-      burnAmount: Number(formatEther(iouVultBalance)),
-    }));
   };
 
-  const handleClaimBurnSelect = (baseTxId: string) => {
-    const selected = unclaimedBurns?.find((burn) => burn.baseTxId === baseTxId);
-    if (selected) {
-      setState((prevState) => ({
-        ...prevState,
-        selectedBurn: {
-          baseTxId: selected.baseTxId,
-          baseEventId: selected.baseEventId,
-          amount: selected.amount,
-        },
+  const handleClaimBurnSelect = useCallback(
+    (baseTxId: string) => {
+      const selected = unclaimedBurns?.find(
+        (burn) => burn.baseTxId === baseTxId,
+      );
+
+      if (!selected) return;
+
+      setState((prev) => ({
+        ...prev,
         claimAmount: Number(formatEther(BigInt(selected.amount))),
+        selectedBurn: {
+          amount: selected.amount,
+          baseEventId: selected.baseEventId,
+          baseTxId: selected.baseTxId,
+        },
       }));
-    }
-  };
+    },
+    [unclaimedBurns],
+  );
 
   const handleClaimSubmit = async () => {
     if (!selectedBurn) {
       message.error("Please select a burn transaction to claim");
       return;
     }
-    setState((prevState) => ({
-      ...prevState,
-      currentChainId: mainnet.id,
+
+    setState((prev) => ({
+      ...prev,
       claimLoading: true,
-      claimTxHash: undefined, // Clear previous claim tx hash
+      claimTxHash: undefined,
+      currentChainId: mainnet.id,
     }));
+
     if (pollingIntervalRef.current) {
       clearInterval(pollingIntervalRef.current);
       pollingIntervalRef.current = null;
     }
 
-    pollingStartTimeRef.current = Date.now();
     const TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+    pollingStartTimeRef.current = Date.now();
 
-    setState((prevState) => ({ ...prevState, isPollingAttestBurn: true }));
+    setState((prev) => ({ ...prev, isPollingAttestBurn: true }));
 
     const pollAttestBurn = async (): Promise<boolean> => {
       if (
@@ -398,19 +441,21 @@ export const ClaimPage = () => {
           clearInterval(pollingIntervalRef.current);
           pollingIntervalRef.current = null;
         }
+
         pollingStartTimeRef.current = null;
+
         message.error("Timeout: Failed to attest burn within 5 minutes");
-        setState((prevState) => ({
-          ...prevState,
+
+        setState((prev) => ({
+          ...prev,
           claimLoading: false,
           isPollingAttestBurn: false,
         }));
-        return false; // Indicate polling should stop
+
+        return false;
       }
 
       try {
-        // Fetch transaction receipt to find the event index
-        // baseEventId from API is a hash, we need to find which log index it corresponds to
         let eventId: number;
 
         try {
@@ -419,21 +464,18 @@ export const ClaimPage = () => {
             chainId: base.id,
           });
 
-          // Default to last log index as fallback
           eventId = receipt.logs.length - 1;
 
-          // Find the log index that matches the baseEventId hash
-          // The baseEventId should be in one of the indexed topics of the Merge event
           let foundEventId: number | undefined;
 
           for (let i = 0; i < receipt.logs.length; i++) {
             const log = receipt.logs[i];
-            // The baseEventId should be in one of the indexed topics
-            // Check if any topic matches the baseEventId (case-insensitive comparison)
+
             if (
               log.topics.some(
                 (topic) =>
-                  topic.toLowerCase() === selectedBurn.baseEventId.toLowerCase()
+                  topic.toLowerCase() ===
+                  selectedBurn.baseEventId.toLowerCase(),
               )
             ) {
               foundEventId = i;
@@ -441,42 +483,45 @@ export const ClaimPage = () => {
             }
           }
 
-          // If not found by topic matching, try finding by contract address and use last log index
-          // This is a fallback - the merge event should be one of the last logs
           if (foundEventId === undefined) {
             const mergeContractAddress =
               attestData.domain.verifyingContract.toLowerCase();
+
             const relevantLogs = receipt.logs.filter(
-              (log) => log.address.toLowerCase() === mergeContractAddress
+              (log) => log.address.toLowerCase() === mergeContractAddress,
             );
-            // Use the index of the last relevant log as a fallback
+
             if (relevantLogs.length > 0) {
               const lastRelevantLog = relevantLogs[relevantLogs.length - 1];
+
               foundEventId = receipt.logs.indexOf(lastRelevantLog);
             } else {
-              // Final fallback: use last log index (similar to old implementation)
               foundEventId = receipt.logs.length - 1;
             }
           }
 
           eventId = foundEventId;
         } catch (receiptError) {
-          console.error("Error fetching transaction receipt:", receiptError);
           message.error(
-            "Failed to fetch transaction receipt. Please try again."
+            "Failed to fetch transaction receipt. Please try again.",
           );
-          setState((prevState) => ({
-            ...prevState,
+
+          console.error("Error fetching transaction receipt:", receiptError);
+
+          setState((prev) => ({
+            ...prev,
             claimLoading: false,
             isPollingAttestBurn: false,
           }));
-          // Clear intervals on error
+
           if (pollingIntervalRef.current) {
             clearInterval(pollingIntervalRef.current);
             pollingIntervalRef.current = null;
           }
+
           pollingStartTimeRef.current = null;
-          return false; // Indicate polling should stop
+
+          return false;
         }
 
         const attestBurnResult = await api.attestBurn({
@@ -486,24 +531,20 @@ export const ClaimPage = () => {
 
         if (attestBurnResult.success) {
           try {
+            const attestData = attestBurnResult.data;
+
             if (pollingIntervalRef.current) {
               clearInterval(pollingIntervalRef.current);
               pollingIntervalRef.current = null;
             }
+
             pollingStartTimeRef.current = null;
 
-            setState((prevState) => ({
-              ...prevState,
+            setState((prev) => ({
+              ...prev,
+              claimAmount: Number(formatEther(BigInt(attestData.amount))),
               isPollingAttestBurn: false,
             }));
-
-            const attestData = attestBurnResult.data;
-            setState((prevState) => ({
-              ...prevState,
-              claimAmount: Number(formatEther(BigInt(attestData.amount))),
-            }));
-
-            const isMetaMask = connector?.name === "MetaMask";
 
             if (chainId !== mainnet.id) {
               if (isMetaMask) {
@@ -512,10 +553,11 @@ export const ClaimPage = () => {
                 try {
                   await switchChainAsync({ chainId: mainnet.id });
                 } catch (error) {
-                  console.error("Error switching chain:", error);
                   message.error(
-                    "Failed to switch chain to Mainnet. Please switch manually from your wallet."
+                    "Failed to switch chain to Mainnet. Please switch manually from your wallet.",
                   );
+
+                  console.error("Error switching chain:", error);
                 }
               }
             }
@@ -533,23 +575,26 @@ export const ClaimPage = () => {
                 attestData.signature,
               ],
             });
-            const claimReceipt = await waitForTransactionReceipt(wagmiConfig, {
+
+            const { status } = await waitForTransactionReceipt(wagmiConfig, {
               hash: claimHash,
             });
-            const success = claimReceipt.status === "success" ? true : false;
-            if (success) {
-              setState((prevState) => ({
-                ...prevState,
+
+            if (status === "success") {
+              message.success("Tokens claimed successfully");
+
+              setState((prev) => ({
+                ...prev,
+                claimLoading: false,
                 claimTxHash: claimHash,
                 selectedBurn: undefined,
               }));
-              message.success("Tokens claimed successfully");
-              // Refetch unclaimed burns after successful claim
+
               getUnclaimedBurns();
-              setState((prevState) => ({ ...prevState, claimLoading: false }));
             } else {
               message.error("Failed to claim tokens");
-              setState((prevState) => ({ ...prevState, claimLoading: false }));
+
+              setState((prev) => ({ ...prev, claimLoading: false }));
             }
           } catch (error) {
             if (pollingIntervalRef.current)
@@ -557,25 +602,29 @@ export const ClaimPage = () => {
 
             pollingIntervalRef.current = null;
             pollingStartTimeRef.current = null;
-            setState((prevState) => ({ ...prevState, claimLoading: false }));
+
+            setState((prev) => ({ ...prev, claimLoading: false }));
+
             message.error("Failed to claim tokens");
+
             console.error("Error claiming tokens:", error);
-            return false; // Indicate polling should stop
+
+            return false;
           }
-          return false; // Successfully completed, no need to continue polling
+          return false;
         }
-        return true; // Continue polling - attestBurn not successful yet
-      } catch (error) {
-        return true; // Indicate polling should continue
+        return true;
+      } catch {
+        return true;
       }
     };
 
     const shouldContinuePolling = await pollAttestBurn();
 
-    // Only set interval if polling should continue
     if (shouldContinuePolling && !pollingIntervalRef.current) {
       pollingIntervalRef.current = setInterval(async () => {
         const shouldContinue = await pollAttestBurn();
+
         if (!shouldContinue && pollingIntervalRef.current) {
           clearInterval(pollingIntervalRef.current);
           pollingIntervalRef.current = null;
@@ -584,230 +633,92 @@ export const ClaimPage = () => {
     }
   };
 
-  const handleConnect = () => {
+  const handleConnect = async () => {
     if (connecting) return;
 
-    setState((prevState) => ({ ...prevState, connecting: true }));
+    setState((prev) => ({
+      ...prev,
+      attestData: DEFAULT_ATTEST_DATA,
+      connecting: true,
+      isWalletRegistered: false,
+      vultisigConnected: false,
+      vultisigWallet: DEFAULT_VULTISIG_WALLET,
+    }));
 
-    vultisigConnect()
-      .then((vultisigWallet) => {
-        message.success("Vultisig connected successfully");
-        setState((prevState) => ({
-          ...prevState,
-          connecting: false,
-          vultisigWallet,
-          vultisigConnected: true,
-        }));
-      })
-      .catch(() => {
-        message.error("Failed to connect Vultisig");
+    try {
+      const vultisigWallet = await vultisigConnect();
 
-        setState((prevState) => ({ ...prevState, connecting: false }));
-      });
+      message.success("Vultisig connected successfully");
+
+      setState((prev) => ({
+        ...prev,
+        connecting: false,
+        vultisigConnected: true,
+        vultisigWallet,
+      }));
+    } catch {
+      message.error("Failed to connect Vultisig");
+
+      setState((prev) => ({ ...prev, connecting: false }));
+    }
   };
-
-  const checkAndRegisterVultisigWallet = useCallback(async () => {
-    if (vultisigWallet.account) {
-      setState((prevState) => ({ ...prevState, connecting: true }));
-      const status = await api.applyStatus(vultisigWallet.publicKeyEcdsa);
-      if (status) {
-        const attestResult = await api.attestAddress(vultisigWallet.account);
-        if (attestResult.success) {
-          setState((prevState) => ({
-            ...prevState,
-            isWalletRegistered: status,
-            connecting: false,
-            attestData: attestResult.data,
-          }));
-        } else {
-          message.error("Failed to verify vultisig wallet");
-          setState((prevState) => ({
-            ...prevState,
-            isWalletRegistered: false,
-            connecting: false,
-          }));
-        }
-      }
-      if (!status) {
-        registerVultisigWallet();
-      }
-    }
-  }, [vultisigWallet]);
-
-  useEffect(() => {
-    checkAndRegisterVultisigWallet();
-  }, [checkAndRegisterVultisigWallet]);
-
-  const registerVultisigWallet = useCallback(async () => {
-    if (vultisigWallet.account && vultisigWallet.uid && !isWalletRegistered) {
-      try {
-        setState((prevState) => ({ ...prevState, connecting: true }));
-        const { message: challengeMessage } = await api.challengeMessage(
-          vultisigWallet.uid
-        );
-        const hexMessage = toHex(challengeMessage);
-        const signature = await vultisigPersonalSign(
-          hexMessage,
-          vultisigWallet.account
-        );
-        await api.registerVultisigWallet(
-          vultisigWallet,
-          challengeMessage,
-          signature
-        );
-
-        const result = await api.attestAddress(vultisigWallet.account);
-
-        if (result.success) {
-          setState((prevState) => ({
-            ...prevState,
-            isWalletRegistered: true,
-            connecting: false,
-            attestData: result.data,
-          }));
-        } else {
-          message.error("Failed to verify vultisig wallet");
-        }
-      } catch {
-        message.error("Failed to register Vultisig wallet");
-        setState((prevState) => ({
-          ...prevState,
-          connecting: false,
-          isWalletRegistered: false,
-          vultisigConnected: false,
-        }));
-      }
-    }
-  }, [vultisigWallet, isWalletRegistered]);
 
   const handleContinue = () => {
     if (disabled) return;
 
-    setStep(step + 1);
+    setState((prev) => ({ ...prev, step: step + 1 }));
   };
 
-  useEffect(() => {
-    if (!isConnected) setStep(0);
-  }, [isConnected]);
+  const handleMaxAmount = () => {
+    if (iouVultBalance === undefined || iouVultBalance === null) return;
 
-  const getIOUVultBalance = useCallback(() => {
-    if (address && chainId && chainId === base.id) {
-      setState((prevState) => ({ ...prevState }));
-      getBalance(wagmiConfig, {
-        address,
-        token: baseContractAddress.iouVult,
-      })
-        .then(({ value }) => {
-          // Validate the balance value
-          if (value !== undefined && value !== null) {
-            setState((prevState) => ({
-              ...prevState,
-              iouVultBalance: value,
-            }));
-          }
-        })
-        .catch((error) => {
-          console.error("Error fetching IOU balance:", error);
-          message.error("Failed to get IOU vault balance");
-        });
-    }
-  }, [address, chainId, message, isConnected]);
-
-  const loadClaimTransaction = useCallback(() => {
-    if (!address) return;
-    const claimTransactions = getClaimTransactions(address);
-    const unclaimedTransaction = claimTransactions
-      .filter((tx) => !tx.isClaimed)
-      .sort((a, b) => b.date - a.date)[0];
-
-    if (unclaimedTransaction) {
-      setState((prevState) => ({
-        ...prevState,
-        claimAmount: unclaimedTransaction.amount,
-      }));
-    } else {
-      setState((prevState) => ({
-        ...prevState,
-        claimAmount: undefined,
-      }));
-    }
-  }, [address]);
-
-  const getUnclaimedBurns = useCallback(() => {
-    if (!address) return;
-    api
-      .getBurns(address)
-      .then((result) => {
-        if (result.success && result.data) {
-          const unclaimedBurnsList = result.data.filter(
-            (burn: { claimed: boolean }) => !burn.claimed
-          );
-          setState((prevState) => ({
-            ...prevState,
-            unclaimedBurns: unclaimedBurnsList.map(
-              (burn: {
-                baseTxId: string;
-                baseEventId: string;
-                amount: string;
-                recipient: string;
-                blockNumber: number;
-              }) => ({
-                baseTxId: burn.baseTxId,
-                baseEventId: burn.baseEventId,
-                amount: burn.amount,
-                recipient: burn.recipient,
-                blockNumber: burn.blockNumber,
-              })
-            ),
-          }));
-        } else {
-          setState((prevState) => ({
-            ...prevState,
-            unclaimedBurns: [],
-          }));
-        }
-      })
-      .catch(() => {
-        message.error("Failed to get unclaimed burns");
-        setState((prevState) => ({
-          ...prevState,
-          unclaimedBurns: [],
-        }));
-      });
-  }, [address, message]);
+    setState((prev) => ({
+      ...prev,
+      burnAmount: Number(formatEther(iouVultBalance)),
+      useMaxAmount: true,
+    }));
+  };
 
   const handleSwitchChain = useCallback(async () => {
-    if (isConnected) {
-      if (chainId && chainId !== currentChainId) {
-        const isMetaMask = connector?.name === "MetaMask";
-        if (isMetaMask) {
-          try {
-            await window.ethereum.request({
-              method: "wallet_switchEthereumChain",
-              params: [{ chainId: `0x${currentChainId.toString(16)}` }],
-            });
-            return;
-          } catch (error) {
-            message.error(
-              `Failed to switch chain. Please switch to ${
-                currentChainId === base.id ? "Base" : "Mainnet"
-              } network from your wallet manually and try again.`
-            );
-          }
+    if (!isConnected) return;
+
+    if (chainId && chainId !== currentChainId) {
+      if (isMetaMask) {
+        if (!window.ethereum) {
+          message.error(
+            "MetaMask is not available. Please install or enable the MetaMask extension.",
+          );
+          return;
         }
 
         try {
-          await switchChainAsync({ chainId: currentChainId });
+          await window.ethereum.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: `0x${currentChainId.toString(16)}` }],
+          });
         } catch {
           message.error(
             `Failed to switch chain. Please switch to ${
               currentChainId === base.id ? "Base" : "Mainnet"
-            } network from your wallet manually and try again.`
+            } network from your wallet manually and try again.`,
           );
         }
+
+        return;
       }
-      getIOUVultBalance();
+
+      try {
+        await switchChainAsync({ chainId: currentChainId });
+      } catch {
+        message.error(
+          `Failed to switch chain. Please switch to ${
+            currentChainId === base.id ? "Base" : "Mainnet"
+          } network from your wallet manually and try again.`,
+        );
+      }
     }
+
+    getIOUVultBalance();
   }, [
     isConnected,
     chainId,
@@ -817,35 +728,152 @@ export const ClaimPage = () => {
     connector,
   ]);
 
-  useEffect(() => {
-    handleSwitchChain();
-  }, [handleSwitchChain]);
+  const loadClaimTransaction = useCallback(() => {
+    if (!address) return;
+
+    const claimTransactions = getClaimTransactions(address);
+    const unclaimedTransaction = claimTransactions
+      .filter((tx) => !tx.isClaimed)
+      .sort((a, b) => b.date - a.date)[0];
+
+    setState((prev) => ({
+      ...prev,
+      claimAmount: unclaimedTransaction?.amount,
+    }));
+  }, [address]);
+
+  const registerVultisigWallet = useCallback(async () => {
+    if (!vultisigWallet.account || !vultisigWallet.uid || isWalletRegistered)
+      return;
+
+    try {
+      setState((prev) => ({ ...prev, connecting: true }));
+
+      const { message: challengeMessage } = await api.challengeMessage(
+        vultisigWallet.uid,
+      );
+      const hexMessage = toHex(challengeMessage);
+      const signature = await vultisigPersonalSign(
+        hexMessage,
+        vultisigWallet.account,
+      );
+
+      await api.registerVultisigWallet(
+        vultisigWallet,
+        challengeMessage,
+        signature,
+      );
+
+      const { data, success } = await api.attestAddress(vultisigWallet.account);
+
+      if (success) {
+        setState((prev) => ({
+          ...prev,
+          attestData: data,
+          connecting: false,
+          isWalletRegistered: true,
+        }));
+      } else {
+        message.error("Failed to verify vultisig wallet");
+
+        setState((prev) => ({
+          ...prev,
+          connecting: false,
+          isWalletRegistered: false,
+          attestData: DEFAULT_ATTEST_DATA,
+        }));
+      }
+    } catch {
+      message.error("Failed to register Vultisig wallet");
+
+      setState((prev) => ({
+        ...prev,
+        connecting: false,
+        isWalletRegistered: false,
+        vultisigConnected: false,
+      }));
+    }
+  }, [vultisigWallet, isWalletRegistered]);
+
+  const checkAndRegisterVultisigWallet = useCallback(async () => {
+    if (vultisigWallet.account) {
+      setState((prev) => ({ ...prev, connecting: true }));
+
+      try {
+        const status = await api.applyStatus(vultisigWallet.publicKeyEcdsa);
+
+        if (status) {
+          const attestResult = await api.attestAddress(vultisigWallet.account);
+
+          if (attestResult.success) {
+            setState((prev) => ({
+              ...prev,
+              attestData: attestResult.data,
+              connecting: false,
+              isWalletRegistered: status,
+            }));
+          } else {
+            message.error("Failed to verify vultisig wallet");
+
+            setState((prev) => ({
+              ...prev,
+              connecting: false,
+              isWalletRegistered: false,
+            }));
+          }
+        } else {
+          registerVultisigWallet();
+        }
+      } catch {
+        message.error("Failed to check vultisig wallet status");
+
+        setState((prev) => ({ ...prev, connecting: false }));
+      }
+    }
+  }, [vultisigWallet, registerVultisigWallet]);
 
   useEffect(() => {
-    loadClaimTransaction();
-  }, [loadClaimTransaction]);
+    checkAndRegisterVultisigWallet();
+  }, [checkAndRegisterVultisigWallet]);
 
   useEffect(() => {
     checkTokenAllowance();
   }, [checkTokenAllowance]);
 
   useEffect(() => {
+    if (isConnected) return;
+
+    setState((prev) => ({
+      ...prev,
+      attestData: DEFAULT_ATTEST_DATA,
+      isWalletRegistered: false,
+      step: 0,
+      vultisigConnected: false,
+      vultisigWallet: DEFAULT_VULTISIG_WALLET,
+    }));
+  }, [isConnected]);
+
+  useEffect(() => {
+    loadClaimTransaction();
+  }, [loadClaimTransaction]);
+
+  useEffect(() => {
+    handleSwitchChain();
+  }, [handleSwitchChain]);
+
+  useEffect(() => {
     getUnclaimedBurns();
 
-    // Set up polling to refresh unclaimed burns every 12 seconds
     if (address) {
-      // Clear any existing interval
       if (unclaimedBurnsIntervalRef.current) {
         clearInterval(unclaimedBurnsIntervalRef.current);
       }
 
-      // Set up new interval
       unclaimedBurnsIntervalRef.current = setInterval(() => {
         getUnclaimedBurns();
-      }, 12000); // 12 seconds
+      }, 12000);
     }
 
-    // Cleanup function
     return () => {
       if (unclaimedBurnsIntervalRef.current) {
         clearInterval(unclaimedBurnsIntervalRef.current);
@@ -853,8 +881,6 @@ export const ClaimPage = () => {
       }
     };
   }, [getUnclaimedBurns, address]);
-
-  useEffect(() => setCurrentPage("claim"), []);
 
   useEffect(() => {
     return () => {
@@ -869,6 +895,8 @@ export const ClaimPage = () => {
       pollingStartTimeRef.current = null;
     };
   }, []);
+
+  useEffect(() => setCurrentPage("claim"), []);
 
   return (
     <VStack
@@ -930,8 +958,8 @@ export const ClaimPage = () => {
                         color: passed
                           ? colors.neutral50.toHex()
                           : disabled
-                          ? colors.textTertiary.toHex()
-                          : colors.accentFour.toHex(),
+                            ? colors.textTertiary.toHex()
+                            : colors.accentFour.toHex(),
                         height: "24px",
                         justifyContent: "center",
                         width: "24px",
