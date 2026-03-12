@@ -721,6 +721,11 @@ export const ClaimPage = () => {
 
     if (chainId && chainId !== currentChainId) {
       if (isMetaMask) {
+        if (!window.ethereum) {
+          message.error("MetaMask is not available. Please install or enable the MetaMask extension.");
+          return;
+        }
+        
         try {
           await window.ethereum.request({
             method: "wallet_switchEthereumChain",
