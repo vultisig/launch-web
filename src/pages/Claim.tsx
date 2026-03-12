@@ -166,9 +166,8 @@ export const ClaimPage = () => {
       burnAmount <= 0 ||
       !attestData.domain.verifyingContract ||
       chainId !== base.id
-    ) {
+    )
       return;
-    }
 
     try {
       const allowance = await readContract(wagmiConfig, {
@@ -189,27 +188,27 @@ export const ClaimPage = () => {
     } catch {
       message.error("Failed to check token allowance");
     }
-  }, [address, burnAmount, attestData.domain.verifyingContract, chainId]);
+  }, [address, attestData.domain.verifyingContract, burnAmount, chainId]);
 
   const getIOUVultBalance = useCallback(async () => {
-    if (address && chainId && chainId === base.id) {
-      try {
-        const { value } = await getBalance(wagmiConfig, {
-          address,
-          token: baseContractAddress.iouVult,
-        });
+    if (!address || !chainId || chainId !== base.id) return;
 
-        if (value !== undefined && value !== null) {
-          setState((prev) => ({
-            ...prev,
-            iouVultBalance: value,
-          }));
-        }
-      } catch {
-        message.error("Failed to get IOU vault balance");
+    try {
+      const { value } = await getBalance(wagmiConfig, {
+        address,
+        token: baseContractAddress.iouVult,
+      });
+
+      if (value !== undefined && value !== null) {
+        setState((prev) => ({
+          ...prev,
+          iouVultBalance: value,
+        }));
       }
+    } catch {
+      message.error("Failed to get IOU vault balance");
     }
-  }, [address, chainId, message, isConnected]);
+  }, [address, chainId]);
 
   const getUnclaimedBurns = useCallback(async () => {
     if (!address) return;
@@ -248,7 +247,7 @@ export const ClaimPage = () => {
 
       setState((prev) => ({ ...prev, unclaimedBurns: [] }));
     }
-  }, [address, message]);
+  }, [address]);
 
   const handleApprove = async () => {
     if (!burnAmount || burnAmount <= 0 || !attestData.domain.verifyingContract)
@@ -381,33 +380,34 @@ export const ClaimPage = () => {
         await checkTokenAllowance();
       } else {
         message.error("Failed to burn tokens");
-
-        setState((prev) => ({ ...prev, burnLoading: false }));
       }
     } catch {
       message.error("Failed to burn tokens");
-
+    } finally {
       setState((prev) => ({ ...prev, burnLoading: false }));
     }
-
-    setState((prev) => ({ ...prev, burnLoading: false }));
   };
 
-  const handleClaimBurnSelect = (baseTxId: string) => {
-    const selected = unclaimedBurns?.find((burn) => burn.baseTxId === baseTxId);
+  const handleClaimBurnSelect = useCallback(
+    (baseTxId: string) => {
+      const selected = unclaimedBurns?.find(
+        (burn) => burn.baseTxId === baseTxId,
+      );
 
-    if (!selected) return;
+      if (!selected) return;
 
-    setState((prev) => ({
-      ...prev,
-      claimAmount: Number(formatEther(BigInt(selected.amount))),
-      selectedBurn: {
-        amount: selected.amount,
-        baseEventId: selected.baseEventId,
-        baseTxId: selected.baseTxId,
-      },
-    }));
-  };
+      setState((prev) => ({
+        ...prev,
+        claimAmount: Number(formatEther(BigInt(selected.amount))),
+        selectedBurn: {
+          amount: selected.amount,
+          baseEventId: selected.baseEventId,
+          baseTxId: selected.baseTxId,
+        },
+      }));
+    },
+    [unclaimedBurns],
+  );
 
   const handleClaimSubmit = async () => {
     if (!selectedBurn) {
@@ -703,7 +703,7 @@ export const ClaimPage = () => {
             } network from your wallet manually and try again.`,
           );
         }
-        
+
         return;
       }
 
@@ -780,7 +780,7 @@ export const ClaimPage = () => {
           ...prev,
           connecting: false,
           isWalletRegistered: false,
-          attestData: undefined,
+          attestData: DEFAULT_ATTEST_DATA,
         }));
       }
     } catch {
