@@ -135,7 +135,8 @@ export const api = {
   registerVultisigWallet: async (
     wallet: VultisigWalletProps,
     message: string,
-    signature: string
+    signature: string,
+    ethAddress: string
   ) => {
     const { data } = await fetchTalkApi.post<{
       id: number;
@@ -147,6 +148,7 @@ export const api = {
       ...wallet,
       message,
       signature,
+      ethAddress,
     });
     return data;
   },

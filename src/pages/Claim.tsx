@@ -653,7 +653,8 @@ export const ClaimPage = () => {
         await api.registerVultisigWallet(
           vultisigWallet,
           challengeMessage,
-          signature
+          signature,
+          vultisigWallet.account
         );
 
         const result = await api.attestAddress(vultisigWallet.account);
