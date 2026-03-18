@@ -38,7 +38,7 @@ Fill in the `.env` values:
 | `VITE_RPC_MAINNET` | Ethereum mainnet RPC endpoint |
 | `VITE_RPC_LOCAL` | Local RPC endpoint (optional) |
 | `VITE_BASE_PATH` | Base path for deployment (optional) |
-| `VITE_TALK_ADDRESS` | Whitelist & attestation service URL (claim flow) |
+| `VITE_TALK_ADDRESS` | Whitelist & attestation service URL (claim flow), e.g. `https://talk.example.com` |
 
 ### Development
 
@@ -64,7 +64,7 @@ npm run knip       # Detect unused files and exports
 
 ## Project Structure
 
-```
+```text
 src/
   components/     # Feature components (SwapVult, SettingsModal, ConnectModal, etc.)
   context/        # React context definitions (CoreContext)
