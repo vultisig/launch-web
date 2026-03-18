@@ -1,54 +1,108 @@
-# React + TypeScript + Vite
+# Vult Launch
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Web frontend for the [VULT token](https://docs.vultisig.com/vultisig-token/vult) DEX — swap tokens via Uniswap V3 and claim airdrop allocations.
 
-Currently, two official plugins are available:
+**Live:** [launch.vultisig.com](https://launch.vultisig.com)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Tech Stack
 
-## Expanding the ESLint configuration
+- **Framework:** React 18, TypeScript ~5.9, Vite
+- **Wallet:** Wagmi + Viem (WalletConnect, MetaMask, Safe connectors)
+- **DEX:** Uniswap V3 SDK (swap routing, quoting, pool pricing)
+- **Styling:** styled-components + Ant Design (light/dark themes)
+- **Data:** Axios, React Query, Highcharts
+- **i18n:** i18next (en, es, pt, it, de, hr)
+- **Deployment:** Vercel
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Getting Started
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+### Prerequisites
+
+- Node.js (LTS recommended)
+- npm
+
+### Setup
+
+```sh
+npm install
+cp .env.example .env
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Fill in the `.env` values:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+| Variable | Description |
+|----------|-------------|
+| `VITE_GRAPH_API_KEY` | TheGraph / CoinMarketCap API key |
+| `VITE_WALLETCONNECT_PROJECT_ID` | [WalletConnect Cloud](https://cloud.walletconnect.com) project ID |
+| `VITE_SERVER_ADDRESS` | Backend server URL (balance & price data) |
+| `VITE_RPC_MAINNET` | Ethereum mainnet RPC endpoint |
+| `VITE_RPC_LOCAL` | Local RPC endpoint (optional) |
+| `VITE_BASE_PATH` | Base path for deployment (optional) |
+| `VITE_TALK_ADDRESS` | Whitelist & attestation service URL (claim flow) |
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+### Development
+
+```sh
+npm run dev        # Start dev server (network-accessible via --host)
+```
+
+### Build & Preview
+
+```sh
+npm run build      # Type-check (tsc) + production build
+npm run preview    # Serve the production build locally
+```
+
+### Linting & Type Checking
+
+```sh
+npm run lint       # ESLint check
+npm run lint:fix   # ESLint auto-fix
+npm run typecheck  # TypeScript type check (no emit)
+npm run knip       # Detect unused files and exports
+```
+
+## Project Structure
+
+```
+src/
+  components/     # Feature components (SwapVult, SettingsModal, ConnectModal, etc.)
+  context/        # React context definitions (CoreContext)
+  hooks/          # Custom hooks (useCore, useSwapVult, useGoBack, useResizeObserver)
+  i18n/           # i18next config and locale files
+  icons/          # SVG icon components
+  layouts/        # Page layouts (DefaultLayout with header/footer)
+  pages/          # Route pages (Swap, Claim, Pool, NotFound)
+  providers/      # Provider wrappers (CoreProvider, AntdProvider, StyledProvider)
+  storage/        # LocalStorage persistence (theme, language, currency, gas, transactions)
+  styles/         # Global SCSS (fonts, normalize, resets)
+  toolkits/       # Layout primitives (Stack, HStack, VStack, Button, Divider, Spin)
+  utils/          # Config and helpers (api, routes, wagmi, theme, currency)
+```
+
+## Routes
+
+| Path | Page | Description |
+|------|------|-------------|
+| `/` | — | Redirects to `/swap` |
+| `/swap` | SwapPage | Uniswap V3 token swap interface |
+| `/claim` | ClaimPage | VULT token airdrop claim |
+| `*` | NotFoundPage | 404 fallback |
+
+## External Services
+
+| Service | Usage |
+|---------|-------|
+| Uniswap V3 (on-chain) | Swap routing and execution |
+| MetaMask Gas API | Suggested gas fees |
+| CoinMarketCap | Token price quotes |
+| GeckoTerminal | Pool volume data |
+| Custom backend (`VITE_SERVER_ADDRESS`) | Balance queries, price aggregation |
+
+## Path Aliases
+
+`@` is aliased to `src/` in `vite.config.ts` and `tsconfig.app.json`:
+
+```ts
+import { SwapPage } from "@/pages/Swap";
 ```
