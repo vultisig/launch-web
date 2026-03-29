@@ -8,6 +8,22 @@ type GasFeeEstimate = {
   maxWaitTimeEstimate: number;
 };
 
+export type ClaimTransactionProps = {
+  amount: number;
+  date: number;
+  hash: string;
+  status: TxStatus;
+  isClaimed: boolean;
+  eventId: number;
+};
+
+export type CreateLPTokensFormProps = {
+  amount0: number;
+  amount1: number;
+  token0: TickerKey;
+  token1: TickerKey;
+};
+
 export type CSSProperties = CSS.Properties<string>;
 
 export type HistoricalPriceProps = { date: number; price: number };
@@ -47,7 +63,7 @@ export type TickerKey = "ETH" | "VULT" | "UNI" | "USDC" | "WETH";
 export type TokenProps = {
   balance: number;
   cmcId: number;
-  contractAddress: string;
+  contractAddress?: string;
   decimals: number;
   isAirdropToken: boolean;
   isNative: boolean;
@@ -63,15 +79,6 @@ export type TransactionProps = {
   hash: string;
   status: TxStatus;
 } & SwapFormProps;
-
-export type ClaimTransactionProps = {
-  amount: number;
-  date: number;
-  hash: string;
-  status: TxStatus;
-  isClaimed: boolean;
-  eventId: number;
-};
 
 export type TxStatus = "failed" | "pending" | "success";
 

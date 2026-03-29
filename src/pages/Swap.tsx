@@ -16,7 +16,7 @@ import { TradingViewWidget } from "@/components/TradingViewWidget";
 import { useCore } from "@/hooks/useCore";
 import { Stack, VStack } from "@/toolkits/Stack";
 import { api } from "@/utils/api";
-import { contractAddress, poolsAbi, uniswapTokens } from "@/utils/constants";
+import { contractAddress, PoolsAbi, uniswapTokens } from "@/utils/constants";
 import { getRPCProvider } from "@/utils/providers";
 
 const { Content } = Layout;
@@ -36,7 +36,7 @@ export const SwapPage = () => {
   const fetchPrice = async () => {
     const contract = new Contract(
       contractAddress.vultUsdcPool,
-      poolsAbi,
+      PoolsAbi,
       getRPCProvider()
     );
     const slot0 = await contract.slot0();

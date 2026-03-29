@@ -9,14 +9,14 @@ import {
 } from "@uniswap/v3-sdk";
 import { Contract, formatUnits, parseUnits } from "ethers";
 import { useEffect, useState } from "react";
-import { encodeFunctionData, erc20Abi } from "viem";
+import { Address, encodeFunctionData, erc20Abi } from "viem";
 import { mainnet } from "viem/chains";
 import { useAccount, useWalletClient } from "wagmi";
 
 import { useCore } from "@/hooks/useCore";
 import { getGasSettings } from "@/storage/gasSettings";
 import { api } from "@/utils/api";
-import { launchListABI } from "@/utils/constants";
+import { LaunchListABI } from "@/utils/constants";
 import { contractAddress, defaultTokens } from "@/utils/constants";
 import { getBrowserProvider, getRPCProvider } from "@/utils/providers";
 import { TickerKey, TxStatus, UniswapTokenProps } from "@/utils/types";
@@ -68,7 +68,7 @@ export const useSwapVult = () => {
     }
   };
 
-  const encodeApproval = (spender: `0x${string}`, amount: bigint) => {
+  const encodeApproval = (spender: Address, amount: bigint) => {
     return encodeFunctionData({
       abi: erc20Abi,
       functionName: "approve",
@@ -105,8 +105,8 @@ export const useSwapVult = () => {
         functionName: "exactInputSingle",
         args: [
           {
-            tokenIn: actualTokenIn as `0x${string}`,
-            tokenOut: actualTokenOut as `0x${string}`,
+            tokenIn: actualTokenIn as Address,
+            tokenOut: actualTokenOut as Address,
             fee: poolConstants.fee,
             recipient: isOutETH ? contractAddress.swapRouter : address,
             deadline: Math.floor(Date.now() / 1000) + 60 * 10, // 10 min deadline
@@ -138,7 +138,7 @@ export const useSwapVult = () => {
 
       const tx = await walletClient.sendTransaction({
         chain: mainnet,
-        to: contractAddress.swapRouter as `0x${string}`,
+        to: contractAddress.swapRouter as Address,
         data: callData,
         gas: gasSetting.gasLimit > 0 ? BigInt(gasSetting.gasLimit) : undefined,
         maxPriorityFeePerGas:
@@ -161,7 +161,7 @@ export const useSwapVult = () => {
   const getAddressSpentUSDC = async (address: string): Promise<number> => {
     const launchListContract = new Contract(
       contractAddress.launchList,
-      launchListABI,
+      LaunchListABI,
       rpcClient
     );
 
@@ -177,7 +177,7 @@ export const useSwapVult = () => {
   const getCurrentPhase = async (): Promise<number> => {
     const launchListContract = new Contract(
       contractAddress.launchList,
-      launchListABI,
+      LaunchListABI,
       rpcClient
     );
 
@@ -424,7 +424,7 @@ export const useSwapVult = () => {
   const isAddressWhitelisted = async (address: string): Promise<boolean> => {
     const launchListContract = new Contract(
       contractAddress.launchList,
-      launchListABI,
+      LaunchListABI,
       rpcClient
     );
 
@@ -448,7 +448,7 @@ export const useSwapVult = () => {
       if (!walletClient) throw new Error("");
 
       const approvalData = encodeApproval(
-        contractAddress.swapRouter as `0x${string}`,
+        contractAddress.swapRouter as Address,
         parseUnits(String(allocateAmount), tokenDecimals)
       );
 
@@ -456,7 +456,7 @@ export const useSwapVult = () => {
 
       const tx = await walletClient.sendTransaction({
         chain: mainnet,
-        to: tokenAddress as `0x${string}`,
+        to: tokenAddress as Address,
         data: approvalData,
         gas: gasSetting.gasLimit > 0 ? BigInt(gasSetting.gasLimit) : undefined,
         maxPriorityFeePerGas:
