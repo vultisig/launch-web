@@ -72,7 +72,7 @@ src/
   i18n/           # i18next config and locale files
   icons/          # SVG icon components
   layouts/        # Page layouts (DefaultLayout with header/footer)
-  pages/          # Route pages (Swap, Claim, Pool, NotFound)
+  pages/          # Route pages (Swap, Claim, NotFound)
   providers/      # Provider wrappers (CoreProvider, AntdProvider, StyledProvider)
   storage/        # LocalStorage persistence (theme, language, currency, gas, transactions)
   styles/         # Global SCSS (fonts, normalize, resets)
