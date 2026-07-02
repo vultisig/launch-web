@@ -778,6 +778,17 @@ footer .brand img {
   border-top: 1px solid #1d3b64;
   padding-top: 20px;
 }
+.ballot-note {
+  color: #8fa4c2;
+  font-size: 10px;
+  line-height: 1.6;
+  margin: 0 0 14px;
+  text-transform: none;
+}
+.ballot-note strong {
+  color: #eef4ff;
+  text-transform: capitalize;
+}
 .vote-options {
   display: grid;
   grid-template-columns: 1fr 1fr;

@@ -93,6 +93,9 @@ const vultBalance = async (address) => {
 };
 
 const requireVult = async (address) => {
+  if (adminWallets().has(address)) {
+    return vultBalance(address).catch(() => 0);
+  }
   const balance = await vultBalance(address);
   if (balance < MIN_VULT) {
     throw new ApiError(403, `At least ${MIN_VULT} VULT is required`);
@@ -164,7 +167,8 @@ const issueNonce = async (payload, requestKey) => {
   return json(200, { message: signInMessage(address, nonce, issuedAt) });
 };
 
-const verifySignIn = async (payload) => {
+const verifySignIn = async (payload, requestKey) => {
+  await rateLimit(`verify:${requestKey}`, 20, 60);
   const address = normalizeAddress(payload.address);
   const rows = await db()`
     DELETE FROM auth_nonces
@@ -257,7 +261,7 @@ export async function handleApi({ method, url, headers = {}, body = "" }) {
     const payload = JSON.parse(body || "{}");
     const requestKey = String(headers["x-forwarded-for"] || headers["x-real-ip"] || "local").split(",")[0].trim();
     if (payload.action === "nonce") return await issueNonce(payload, requestKey);
-    if (payload.action === "verify") return await verifySignIn(payload);
+    if (payload.action === "verify") return await verifySignIn(payload, requestKey);
     if (payload.action === "createProposal") return await createProposal(headers, payload);
     if (payload.action === "vote") return await castVote(headers, payload);
     if (payload.action === "moderate") return await moderate(headers, payload);

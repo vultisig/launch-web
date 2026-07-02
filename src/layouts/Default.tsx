@@ -2,9 +2,11 @@ import { Layout, Menu } from "antd";
 import { FC } from "react";
 import { useTranslation } from "react-i18next";
 import MediaQuery from "react-responsive";
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useNavigate } from "react-router-dom";
 import { createGlobalStyle, useTheme } from "styled-components";
-import { useAccount } from "wagmi";
+import { formatUnits } from "viem";
+import { useAccount, useReadContract } from "wagmi";
+import { mainnet } from "wagmi/chains";
 
 import { ConnectModal } from "@/components/ConnectModal";
 import { MiddleTruncate } from "@/components/MiddleTruncate";
@@ -18,6 +20,14 @@ import { modalHash } from "@/utils/constants";
 import { RouteKey, routeTree } from "@/utils/routes";
 
 const { Footer, Header } = Layout;
+const VULT_CONTRACT = "0xb788144df611029c60b859df47e79b7726c4deba" as const;
+const tokenAbi = [{
+  type: "function",
+  name: "balanceOf",
+  stateMutability: "view",
+  inputs: [{ name: "account", type: "address" }],
+  outputs: [{ name: "", type: "uint256" }],
+}] as const;
 
 type NavItem = {
   href: string;
@@ -27,9 +37,21 @@ type NavItem = {
 };
 
 export const DefaultLayout = () => {
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const { currentPage } = useCore();
   const { address = "", isConnected } = useAccount();
+  const { data: rawVultBalance, isLoading: vultBalanceLoading } = useReadContract({
+    address: VULT_CONTRACT,
+    abi: tokenAbi,
+    chainId: mainnet.id,
+    functionName: "balanceOf",
+    args: address ? [address] : undefined,
+    query: { enabled: Boolean(address) },
+  });
+  const vultBalance = rawVultBalance === undefined
+    ? 0
+    : Number(formatUnits(rawVultBalance, 18));
   const colors = useTheme();
 
   const menu: NavItem[] = [
@@ -92,19 +114,19 @@ export const DefaultLayout = () => {
           <MediaQuery minWidth={768}>
             <Stack
               as={Menu}
-              items={menu.map(({ href, key, title }) => ({
+              items={menu.map(({ key, title }) => ({
                 key,
                 label: (
-                  <Stack
-                    as={Link}
-                    to={href}
-                    $style={{ display: "block", padding: "0 16px" }}
-                  >
+                  <span style={{ display: "block", padding: "0 12px" }}>
                     {title}
-                  </Stack>
+                  </span>
                 ),
               }))}
               mode="horizontal"
+              onClick={({ key }) => {
+                const item = menu.find((entry) => entry.key === key);
+                if (item) navigate(item.href);
+              }}
               selectedKeys={[currentPage]}
               $style={{ flexGrow: "1" }}
             />
@@ -114,6 +136,16 @@ export const DefaultLayout = () => {
               <MiddleTruncate $style={{ textAlign: "center", width: "110px" }}>
                 {address}
               </MiddleTruncate>
+              <MediaQuery minWidth={768}>
+                <Stack
+                  as="span"
+                  $style={{ fontSize: "12px", fontWeight: "600", whiteSpace: "nowrap" }}
+                >
+                  {vultBalanceLoading
+                    ? "Checking VULT…"
+                    : `${vultBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })} VULT`}
+                </Stack>
+              </MediaQuery>
             </Button>
           ) : (
             <Button href={modalHash.connect}>{t("connectWallet")}</Button>

@@ -182,6 +182,12 @@ function FeatureBoard() {
     queryFn: () => fetchBoard(activeSession?.token),
     refetchInterval: 30_000,
   });
+  useEffect(() => {
+    if (activeSession && board.isSuccess && !board.data.viewer) {
+      localStorage.removeItem(SESSION_KEY);
+      setSession(null);
+    }
+  }, [activeSession, board.data?.viewer, board.isSuccess]);
   const { data: rawBalance, isLoading: balanceLoading } = useReadContract({
     address: VULT_CONTRACT,
     abi: tokenAbi,
@@ -236,17 +242,20 @@ function FeatureBoard() {
 
   const createProposal = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const title = String(data.get("title") || "").trim();
+    const body = String(data.get("body") || "").trim();
     setSubmitting(true);
     setActionError("");
     try {
       const authenticated = await authenticate();
-      const data = new FormData(event.currentTarget);
       await createFeatureProposal(
         authenticated.token,
-        String(data.get("title") || "").trim(),
-        String(data.get("body") || "").trim(),
+        title,
+        body,
       );
-      event.currentTarget.reset();
+      form.reset();
       setProposalOpen(false);
       await board.refetch();
     } catch (error) {
@@ -281,17 +290,19 @@ function FeatureBoard() {
   ) => {
     event.preventDefault();
     if (!selected) return;
+    const data = new FormData(event.currentTarget);
+    const startsAt = String(data.get("startsAt") || "");
+    const endsAt = String(data.get("endsAt") || "");
     setSubmitting(true);
     setActionError("");
     try {
       const authenticated = await authenticate();
-      const data = new FormData(event.currentTarget);
       await moderateProposal(
         authenticated.token,
         selected.id,
         moderationState,
-        String(data.get("startsAt") || ""),
-        String(data.get("endsAt") || ""),
+        startsAt,
+        endsAt,
       );
       setSelected(null);
       await board.refetch();
@@ -557,8 +568,8 @@ function FeatureBoard() {
               <b>01</b>
               <h3>Connect</h3>
               <p>
-                Connect a wallet holding at least 100 VULT and sign a gasless
-                login message.
+                Connect a wallet holding at least 100 VULT and sign one gasless
+                login message. No transaction is sent.
               </p>
             </div>
             <div>
@@ -617,7 +628,7 @@ function FeatureBoard() {
               </h2>
               <p>
                 {isConnected
-                  ? "Your VULT stays in your wallet. Signing in only proves wallet ownership."
+                  ? "Your VULT stays in your wallet. The one-time gasless message only proves wallet ownership and creates a seven-day session—no transaction is sent."
                   : "Connect the Ethereum wallet holding your VULT. No assets or approvals are requested."}
               </p>
               {isConnected ? (
@@ -765,8 +776,15 @@ function FeatureBoard() {
               {selected.state === "active" && (
                 <div className="ballot">
                   <h4>
-                    {selected.myVote ? "Update your vote" : "Cast your vote"}
+                    {selected.myVote ? "Change your vote" : "Cast your vote"}
                   </h4>
+                  {selected.myVote && (
+                    <p className="ballot-note">
+                      Your current vote is <strong>{selected.myVote}</strong>.
+                      Selecting a different option replaces it—your wallet still
+                      counts as one ballot.
+                    </p>
+                  )}
                   <div className="vote-options dynamic">
                     {(["for", "against", "abstain"] as VoteChoice[]).map(
                       (item) => (
@@ -780,21 +798,35 @@ function FeatureBoard() {
                           key={item}
                         >
                           <span>{item[0].toUpperCase() + item.slice(1)}</span>
-                          <small>One wallet, one vote</small>
+                          <small>
+                            {selected.myVote === item
+                              ? "Current vote"
+                              : choice === item
+                                ? "New choice"
+                                : selected.myVote
+                                  ? "Select to replace"
+                                  : "One wallet, one vote"}
+                          </small>
                         </button>
                       ),
                     )}
                   </div>
                   <button
                     className="primary-button full"
-                    disabled={!choice || submitting}
+                    disabled={
+                      !choice || choice === selected.myVote || submitting
+                    }
                     onClick={vote}
                   >
                     {submitting
                       ? "Verifying wallet…"
                       : activeSession
-                        ? "Submit vote"
-                        : "Sign in & submit vote"}
+                        ? selected.myVote
+                          ? "Update vote"
+                          : "Submit vote"
+                        : selected.myVote
+                          ? "Sign message & update vote"
+                          : "Sign message & submit vote"}
                   </button>
                 </div>
               )}
@@ -919,7 +951,7 @@ function FeatureBoard() {
                     ? "Verifying wallet…"
                     : activeSession
                       ? "Submit for review"
-                      : "Sign in & submit for review"}
+                      : "Sign message & submit for review"}
                 </button>
               </form>
             </div>
