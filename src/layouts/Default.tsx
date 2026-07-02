@@ -11,7 +11,7 @@ import { MiddleTruncate } from "@/components/MiddleTruncate";
 import { WalletDrawer } from "@/components/WalletDrawer";
 import { useCore } from "@/hooks/useCore";
 import { ArrowDownUpIcon } from "@/icons/ArrowDownUpIcon";
-import { DatabaseIcon } from "@/icons/DatabaseIcon";
+import { ChartPieIcon } from "@/icons/ChartPieIcon";
 import { Button } from "@/toolkits/Button";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
 import { modalHash } from "@/utils/constants";
@@ -34,22 +34,16 @@ export const DefaultLayout = () => {
 
   const menu: NavItem[] = [
     {
+      href: routeTree.features.path,
+      icon: ChartPieIcon,
+      key: "features",
+      title: "Features",
+    },
+    {
       href: routeTree.swap.path,
       icon: ArrowDownUpIcon,
       key: "swap",
       title: t("swap"),
-    },
-    {
-      href: "#",
-      icon: DatabaseIcon,
-      key: "pool",
-      title: t("pool"),
-    },
-    {
-      href: routeTree.claim.path,
-      icon: ArrowDownUpIcon,
-      key: "claim",
-      title: t("claim"),
     },
   ];
 
@@ -73,7 +67,11 @@ export const DefaultLayout = () => {
             zIndex: "2",
           }}
         >
-          <HStack $style={{ alignItems: "center", gap: "8px" }}>
+          <HStack
+            as={Link}
+            to={routeTree.features.path}
+            $style={{ alignItems: "center", gap: "8px" }}
+          >
             <Stack
               as="img"
               alt="Vultisig"

@@ -53,6 +53,7 @@ export const SwapPage = () => {
   };
 
   useEffect(() => {
+    document.title = "Vultisig Swap";
     setCurrentPage("swap");
 
     api.volume().then((volume) => {
