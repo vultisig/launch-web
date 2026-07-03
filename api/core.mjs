@@ -28,7 +28,10 @@ const db = () => {
 
 const ethereum = () => createPublicClient({
   chain: mainnet,
-  transport: http(process.env.ETHEREUM_RPC_URL),
+  transport: http(process.env.ETHEREUM_RPC_URL, {
+    retryCount: 1,
+    timeout: 8_000,
+  }),
 });
 
 const json = (status, body) => ({
