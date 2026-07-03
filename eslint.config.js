@@ -29,5 +29,13 @@ export default tseslint.config(
       "simple-import-sort/imports": "error",
       "simple-import-sort/exports": "error",
     },
+  },
+  {
+    files: ["api/**/*.mjs", "scripts/**/*.mjs", "shared/**/*.js"],
+    languageOptions: {
+      ecmaVersion: 2022,
+      globals: globals.node,
+      sourceType: "module",
+    },
   }
 );

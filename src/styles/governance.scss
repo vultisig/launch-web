@@ -1,32 +1,25 @@
 @use "@fontsource/montserrat/latin.css" as montserrat;
-:root {
+.governance-app {
   color-scheme: dark;
   font-family: Montserrat, sans-serif;
   background: #06152d;
   color: #f1f5ff;
 }
-* {
+.governance-app,
+.governance-app * {
   box-sizing: border-box;
 }
-html {
-  scroll-behavior: smooth;
-}
-body {
-  margin: 0;
-  min-width: 320px;
-  background: #06152d;
-}
-button,
-input,
-textarea,
-select {
+.governance-app button,
+.governance-app input,
+.governance-app textarea,
+.governance-app select {
   font: inherit;
 }
-a {
+.governance-app a {
   color: inherit;
   text-decoration: none;
 }
-svg {
+.governance-app svg {
   width: 20px;
   height: 20px;
   fill: none;

@@ -2,9 +2,9 @@ import { Layout, Menu } from "antd";
 import { FC } from "react";
 import { useTranslation } from "react-i18next";
 import MediaQuery from "react-responsive";
-import { Link, Outlet, useNavigate } from "react-router-dom";
+import { Link, Outlet } from "react-router-dom";
 import { createGlobalStyle, useTheme } from "styled-components";
-import { formatUnits } from "viem";
+import { erc20Abi, formatUnits } from "viem";
 import { useAccount, useReadContract } from "wagmi";
 import { mainnet } from "wagmi/chains";
 
@@ -16,19 +16,10 @@ import { ArrowDownUpIcon } from "@/icons/ArrowDownUpIcon";
 import { ChartPieIcon } from "@/icons/ChartPieIcon";
 import { Button } from "@/toolkits/Button";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
-import { modalHash } from "@/utils/constants";
+import { contractAddress, modalHash } from "@/utils/constants";
 import { RouteKey, routeTree } from "@/utils/routes";
 
 const { Footer, Header } = Layout;
-const VULT_CONTRACT = "0xb788144df611029c60b859df47e79b7726c4deba" as const;
-const tokenAbi = [{
-  type: "function",
-  name: "balanceOf",
-  stateMutability: "view",
-  inputs: [{ name: "account", type: "address" }],
-  outputs: [{ name: "", type: "uint256" }],
-}] as const;
-
 type NavItem = {
   href: string;
   icon: FC;
@@ -37,13 +28,16 @@ type NavItem = {
 };
 
 export const DefaultLayout = () => {
-  const navigate = useNavigate();
   const { t } = useTranslation();
   const { currentPage } = useCore();
   const { address = "", isConnected } = useAccount();
-  const { data: rawVultBalance, isLoading: vultBalanceLoading } = useReadContract({
-    address: VULT_CONTRACT,
-    abi: tokenAbi,
+  const {
+    data: rawVultBalance,
+    isError: vultBalanceError,
+    isLoading: vultBalanceLoading,
+  } = useReadContract({
+    address: contractAddress.vultToken,
+    abi: erc20Abi,
     chainId: mainnet.id,
     functionName: "balanceOf",
     args: address ? [address] : undefined,
@@ -114,19 +108,15 @@ export const DefaultLayout = () => {
           <MediaQuery minWidth={768}>
             <Stack
               as={Menu}
-              items={menu.map(({ key, title }) => ({
+              items={menu.map(({ href, key, title }) => ({
                 key,
                 label: (
-                  <span style={{ display: "block", padding: "0 12px" }}>
+                  <Link to={href} style={{ display: "block", padding: "0 12px" }}>
                     {title}
-                  </span>
+                  </Link>
                 ),
               }))}
               mode="horizontal"
-              onClick={({ key }) => {
-                const item = menu.find((entry) => entry.key === key);
-                if (item) navigate(item.href);
-              }}
               selectedKeys={[currentPage]}
               $style={{ flexGrow: "1" }}
             />
@@ -143,6 +133,8 @@ export const DefaultLayout = () => {
                 >
                   {vultBalanceLoading
                     ? "Checking VULT…"
+                    : vultBalanceError
+                      ? "VULT unavailable"
                     : `${vultBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })} VULT`}
                 </Stack>
               </MediaQuery>

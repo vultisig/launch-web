@@ -9,19 +9,21 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { I18nextProvider } from "react-i18next";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { formatUnits } from "viem";
 import {
   useAccount,
-  useConnect,
-  useDisconnect,
-  useReadContract,
   useSignMessage,
   WagmiProvider,
 } from "wagmi";
-import { mainnet } from "wagmi/chains";
 
 import { useCore } from "@/hooks/useCore";
 import { i18nInstance } from "@/i18n/config";
+import { CheckIcon } from "@/icons/CheckIcon";
+import { ChevronRightIcon } from "@/icons/ChevronRightIcon";
+import { CrossIcon } from "@/icons/CrossIcon";
+import { PlusIcon } from "@/icons/PlusIcon";
+import { SearchIcon } from "@/icons/SearchIcon";
+import { TimerIcon } from "@/icons/TimerIcon";
+import { UsersIcon } from "@/icons/UsersIcon";
 import { DefaultLayout } from "@/layouts/Default";
 import { NotFoundPage } from "@/pages/NotFound";
 import { SwapPage } from "@/pages/Swap";
@@ -30,6 +32,7 @@ import { CoreProvider } from "@/providers/core";
 import { StyledProvider } from "@/providers/styled";
 import {
   createFeatureProposal,
+  FeatureBoardApiError,
   type FeatureProposal,
   fetchBoard,
   formatExactDate,
@@ -39,26 +42,15 @@ import {
   submitVote,
   type VoteChoice,
 } from "@/services/featureBoard";
+import { clearFeatureBoardSession, getFeatureBoardSession, setFeatureBoardSession } from "@/storage/featureBoardSession";
+import { modalHash } from "@/utils/constants";
 import { wagmiConfig } from "@/utils/wagmi";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 2, staleTime: 15_000 } },
 });
-const MIN_VULT = 100;
 const MAX_TITLE_LENGTH = 160;
 const MAX_BODY_LENGTH = 10_000;
-const VULT_CONTRACT = "0xb788144df611029c60b859df47e79b7726c4deba" as const;
-const SESSION_KEY = "vultisig-feature-board-session";
-
-const tokenAbi = [
-  {
-    type: "function",
-    name: "balanceOf",
-    stateMutability: "view",
-    inputs: [{ name: "account", type: "address" }],
-    outputs: [{ name: "", type: "uint256" }],
-  },
-] as const;
 
 type IconName =
   | "search"
@@ -69,59 +61,18 @@ type IconName =
   | "plus"
   | "close";
 function Icon({ name }: { name: IconName }) {
-  const paths = {
-    search: (
-      <>
-        <circle cx="11" cy="11" r="7" />
-        <path d="m20 20-4-4" />
-      </>
-    ),
-    arrow: (
-      <>
-        <path d="M5 12h14" />
-        <path d="m14 7 5 5-5 5" />
-      </>
-    ),
-    check: <path d="m5 12 4 4L19 6" />,
-    users: (
-      <>
-        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-      </>
-    ),
-    clock: (
-      <>
-        <circle cx="12" cy="12" r="9" />
-        <path d="M12 7v5l3 2" />
-      </>
-    ),
-    plus: (
-      <>
-        <path d="M12 5v14M5 12h14" />
-      </>
-    ),
-    close: (
-      <>
-        <path d="m6 6 12 12M18 6 6 18" />
-      </>
-    ),
+  const icons = {
+    search: SearchIcon,
+    arrow: ChevronRightIcon,
+    check: CheckIcon,
+    users: UsersIcon,
+    clock: TimerIcon,
+    plus: PlusIcon,
+    close: CrossIcon,
   };
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      {paths[name]}
-    </svg>
-  );
+  const Component = icons[name];
+  return <Component aria-hidden="true" />;
 }
-
-const readSession = (): Session | null => {
-  try {
-    const value = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
-    return value?.token && value?.address ? value : null;
-  } catch {
-    return null;
-  }
-};
 
 const statusLabel = (proposal: FeatureProposal) =>
   ({
@@ -148,6 +99,9 @@ const errorMessage = (error: unknown) =>
     ? error.message
     : "Something went wrong. Please try again.";
 
+const isExpiredSession = (error: unknown) =>
+  error instanceof FeatureBoardApiError && error.status === 401;
+
 function FeatureBoard() {
   const { setCurrentPage } = useCore();
   useEffect(() => {
@@ -156,11 +110,8 @@ function FeatureBoard() {
   }, [setCurrentPage]);
 
   const { address, isConnected } = useAccount();
-  const { connectors, connect, isPending: connecting } = useConnect();
-  const { disconnect } = useDisconnect();
   const { signMessageAsync } = useSignMessage();
-  const [session, setSession] = useState<Session | null>(readSession);
-  const [walletOpen, setWalletOpen] = useState(false);
+  const [session, setSession] = useState<Session | null>(getFeatureBoardSession);
   const [proposalOpen, setProposalOpen] = useState(false);
   const [selected, setSelected] = useState<FeatureProposal | null>(null);
   const [choice, setChoice] = useState<VoteChoice | null>(null);
@@ -184,28 +135,17 @@ function FeatureBoard() {
   });
   useEffect(() => {
     if (activeSession && board.isSuccess && !board.data.viewer) {
-      localStorage.removeItem(SESSION_KEY);
+      clearFeatureBoardSession();
       setSession(null);
     }
   }, [activeSession, board.data?.viewer, board.isSuccess]);
-  const { data: rawBalance, isLoading: balanceLoading } = useReadContract({
-    address: VULT_CONTRACT,
-    abi: tokenAbi,
-    chainId: mainnet.id,
-    functionName: "balanceOf",
-    args: address ? [address] : undefined,
-    query: { enabled: Boolean(address) },
-  });
-  const balance =
-    rawBalance === undefined ? 0 : Number(formatUnits(rawBalance, 18));
-
   const authenticate = async () => {
     if (!address) throw new Error("Connect a wallet first");
     if (activeSession) return activeSession;
     const next = await signIn(address, (message) =>
       signMessageAsync({ message }),
     );
-    localStorage.setItem(SESSION_KEY, JSON.stringify(next));
+    setFeatureBoardSession(next);
     setSession(next);
     await queryClient.invalidateQueries({ queryKey: ["feature-board"] });
     return next;
@@ -236,7 +176,7 @@ function FeatureBoard() {
 
   const openProposalForm = () => {
     setActionError("");
-    if (!isConnected) setWalletOpen(true);
+    if (!isConnected) window.location.hash = modalHash.connect;
     else setProposalOpen(true);
   };
 
@@ -259,6 +199,10 @@ function FeatureBoard() {
       setProposalOpen(false);
       await board.refetch();
     } catch (error) {
+      if (isExpiredSession(error)) {
+        clearFeatureBoardSession();
+        setSession(null);
+      }
       setActionError(errorMessage(error));
     } finally {
       setSubmitting(false);
@@ -278,6 +222,10 @@ function FeatureBoard() {
       );
       setChoice(null);
     } catch (error) {
+      if (isExpiredSession(error)) {
+        clearFeatureBoardSession();
+        setSession(null);
+      }
       setActionError(errorMessage(error));
     } finally {
       setSubmitting(false);
@@ -301,12 +249,16 @@ function FeatureBoard() {
         authenticated.token,
         selected.id,
         moderationState,
-        startsAt,
-        endsAt,
+        new Date(startsAt).toISOString(),
+        new Date(endsAt).toISOString(),
       );
       setSelected(null);
       await board.refetch();
     } catch (error) {
+      if (isExpiredSession(error)) {
+        clearFeatureBoardSession();
+        setSession(null);
+      }
       setActionError(errorMessage(error));
     } finally {
       setSubmitting(false);
@@ -323,6 +275,10 @@ function FeatureBoard() {
       setSelected(null);
       await board.refetch();
     } catch (error) {
+      if (isExpiredSession(error)) {
+        clearFeatureBoardSession();
+        setSession(null);
+      }
       setActionError(errorMessage(error));
     } finally {
       setSubmitting(false);
@@ -599,111 +555,6 @@ function FeatureBoard() {
         <p>Product direction informed by VULT holders.</p>
         <span>© 2026 Vultisig</span>
       </footer>
-
-      {walletOpen &&
-        createPortal(
-          <div
-            className="modal-backdrop"
-            onMouseDown={() => setWalletOpen(false)}
-          >
-            <div
-              className="modal wallet-modal"
-              onMouseDown={(event) => event.stopPropagation()}
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="wallet-title"
-            >
-              <button
-                aria-label="Close wallet dialog"
-                className="modal-close"
-                onClick={() => setWalletOpen(false)}
-              >
-                <Icon name="close" />
-              </button>
-              <div className="modal-kicker">Wallet access</div>
-              <h2 id="wallet-title">
-                {isConnected
-                  ? "Your feature-board wallet"
-                  : "Connect to participate"}
-              </h2>
-              <p>
-                {isConnected
-                  ? "Your VULT stays in your wallet. The one-time gasless message only proves wallet ownership and creates a seven-day session—no transaction is sent."
-                  : "Connect the Ethereum wallet holding your VULT. No assets or approvals are requested."}
-              </p>
-              {isConnected ? (
-                <>
-                  <div className="balance-card">
-                    <span>{address}</span>
-                    <strong>
-                      {balanceLoading
-                        ? "Checking…"
-                        : balance.toLocaleString(undefined, {
-                            maximumFractionDigits: 2,
-                          })}{" "}
-                      <small>VULT</small>
-                    </strong>
-                    <i>
-                      <Icon name="check" />
-                      {activeSession
-                        ? "Signed in"
-                        : balance >= MIN_VULT
-                          ? "Eligible—sign when you propose or vote"
-                          : `${MIN_VULT} VULT required`}
-                    </i>
-                  </div>
-                  <button
-                    className="secondary-button full"
-                    onClick={() => {
-                      disconnect();
-                      localStorage.removeItem(SESSION_KEY);
-                      setSession(null);
-                      setWalletOpen(false);
-                    }}
-                  >
-                    Disconnect wallet
-                  </button>
-                </>
-              ) : (
-                <div className="connector-list">
-                  {connectors
-                    .filter((connector) => connector.name !== "Safe")
-                    .map((connector) => (
-                      <button
-                        key={connector.uid}
-                        disabled={connecting}
-                        onClick={() =>
-                          connect(
-                            { connector },
-                            { onSuccess: () => setWalletOpen(false) },
-                          )
-                        }
-                      >
-                        {connector.icon ? (
-                          <img
-                            className="connector-image"
-                            src={connector.icon}
-                            alt=""
-                          />
-                        ) : (
-                          <span className="connector-icon">
-                            {connector.name[0]}
-                          </span>
-                        )}
-                        <b>{connector.name}</b>
-                        <Icon name="arrow" />
-                      </button>
-                    ))}
-                </div>
-              )}
-              <small className="privacy-note">
-                Eligibility is verified again by the server whenever you submit
-                or vote.
-              </small>
-            </div>
-          </div>,
-          document.body,
-        )}
 
       {selected &&
         createPortal(

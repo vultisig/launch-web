@@ -1,11 +1,13 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-CREATE TABLE IF NOT EXISTS auth_nonces (
-  address TEXT PRIMARY KEY CHECK (address ~ '^0x[0-9a-f]{40}$'),
-  nonce TEXT NOT NULL,
-  issued_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+CREATE TABLE IF NOT EXISTS auth_challenges (
+  nonce TEXT PRIMARY KEY,
+  address TEXT NOT NULL CHECK (address ~ '^0x[0-9a-f]{40}$'),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   expires_at TIMESTAMPTZ NOT NULL
 );
+CREATE INDEX IF NOT EXISTS auth_challenges_address_idx ON auth_challenges(address);
+CREATE INDEX IF NOT EXISTS auth_challenges_expiry_idx ON auth_challenges(expires_at);
 
 CREATE TABLE IF NOT EXISTS sessions (
   token_hash TEXT PRIMARY KEY,

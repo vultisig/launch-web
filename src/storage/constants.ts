@@ -6,6 +6,7 @@ export const storageKeys = {
   theme: "theme",
   transactions: "transactions",
   claimTransactions: "claimTransactions",
+  featureBoardSession: "featureBoardSession",
 } as const;
 
 export type StorageKey = (typeof storageKeys)[keyof typeof storageKeys];

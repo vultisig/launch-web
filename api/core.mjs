@@ -1,10 +1,20 @@
 import { neon } from "@neondatabase/serverless";
 import { createHash, randomBytes } from "node:crypto";
-import { createPublicClient, erc20Abi, formatUnits, http, verifyMessage } from "viem";
+import {
+  createPublicClient,
+  erc20Abi,
+  formatUnits,
+  http,
+} from "viem";
 import { mainnet } from "viem/chains";
+import { createSiweMessage, generateSiweNonce, parseSiweMessage } from "viem/siwe";
 
-const VULT_CONTRACT = "0xb788144df611029c60b859df47e79b7726c4deba";
-const MIN_VULT = 100;
+import {
+  FEATURE_BOARD_CHAIN_ID,
+  MINIMUM_VULT_BALANCE,
+  VULT_CONTRACT_ADDRESS,
+} from "../shared/featureBoard.js";
+
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
 const NONCE_TTL_SECONDS = 10 * 60;
 const MAX_BODY_BYTES = 24_000;
@@ -31,10 +41,11 @@ const json = (status, body) => ({
   body,
 });
 
+/** @returns {import("viem").Address} */
 const normalizeAddress = (value) => {
   const address = String(value || "").toLowerCase();
   if (!/^0x[0-9a-f]{40}$/.test(address)) throw new ApiError(400, "Invalid wallet address");
-  return address;
+  return /** @type {import("viem").Address} */ (address);
 };
 
 const normalizeProposalId = (value) => {
@@ -60,9 +71,6 @@ const adminWallets = () => new Set(
     .filter(Boolean),
 );
 
-const signInMessage = (address, nonce, issuedAt) =>
-  `Vultisig Feature Board\n\nSign in to participate. This request does not trigger a transaction or cost gas.\n\nWallet: ${address}\nNonce: ${nonce}\nIssued at: ${issuedAt}`;
-
 const sessionFromHeaders = async (headers, required = true) => {
   const token = String(headers.authorization || "").replace(/^Bearer\s+/i, "");
   if (!token) {
@@ -83,13 +91,13 @@ const sessionFromHeaders = async (headers, required = true) => {
 
 const vultBalance = async (address) => {
   if (!process.env.ETHEREUM_RPC_URL) throw new Error("ETHEREUM_RPC_URL is not configured");
-  const raw = await ethereum().readContract({
-    address: VULT_CONTRACT,
+  const raw = await ethereum().readContract(/** @type {any} */ ({
+    address: VULT_CONTRACT_ADDRESS,
     abi: erc20Abi,
     functionName: "balanceOf",
     args: [address],
-  });
-  return Number(formatUnits(raw, 18));
+  }));
+  return Number(formatUnits(/** @type {bigint} */ (raw), 18));
 };
 
 const requireVult = async (address) => {
@@ -97,8 +105,8 @@ const requireVult = async (address) => {
     return vultBalance(address).catch(() => 0);
   }
   const balance = await vultBalance(address);
-  if (balance < MIN_VULT) {
-    throw new ApiError(403, `At least ${MIN_VULT} VULT is required`);
+  if (balance < MINIMUM_VULT_BALANCE) {
+    throw new ApiError(403, `At least ${MINIMUM_VULT_BALANCE} VULT is required`);
   }
   return balance;
 };
@@ -112,6 +120,30 @@ const rateLimit = async (key, maximum, seconds) => {
     RETURNING request_count
   `;
   if (rows[0].request_count > maximum) throw new ApiError(429, "Too many requests. Please try again shortly");
+};
+
+const cleanupExpiredRows = async () => {
+  await Promise.all([
+    db()`DELETE FROM auth_challenges WHERE expires_at <= now()`,
+    db()`DELETE FROM sessions WHERE expires_at <= now()`,
+    db()`DELETE FROM rate_limits WHERE expires_at <= now()`,
+  ]);
+};
+
+const requestOrigin = (headers) => {
+  const host = String(headers.host || "").trim().toLowerCase();
+  if (!host || !/^[a-z0-9.-]+(?::\d{1,5})?$/.test(host)) {
+    throw new ApiError(400, "Invalid request host");
+  }
+  const forwardedProto = String(headers["x-forwarded-proto"] || "")
+    .split(",")[0]
+    .trim();
+  const protocol = forwardedProto === "https" || forwardedProto === "http"
+    ? forwardedProto
+    : host.startsWith("localhost") || host.startsWith("127.0.0.1")
+      ? "http"
+      : "https";
+  return { domain: host, uri: `${protocol}://${host}` };
 };
 
 const board = async (headers) => {
@@ -149,36 +181,75 @@ const board = async (headers) => {
   return json(200, {
     proposals: rows,
     viewer: session ? { address: session.address, isAdmin: session.isAdmin } : null,
-    rules: { minimumVult: MIN_VULT, votingModel: "one-wallet-one-vote" },
+    rules: { minimumVult: MINIMUM_VULT_BALANCE, votingModel: "one-wallet-one-vote" },
   });
 };
 
-const issueNonce = async (payload, requestKey) => {
+const issueNonce = async (payload, requestKey, headers) => {
   await rateLimit(`nonce:${requestKey}`, 10, 60);
+  await cleanupExpiredRows();
   const address = normalizeAddress(payload.address);
-  const nonce = randomBytes(16).toString("hex");
-  const issuedAt = new Date().toISOString();
+  const nonce = generateSiweNonce();
+  const issuedAt = new Date();
+  const expirationTime = new Date(issuedAt.getTime() + NONCE_TTL_SECONDS * 1000);
+  const { domain, uri } = requestOrigin(headers);
+  const message = createSiweMessage({
+    address,
+    chainId: FEATURE_BOARD_CHAIN_ID,
+    domain,
+    expirationTime,
+    issuedAt,
+    nonce,
+    statement: "Sign in to participate in the Vultisig Feature Board. This does not trigger a transaction or cost gas.",
+    uri,
+    version: "1",
+  });
   await db()`
-    INSERT INTO auth_nonces(address, nonce, issued_at, expires_at)
-    VALUES (${address}, ${nonce}, ${issuedAt}, now() + (${NONCE_TTL_SECONDS} * interval '1 second'))
-    ON CONFLICT (address) DO UPDATE SET
-      nonce = EXCLUDED.nonce, issued_at = EXCLUDED.issued_at, expires_at = EXCLUDED.expires_at
+    INSERT INTO auth_challenges(nonce, address, expires_at)
+    VALUES (${nonce}, ${address}, ${expirationTime.toISOString()})
   `;
-  return json(200, { message: signInMessage(address, nonce, issuedAt) });
+  return json(200, { message });
 };
 
-const verifySignIn = async (payload, requestKey) => {
+const verifySignIn = async (payload, requestKey, headers) => {
   await rateLimit(`verify:${requestKey}`, 20, 60);
-  const address = normalizeAddress(payload.address);
+  const message = String(payload.message || "");
+  const signature = /** @type {import("viem").Hex} */ (String(payload.signature || ""));
+  if (!/^0x[0-9a-f]+$/i.test(signature)) {
+    throw new ApiError(400, "Invalid wallet signature");
+  }
+  let parsed;
+  try {
+    parsed = parseSiweMessage(message);
+  } catch {
+    throw new ApiError(400, "Invalid sign-in message");
+  }
+  const address = normalizeAddress(parsed.address);
+  const nonce = String(parsed.nonce || "");
+  const { domain, uri } = requestOrigin(headers);
   const rows = await db()`
-    DELETE FROM auth_nonces
-    WHERE address = ${address} AND expires_at > now()
-    RETURNING nonce, issued_at AS "issuedAt"
+    SELECT nonce FROM auth_challenges
+    WHERE address = ${address} AND nonce = ${nonce} AND expires_at > now()
+    LIMIT 1
   `;
   if (!rows[0]) throw new ApiError(401, "Sign-in request expired. Try again");
-  const message = signInMessage(address, rows[0].nonce, new Date(rows[0].issuedAt).toISOString());
-  const valid = await verifyMessage({ address, message, signature: payload.signature });
+  if (parsed.domain !== domain || parsed.uri !== uri || parsed.chainId !== FEATURE_BOARD_CHAIN_ID) {
+    throw new ApiError(401, "Sign-in request does not match this site");
+  }
+  const valid = await ethereum().verifySiweMessage({
+    address,
+    domain,
+    message,
+    nonce,
+    signature,
+  });
   if (!valid) throw new ApiError(401, "Wallet signature could not be verified");
+  const consumed = await db()`
+    DELETE FROM auth_challenges
+    WHERE address = ${address} AND nonce = ${nonce} AND expires_at > now()
+    RETURNING nonce
+  `;
+  if (!consumed[0]) throw new ApiError(401, "Sign-in request was already used");
   const balance = await requireVult(address);
   const token = randomBytes(32).toString("hex");
   await db()`
@@ -259,9 +330,11 @@ export async function handleApi({ method, url, headers = {}, body = "" }) {
     if (method !== "POST") throw new ApiError(405, "Method not allowed");
     if (Buffer.byteLength(body) > MAX_BODY_BYTES) throw new ApiError(413, "Request is too large");
     const payload = JSON.parse(body || "{}");
-    const requestKey = String(headers["x-forwarded-for"] || headers["x-real-ip"] || "local").split(",")[0].trim();
-    if (payload.action === "nonce") return await issueNonce(payload, requestKey);
-    if (payload.action === "verify") return await verifySignIn(payload, requestKey);
+    const requestKey = String(
+      headers["x-real-ip"] || headers["x-vercel-forwarded-for"] || "local",
+    ).split(",")[0].trim();
+    if (payload.action === "nonce") return await issueNonce(payload, requestKey, headers);
+    if (payload.action === "verify") return await verifySignIn(payload, requestKey, headers);
     if (payload.action === "createProposal") return await createProposal(headers, payload);
     if (payload.action === "vote") return await castVote(headers, payload);
     if (payload.action === "moderate") return await moderate(headers, payload);

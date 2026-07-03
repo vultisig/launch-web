@@ -33,6 +33,12 @@ export type Session = {
   isAdmin: boolean;
 };
 
+export class FeatureBoardApiError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+  }
+}
+
 const request = async <T>(
   action: string,
   payload: Record<string, unknown> = {},
@@ -46,16 +52,31 @@ const request = async <T>(
     },
     body: JSON.stringify({ action, ...payload }),
   });
-  const data = (await response.json()) as T & { error?: string };
-  if (!response.ok) throw new Error(data.error || `Request failed (${response.status})`);
+  const data = await parseResponse<T>(response);
+  if (!response.ok) {
+    throw new FeatureBoardApiError(
+      data.error || `Request failed (${response.status})`,
+      response.status,
+    );
+  }
   return data;
+};
+
+const parseResponse = async <T>(response: Response) => {
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    throw new Error(response.ok
+      ? "The server returned an unexpected response"
+      : `Request failed (${response.status})`);
+  }
+  return response.json() as Promise<T & { error?: string }>;
 };
 
 export const fetchBoard = async (token?: string) => {
   const response = await fetch("/api?action=board", {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
-  const data = (await response.json()) as BoardResponse & { error?: string };
+  const data = await parseResponse<BoardResponse>(response);
   if (!response.ok) throw new Error(data.error || "Could not load the feature board");
   return data;
 };
@@ -66,7 +87,7 @@ export const signIn = async (
 ) => {
   const { message } = await request<{ message: string }>("nonce", { address });
   const signature = await sign(message);
-  return request<Session>("verify", { address, signature });
+  return request<Session>("verify", { message, signature });
 };
 
 export const createFeatureProposal = (

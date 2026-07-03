@@ -6,11 +6,12 @@
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "dev:web": "vite --host",
-    "build": "tsc -b && vite build",
-    "lint": "eslint . --ext .ts,.tsx",
-    "lint:fix": "npm run lint -- --fix",
+    "build": "npm run typecheck && vite build",
+    "lint": "eslint . --ext .ts,.tsx,.mjs,.js && node --check api/core.mjs && node --check api/index.mjs",
+    "lint:fix": "eslint . --ext .ts,.tsx,.mjs,.js --fix",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && npm run typecheck:api",
+    "typecheck:api": "tsc --allowJs --checkJs --noEmit --module NodeNext --moduleResolution NodeNext --target ES2022 --types node --skipLibCheck api/core.mjs api/index.mjs scripts/api-server.mjs scripts/apply-schema.mjs scripts/dev.mjs shared/featureBoard.js",
     "db:schema": "node scripts/apply-schema.mjs"
   },
   "dependencies": {
