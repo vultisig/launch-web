@@ -1,0 +1,5 @@
+export const VULT_CONTRACT_ADDRESS =
+  "0xb788144df611029c60b859df47e79b7726c4deba";
+export const MINIMUM_VULT_BALANCE = 100;
+export const FEATURE_BOARD_CHAIN_ID = 1;
+

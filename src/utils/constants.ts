@@ -2,6 +2,8 @@ import { ChainId, Token } from "@uniswap/sdk-core";
 
 import { GasSettingsProps, TickerKey, TokenProps } from "@/utils/types";
 
+import { VULT_CONTRACT_ADDRESS } from "../../shared/featureBoard.js";
+
 export const modalHash = {
   connect: "#connect",
   settings: "#settings",
@@ -17,7 +19,7 @@ export const contractAddress = {
   uniToken: "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
   uniUsdcPool: "0xd0fc8ba7e267f2bc56044a7715a489d851dc6d78",
   usdcToken: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-  vultToken: "0xb788144df611029c60b859df47e79b7726c4deba",
+  vultToken: VULT_CONTRACT_ADDRESS,
   vultStake: "0xea56819d589d266b165b287e57d1b63efceb630c",
   vultUsdcPool: "0x6Df52cC6E2E6f6531E4ceB4b083CF49864A89020",
   vultWethPool: "0xeDeC8b375f256B7cf34f0b0d85A13E7b2E3F46af",

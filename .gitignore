@@ -1,4 +1,10 @@
 /dist
 /node_modules
+/.npm-cache
 .windsurfrules
 .env
+.vercel
+.env*.local
+dev-server*.log
+
+.env*.local

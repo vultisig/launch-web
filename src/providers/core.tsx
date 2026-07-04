@@ -1,5 +1,5 @@
 import { message as Message, Modal } from "antd";
-import { FC, ReactNode, useEffect, useState } from "react";
+import { FC, ReactNode, useCallback, useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 
 import { CoreContext, CoreContextProps } from "@/context/Core";
@@ -76,9 +76,13 @@ export const CoreProvider: FC<{ children: ReactNode }> = ({ children }) => {
     setState((prevState) => ({ ...prevState, currency }));
   };
 
-  const setCurrentPage = (currentPage: RouteKey) => {
-    setState((prevState) => ({ ...prevState, currentPage }));
-  };
+  const setCurrentPage = useCallback((currentPage: RouteKey) => {
+    setState((prevState) =>
+      prevState.currentPage === currentPage
+        ? prevState
+        : { ...prevState, currentPage }
+    );
+  }, []);
 
   const setGasSettings = (
     gasSettings: GasSettingsProps,

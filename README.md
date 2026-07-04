@@ -1,54 +1,76 @@
-# React + TypeScript + Vite
+# Vultisig Feature Board
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A wallet-gated product-feedback board for VULT holders, integrated into Vultisig Launch. The feature board is the primary `/` page and the existing swap remains available at `/swap`; the unused Pool and Claim navigation is removed. This is intentionally not a governance protocol: proposals and votes inform Vultisig's product roadmap, while the Vultisig team retains moderation and scheduling control.
 
-Currently, two official plugins are available:
+## Product rules
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- A wallet must currently hold at least 100 VULT on Ethereum to submit or vote.
+- Each eligible wallet gets one vote per proposal.
+- Voters can update their choice while voting remains open.
+- New proposals are private to their author and admins until approved.
+- Admins approve or reject submissions and set exact voting start/end dates.
+- Wallet login uses a gasless signed message. No token approvals or transactions are requested.
 
-## Expanding the ESLint configuration
+The server independently verifies signatures and VULT balances. Client-side balance displays are never trusted for authorization.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Stack
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+- React, Vite, Wagmi and Viem
+- One Vercel Function at `/api`
+- Neon serverless Postgres
+- Ethereum RPC for current VULT balances
+
+## Local setup
+
+1. Create a Neon database through the Vercel Marketplace or Neon dashboard.
+2. Copy `.env.example` to `.env.local` and configure:
+
+```env
+DATABASE_URL=postgresql://...
+ETHEREUM_RPC_URL=https://...
+ADMIN_WALLETS=0xAdminAddress,0xSecondAdmin
+VITE_WALLETCONNECT_PROJECT_ID=your_reown_project_id
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+`ADMIN_WALLETS` is a comma-separated list of team-controlled Ethereum addresses. It does not custody funds; it only grants moderation controls in this application.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+3. Apply the schema and start both the API and web app:
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+```bash
+npm install
+npm run db:schema
+npm run dev
 ```
+
+Open `http://localhost:5173`.
+
+## Production deployment
+
+1. Link the repository to Vercel.
+2. Add Neon from the Vercel Marketplace so `DATABASE_URL` is provisioned.
+3. Add `ETHEREUM_RPC_URL`, `ADMIN_WALLETS`, and `VITE_WALLETCONNECT_PROJECT_ID` for Production and Preview.
+4. Run `npm run db:schema` once against the production database.
+5. Deploy and test with one admin wallet and one eligible holder wallet.
+
+No ENS name, Snapshot space, governance wallet, smart contract, or treasury setup is required.
+
+## Security model
+
+- Nonces expire after 10 minutes and are consumed once.
+- Sessions are random, hashed in storage, and expire after seven days.
+- Proposal/vote writes re-check the live VULT balance server-side.
+- Database constraints prevent duplicate votes and invalid proposal states.
+- Auth, proposal and vote endpoints are rate-limited.
+- User content is rendered as plain text; React escapes it by default.
+- Bearer-token writes are not vulnerable to cross-site request forgery.
+
+## Release checks
+
+```bash
+npm run lint
+npm run typecheck
+npm run build
+npm audit --omit=dev
+```
+
+The SQL schema is stored in `db/schema.sql`; the API is in `api/core.mjs`.
