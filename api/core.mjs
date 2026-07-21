@@ -79,7 +79,7 @@ class ApiError extends Error {
 const hashToken = (token) => createHash("sha256").update(token).digest("hex");
 
 // Postgres foreign-key violation on proposal_id means the proposal is gone.
-const onProposal = (query) => query.catch((error) => {
+const mapMissingProposal = (query) => query.catch((error) => {
   if (error?.code === "23503") throw new ApiError(404, "Proposal not found");
   throw error;
 });
@@ -304,7 +304,7 @@ const castVote = async (headers, payload) => {
   const choice = String(payload.choice || "");
   if (!["up", "down"].includes(choice)) throw new ApiError(400, "Invalid vote choice");
   const proposalId = normalizeUuid(payload.proposalId);
-  const rows = await onProposal(db()`
+  const rows = await mapMissingProposal(db()`
     WITH removed AS (
       DELETE FROM votes
       WHERE proposal_id = ${proposalId}
@@ -331,7 +331,7 @@ const addNote = async (headers, payload) => {
     throw new ApiError(400, `Notes must be 1–${MAX_NOTE_LENGTH.toLocaleString("en-US")} characters`);
   }
   const proposalId = normalizeUuid(payload.proposalId);
-  const rows = await onProposal(db()`
+  const rows = await mapMissingProposal(db()`
     INSERT INTO notes(proposal_id, author_address, body)
     VALUES (${proposalId}, ${session.address}, ${body})
     RETURNING id, author_address AS "authorAddress", body, created_at AS "createdAt"

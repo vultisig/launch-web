@@ -129,7 +129,6 @@ function FeatureBoard() {
   const [query, setQuery] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [actionError, setActionError] = useState("");
-  const [voteOverrides, setVoteOverrides] = useState<Record<string, VoteChoice | null>>({});
   const [deleteArmed, setDeleteArmed] = useState(false);
   const activeSession =
     session &&
@@ -161,15 +160,7 @@ function FeatureBoard() {
     return next;
   };
 
-  const proposals = useMemo(
-    () =>
-      (board.data?.proposals ?? []).map((proposal) =>
-        proposal.id in voteOverrides
-          ? withVote(proposal, voteOverrides[proposal.id] ?? null)
-          : proposal,
-      ),
-    [board.data?.proposals, voteOverrides],
-  );
+  const proposals = board.data?.proposals ?? [];
   const filtered = useMemo(() => {
     const matching = proposals.filter((proposal) =>
       `${proposal.title} ${proposal.body}`
@@ -237,38 +228,38 @@ function FeatureBoard() {
     }
   };
 
+  const patchBoard = (
+    token: string | undefined,
+    proposalId: string,
+    transform: (proposal: FeatureProposal) => FeatureProposal,
+  ) =>
+    queryClient.setQueryData<BoardResponse>(
+      ["feature-board", token],
+      (data) =>
+        data && {
+          ...data,
+          proposals: data.proposals.map((item) =>
+            item.id === proposalId ? transform(item) : item,
+          ),
+        },
+    );
+
   const vote = async (proposal: FeatureProposal, choice: VoteChoice) => {
     if (!isConnected) {
       window.location.hash = modalHash.connect;
       return;
     }
     setActionError("");
+    patchBoard(activeSession?.token, proposal.id, (item) =>
+      withVote(item, nextVote(item.myVote, choice)),
+    );
     try {
       const authenticated = await authenticate();
-      setVoteOverrides((current) => ({
-        ...current,
-        [proposal.id]: nextVote(proposal.myVote, choice),
-      }));
       const { myVote } = await toggleVote(authenticated.token, proposal.id, choice);
-      queryClient.setQueryData<BoardResponse>(
-        ["feature-board", authenticated.token],
-        (data) =>
-          data && {
-            ...data,
-            proposals: data.proposals.map((item) =>
-              item.id === proposal.id ? withVote(item, myVote) : item,
-            ),
-          },
-      );
+      patchBoard(authenticated.token, proposal.id, (item) => withVote(item, myVote));
     } catch (error) {
       handleActionError(error);
       await board.refetch();
-    } finally {
-      setVoteOverrides((current) => {
-        const rest = { ...current };
-        delete rest[proposal.id];
-        return rest;
-      });
     }
   };
 
