@@ -44,12 +44,23 @@ const ethereum = () => createPublicClient({
   }),
 });
 
+// Auth is a Bearer header, never a cookie, so open CORS carries no ambient
+// credentials. This lets the core apps (extension, in-app webviews) call the
+// API directly.
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Max-Age": "86400",
+};
+
 const json = (status, body) => ({
   status,
   headers: {
     "Cache-Control": "no-store",
     "Content-Type": "application/json; charset=utf-8",
     "X-Content-Type-Options": "nosniff",
+    ...corsHeaders,
   },
   body,
 });
@@ -364,6 +375,9 @@ const deleteProposal = async (headers, payload) => {
 };
 
 export async function handleApi({ method, url, headers = {}, body = "" }) {
+  if (method === "OPTIONS") {
+    return { status: 204, headers: corsHeaders, body: null };
+  }
   try {
     const parsedUrl = new URL(url, "http://localhost");
     if (method === "GET" && parsedUrl.searchParams.get("action") === "board") return await board(headers);
