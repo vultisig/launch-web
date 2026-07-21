@@ -10,7 +10,7 @@ Integration contract for the Vultisig core apps (iOS, Android, Windows/macOS des
 
 ## Eligibility
 
-Every write requires a wallet currently holding at least **100 VULT** on Ethereum mainnet (`0xb788144df611029c60b859df47e79b7726c4deba`). The server re-checks the live balance on every write; client-side balances are display-only. Reads are public.
+Posting an idea, voting, and adding a note require a wallet currently holding at least **100 VULT** on Ethereum mainnet (`0xb788144df611029c60b859df47e79b7726c4deba`); the server re-checks the live balance on each of those writes, and client-side balances are display-only. Deleting a note or idea is gated on authorship/admin status instead of balance. Reads are public.
 
 ## Authentication (SIWE, gasless)
 
@@ -107,6 +107,8 @@ Always `{ "error": "human-readable message" }` with the status telling the story
 | createProposal | 5 / hour |
 | vote | 60 / minute |
 | addNote | 30 / hour |
+| deleteNote | 30 / hour |
+| deleteProposal | 30 / hour |
 
 ## Per-surface notes
 

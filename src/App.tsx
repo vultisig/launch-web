@@ -127,7 +127,9 @@ function FeatureBoard() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sort, setSort] = useState<"Top" | "New">("Top");
   const [query, setQuery] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const [busy, setBusy] = useState<
+    "" | "post" | "note" | "note-delete" | "idea-delete"
+  >("");
   const [actionError, setActionError] = useState("");
   const [deleteArmed, setDeleteArmed] = useState(false);
   const activeSession =
@@ -213,7 +215,7 @@ function FeatureBoard() {
     const data = new FormData(form);
     const title = String(data.get("title") || "").trim();
     const body = String(data.get("body") || "").trim();
-    setSubmitting(true);
+    setBusy("post");
     setActionError("");
     try {
       const authenticated = await authenticate();
@@ -224,7 +226,7 @@ function FeatureBoard() {
     } catch (error) {
       handleActionError(error);
     } finally {
-      setSubmitting(false);
+      setBusy("");
     }
   };
 
@@ -269,7 +271,7 @@ function FeatureBoard() {
     const form = event.currentTarget;
     const body = String(new FormData(form).get("note") || "").trim();
     if (!body) return;
-    setSubmitting(true);
+    setBusy("note");
     setActionError("");
     try {
       const authenticated = await authenticate();
@@ -279,12 +281,12 @@ function FeatureBoard() {
     } catch (error) {
       handleActionError(error);
     } finally {
-      setSubmitting(false);
+      setBusy("");
     }
   };
 
   const removeNote = async (noteId: string) => {
-    setSubmitting(true);
+    setBusy("note-delete");
     setActionError("");
     try {
       const authenticated = await authenticate();
@@ -293,7 +295,7 @@ function FeatureBoard() {
     } catch (error) {
       handleActionError(error);
     } finally {
-      setSubmitting(false);
+      setBusy("");
     }
   };
 
@@ -303,7 +305,7 @@ function FeatureBoard() {
       setDeleteArmed(true);
       return;
     }
-    setSubmitting(true);
+    setBusy("idea-delete");
     setActionError("");
     try {
       const authenticated = await authenticate();
@@ -313,7 +315,7 @@ function FeatureBoard() {
     } catch (error) {
       handleActionError(error);
     } finally {
-      setSubmitting(false);
+      setBusy("");
       setDeleteArmed(false);
     }
   };
@@ -633,7 +635,7 @@ function FeatureBoard() {
                             <button
                               aria-label="Delete note"
                               className="note-delete"
-                              disabled={submitting}
+                              disabled={busy !== ""}
                               onClick={() => removeNote(note.id)}
                             >
                               <Icon name="trash" />
@@ -655,10 +657,10 @@ function FeatureBoard() {
                   />
                   <button
                     className="secondary-button"
-                    disabled={submitting}
+                    disabled={busy !== ""}
                     type="submit"
                   >
-                    {submitting
+                    {busy === "note"
                       ? "Verifying wallet…"
                       : activeSession
                         ? "Add note"
@@ -671,11 +673,15 @@ function FeatureBoard() {
                   <h4>Admin</h4>
                   <button
                     className="secondary-button danger"
-                    disabled={submitting}
+                    disabled={busy !== ""}
                     onClick={removeProposal}
                   >
                     <Icon name="trash" />
-                    {deleteArmed ? "Confirm delete" : "Delete idea"}
+                    {busy === "idea-delete"
+                      ? "Deleting…"
+                      : deleteArmed
+                        ? "Confirm delete"
+                        : "Delete idea"}
                   </button>
                 </div>
               )}
@@ -749,9 +755,9 @@ function FeatureBoard() {
                 <button
                   className="primary-button full"
                   type="submit"
-                  disabled={submitting}
+                  disabled={busy === "post"}
                 >
-                  {submitting
+                  {busy === "post"
                     ? "Verifying wallet…"
                     : activeSession
                       ? "Post idea"

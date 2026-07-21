@@ -351,6 +351,7 @@ const addNote = async (headers, payload) => {
 
 const deleteNote = async (headers, payload) => {
   const session = await sessionFromHeaders(headers);
+  await rateLimit(`deleteNote:${session.address}`, 30, 3600);
   const noteId = normalizeUuid(payload.noteId);
   const rows = await db()`
     DELETE FROM notes
@@ -365,6 +366,7 @@ const deleteNote = async (headers, payload) => {
 const deleteProposal = async (headers, payload) => {
   const session = await sessionFromHeaders(headers);
   if (!session.isAdmin) throw new ApiError(403, "Admin access required");
+  await rateLimit(`deleteProposal:${session.address}`, 30, 3600);
   const proposalId = normalizeUuid(payload.proposalId);
   const rows = await db()`
     DELETE FROM proposals WHERE id = ${proposalId} RETURNING id
