@@ -44,9 +44,8 @@ const ethereum = () => createPublicClient({
   }),
 });
 
-// Auth is a Bearer header, never a cookie, so open CORS carries no ambient
-// credentials. This lets the core apps (extension, in-app webviews) call the
-// API directly.
+// Open CORS is safe here: auth is a Bearer header, never a cookie, so
+// cross-origin requests carry no ambient credentials.
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
