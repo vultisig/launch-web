@@ -1,23 +1,25 @@
 import type { Address, Hex } from "viem";
 
-export type VoteChoice = "for" | "against" | "abstain";
-export type ProposalState = "pending" | "rejected" | "upcoming" | "active" | "closed";
+export type VoteChoice = "up" | "down";
 
 export type FeatureProposal = {
   id: string;
   title: string;
   body: string;
   authorAddress: string;
-  moderationState: "pending" | "approved" | "rejected";
-  startsAt: string | null;
-  endsAt: string | null;
   createdAt: string;
-  state: ProposalState;
-  voteCount: number;
-  forVotes: number;
-  againstVotes: number;
-  abstainVotes: number;
+  upVotes: number;
+  downVotes: number;
+  score: number;
+  noteCount: number;
   myVote: VoteChoice | null;
+};
+
+export type ProposalNote = {
+  id: string;
+  authorAddress: string;
+  body: string;
+  createdAt: string;
 };
 
 export type BoardResponse = {
@@ -72,14 +74,23 @@ const parseResponse = async <T>(response: Response) => {
   return response.json() as Promise<T & { error?: string }>;
 };
 
-export const fetchBoard = async (token?: string) => {
-  const response = await fetch("/api?action=board", {
+const get = async <T>(query: string, token?: string) => {
+  const response = await fetch(`/api?${query}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
-  const data = await parseResponse<BoardResponse>(response);
-  if (!response.ok) throw new Error(data.error || "Could not load the feature board");
+  const data = await parseResponse<T>(response);
+  if (!response.ok) throw new FeatureBoardApiError(
+    data.error || `Request failed (${response.status})`,
+    response.status,
+  );
   return data;
 };
+
+export const fetchBoard = (token?: string) =>
+  get<BoardResponse>("action=board", token);
+
+export const fetchNotes = (proposalId: string) =>
+  get<{ notes: ProposalNote[] }>(`action=notes&proposalId=${proposalId}`);
 
 export const signIn = async (
   address: Address,
@@ -94,33 +105,25 @@ export const createFeatureProposal = (
   token: string,
   title: string,
   body: string,
-) => request<{ id: string; moderationState: "pending" }>(
-  "createProposal",
-  { title, body },
-  token,
-);
+) => request<{ id: string }>("createProposal", { title, body }, token);
 
-export const submitVote = (
+export const toggleVote = (
   token: string,
   proposalId: string,
   choice: VoteChoice,
-) => request<{ recorded: true; choice: VoteChoice }>(
-  "vote",
-  { proposalId, choice },
-  token,
-);
+) => request<{ myVote: VoteChoice | null }>("vote", { proposalId, choice }, token);
 
-export const moderateProposal = (
+export const addNote = (
   token: string,
   proposalId: string,
-  moderationState: "approved" | "rejected",
-  startsAt?: string,
-  endsAt?: string,
-) => request<{ updated: true }>(
-  "moderate",
-  { proposalId, moderationState, startsAt, endsAt },
-  token,
-);
+  body: string,
+) => request<{ note: ProposalNote }>("addNote", { proposalId, body }, token);
+
+export const deleteNote = (token: string, noteId: string) =>
+  request<{ deleted: true }>("deleteNote", { noteId }, token);
+
+export const deleteProposal = (token: string, proposalId: string) =>
+  request<{ deleted: true }>("deleteProposal", { proposalId }, token);
 
 export const formatExactDate = (date: string) =>
   new Intl.DateTimeFormat(undefined, {

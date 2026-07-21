@@ -403,11 +403,11 @@ main {
 }
 .proposal-card {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 250px;
-  gap: 30px;
-  padding: 27px 22px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 24px;
+  padding: 22px;
   border-bottom: 1px solid #17345e;
-  cursor: pointer;
   transition: 0.2s;
 }
 .proposal-card:hover {
@@ -416,38 +416,12 @@ main {
 }
 .proposal-main {
   min-width: 0;
-}
-.proposal-meta {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #708ab2;
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-.badge {
-  padding: 5px 8px;
-  border-radius: 4px;
-  color: #7fa5ff;
-  background: #132d61;
-}
-.badge.active {
-  color: #45e5c2;
-  background: #103d42;
-}
-.badge.upcoming {
-  color: #e7bd69;
-  background: #42391e;
-}
-.badge.closed {
-  color: #90a2bd;
-  background: #1b2b43;
+  cursor: pointer;
 }
 .proposal-main h3 {
   display: -webkit-box;
   font-size: 19px;
-  margin: 14px 0 9px;
+  margin: 0 0 9px;
   overflow: hidden;
   overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
@@ -480,42 +454,63 @@ main {
 .proposal-foot svg {
   width: 13px;
 }
-.vote-summary {
-  align-self: center;
-  position: relative;
-  padding-right: 48px;
-}
-.vote-label {
+.vote-rail {
   display: flex;
-  justify-content: space-between;
-  font-size: 11px;
-  color: #65e0c6;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
 }
-.vote-label strong {
+.vote-rail .score {
   font-size: 17px;
   color: #eef4ff;
+  min-width: 30px;
+  text-align: center;
 }
-.vote-label.muted {
-  color: #738bab;
-  margin-top: 7px;
+.vote-button {
+  width: 33px;
+  height: 33px;
+  border-radius: 8px;
+  border: 1px solid #294b79;
+  background: transparent;
+  color: #8ea7cb;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: 0.15s;
 }
-.progress {
-  height: 5px;
-  background: #1e3556;
-  border-radius: 5px;
-  overflow: hidden;
-  margin-top: 7px;
+.vote-button svg {
+  width: 16px;
 }
-.progress span {
-  display: block;
-  height: 100%;
-  background: linear-gradient(90deg, #1dcba9, #48e4c5);
+.vote-button.up svg {
+  transform: rotate(180deg);
 }
-.vote-summary > button {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
+.vote-button:hover {
+  border-color: #3d6cff;
+  color: #dbe6f7;
+}
+.vote-button.up.active {
+  border-color: #1dcba9;
+  background: #103d42;
+  color: #45e5c2;
+}
+.vote-button.down.active {
+  border-color: #b04a5a;
+  background: #3a1b26;
+  color: #ff8fa0;
+}
+.vote-rail.horizontal {
+  flex-direction: row;
+  gap: 14px;
+}
+.vote-rail.horizontal .vote-button {
+  width: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  font-size: 12px;
+}
+.open-button {
   width: 33px;
   height: 33px;
   border-radius: 50%;
@@ -524,24 +519,10 @@ main {
   color: #8ea7cb;
   display: grid;
   place-items: center;
+  cursor: pointer;
 }
-.vote-summary > button svg {
+.open-button svg {
   width: 15px;
-}
-.upcoming-mark {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  color: #758eb4;
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-.upcoming-mark strong {
-  color: #e3edf9;
-  font-size: 13px;
-  text-transform: none;
-  letter-spacing: 0;
 }
 .empty {
   text-align: center;
@@ -750,25 +731,13 @@ footer .brand img {
 .proposal-modal {
   width: min(600px, 100%);
 }
-.detail-box {
-  background: #0d294c;
-  border-left: 2px solid #3b6ef0;
-  padding: 15px 18px;
-  margin: 20px 0;
-}
-.detail-box h4,
 .ballot h4 {
   margin: 0 0 8px;
   font-size: 12px;
 }
-.detail-box p {
-  color: #87a0c2;
-  font-size: 11px;
-  line-height: 1.6;
-  margin: 0;
-}
 .ballot {
   border-top: 1px solid #1d3b64;
+  margin-top: 20px;
   padding-top: 20px;
 }
 .ballot-note {
@@ -782,97 +751,72 @@ footer .brand img {
   color: #eef4ff;
   text-transform: capitalize;
 }
-.vote-options {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 15px;
-}
-.vote-options button {
-  text-align: left;
-  background: #0d2749;
-  border: 1px solid #27476f;
-  border-radius: 8px;
-  padding: 14px;
-  cursor: pointer;
-}
-.vote-options button.selected {
-  border-color: #31d5b1;
-  background: #103e43;
-}
-.vote-options button.selected.against {
-  border-color: #ff6c76;
-  background: #47222d;
-}
-.vote-options span,
-.vote-options small {
-  display: block;
-}
-.vote-options span {
-  font-weight: 700;
-  font-size: 12px;
-  margin-bottom: 5px;
-}
-.vote-options small {
-  color: #7f96b6;
-  font-size: 9px;
-}
-.eligibility {
-  color: #e2b866 !important;
-  font-size: 10px !important;
-}
-.modal-footer-row {
-  display: flex;
-  justify-content: space-between;
-  color: #6e88ad;
-  font-size: 9px;
-  text-transform: uppercase;
+.note-section {
   border-top: 1px solid #1d3b64;
-  margin-top: 22px;
-  padding-top: 16px;
+  margin-top: 20px;
+  padding-top: 20px;
 }
-.voted {
-  text-align: center;
-  padding: 20px;
-  background: #0e3840;
-  border-radius: 8px;
+.note-section h4 {
+  margin: 0 0 14px;
+  font-size: 12px;
+}
+.note-list {
   display: flex;
   flex-direction: column;
+  gap: 14px;
+  list-style: none;
+  margin: 0 0 16px;
+  max-height: 30vh;
+  overflow: auto;
+  padding: 0;
+}
+.note-list li {
+  background: #0d2749;
+  border: 1px solid #1d3b64;
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+.note-head {
   align-items: center;
-  gap: 7px;
-  color: #40dfbc;
-}
-.voted span {
-  color: #83a9ad;
+  color: #6e88ad;
+  display: flex;
   font-size: 10px;
+  gap: 12px;
+  margin-bottom: 7px;
 }
-.locked {
-  text-align: center;
-  background: #0c2749;
-  border: 1px solid #25476f;
-  border-radius: 10px;
-  padding: 24px;
-}
-.lock-mark {
-  width: 58px;
-  height: 58px;
-  border-radius: 50%;
+.note-delete {
+  background: none;
+  border: 0;
+  color: #6e88ad;
+  cursor: pointer;
   display: grid;
+  margin-left: auto;
+  padding: 2px;
   place-items: center;
-  margin: auto;
-  background: #14365f;
-  color: #5c82ef;
-  font-weight: 800;
 }
-.locked h3 {
-  font-size: 15px;
-  margin: 14px 0 8px;
+.note-delete:hover {
+  color: #ff9ca4;
 }
-.locked p {
-  color: #8199bb;
-  font-size: 10px;
+.note-delete svg {
+  width: 13px;
+}
+.note-list p {
+  color: #c6d4ea;
+  font-size: 12px;
   line-height: 1.6;
-  margin: 0 0 18px;
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.note-section form {
+  gap: 10px;
+}
+.secondary-button.danger {
+  border-color: #743343;
+  color: #ff9ca4;
+}
+.secondary-button.danger svg {
+  width: 13px;
 }
 .modal form {
   display: flex;
@@ -898,17 +842,6 @@ footer .brand img {
   outline: none;
   font-size: 11px;
 }
-.form-note {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: #6e8caf;
-  font-size: 9px;
-}
-.form-note svg {
-  width: 13px;
-  color: #31d5b1;
-}
 .hero h1 {
   font-family: Montserrat, sans-serif;
   font-weight: 700;
@@ -917,7 +850,9 @@ footer .brand img {
 .proposal-modal {
   overflow-wrap: anywhere;
 }
-.proposal-card:focus-visible,
+.proposal-main:focus-visible,
+.vote-button:focus-visible,
+.open-button:focus-visible,
 .primary-button:focus-visible,
 .secondary-button:focus-visible,
 .wallet-pill:focus-visible,
@@ -947,7 +882,6 @@ footer .brand img {
   margin: 0 auto 18px;
   max-width: 620px;
 }
-.setup-state,
 .error-state {
   border: 1px solid #1d3b64;
   border-radius: 12px;
@@ -962,38 +896,6 @@ footer .brand img {
   overflow: auto;
   white-space: pre-wrap;
 }
-.discussion-link {
-  align-items: center;
-  color: #7fa5ff;
-  display: inline-flex;
-  font-size: 11px;
-  gap: 7px;
-  margin-bottom: 20px;
-}
-.discussion-link svg {
-  width: 14px;
-}
-.result-list {
-  border-top: 1px solid #1d3b64;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 20px 0;
-}
-.result-row > div:first-child {
-  display: flex;
-  font-size: 11px;
-  justify-content: space-between;
-}
-.result-row small {
-  color: #6e88ad;
-  display: block;
-  font-size: 9px;
-  margin-top: 6px;
-}
-.vote-options.dynamic {
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-}
 .action-error {
   background: #3d1b27;
   border: 1px solid #743343;
@@ -1004,19 +906,11 @@ footer .brand img {
   margin: 12px 0;
   padding: 10px;
 }
-.modal-footer-row a {
-  color: #7fa5ff;
-}
 .connector-image {
   border-radius: 8px;
   height: 36px;
   object-fit: cover;
   width: 36px;
-}
-.date-grid {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: 1fr 1fr;
 }
 .optional {
   color: #60799e;
@@ -1024,9 +918,6 @@ footer .brand img {
   font-weight: 400;
 }
 @media (max-width: 640px) {
-  .date-grid {
-    grid-template-columns: 1fr;
-  }
   .proposal-body {
     max-height: 30vh;
   }
@@ -1039,27 +930,6 @@ footer .brand img {
 .admin-panel h4 {
   font-size: 12px;
   margin: 0 0 14px;
-}
-.admin-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-}
-.badge.pending {
-  background: #3a301b;
-  color: #e7bd69;
-}
-.badge.upcoming {
-  background: #42391e;
-  color: #e7bd69;
-}
-.badge.active {
-  background: #103d42;
-  color: #45e5c2;
-}
-.badge.closed {
-  background: #1b2b43;
-  color: #90a2bd;
 }
 @media (max-width: 900px) {
   .topbar {
@@ -1081,9 +951,6 @@ footer .brand img {
   .stats div {
     padding: 22px 12px;
     flex-direction: column;
-  }
-  .proposal-card {
-    grid-template-columns: 1fr 190px;
   }
   .how {
     grid-template-columns: 1fr;
@@ -1155,8 +1022,11 @@ footer .brand img {
     padding: 10px 0;
   }
   .proposal-card {
-    grid-template-columns: 1fr;
+    grid-template-columns: auto minmax(0, 1fr);
     padding: 22px 5px;
+  }
+  .open-button {
+    display: none;
   }
   .proposal-foot {
     flex-wrap: wrap;
@@ -1173,9 +1043,6 @@ footer .brand img {
   }
   .modal {
     padding: 28px 20px;
-  }
-  .vote-options {
-    grid-template-columns: 1fr;
   }
   .wallet-pill {
     font-size: 0;
