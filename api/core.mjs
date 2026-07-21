@@ -11,6 +11,10 @@ import { createSiweMessage, generateSiweNonce, parseSiweMessage } from "viem/siw
 
 import {
   FEATURE_BOARD_CHAIN_ID,
+  MAX_BODY_LENGTH,
+  MAX_NOTE_LENGTH,
+  MAX_TITLE_LENGTH,
+  MIN_TITLE_LENGTH,
   MINIMUM_VULT_BALANCE,
   VULT_CONTRACT_ADDRESS,
 } from "../shared/featureBoard.js";
@@ -60,7 +64,7 @@ const normalizeAddress = (value) => {
 const normalizeUuid = (value) => {
   const id = String(value || "");
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
-    throw new ApiError(400, "Invalid proposal ID");
+    throw new ApiError(400, "Invalid ID");
   }
   return id;
 };
@@ -73,6 +77,12 @@ class ApiError extends Error {
 }
 
 const hashToken = (token) => createHash("sha256").update(token).digest("hex");
+
+// Postgres foreign-key violation on proposal_id means the proposal is gone.
+const onProposal = (query) => query.catch((error) => {
+  if (error?.code === "23503") throw new ApiError(404, "Proposal not found");
+  throw error;
+});
 const adminWallets = () => new Set(
   String(process.env.ADMIN_WALLETS || "")
     .split(",")
@@ -273,8 +283,12 @@ const createProposal = async (headers, payload) => {
   await requireVult(session.address);
   const title = String(payload.title || "").trim();
   const body = String(payload.body || "").trim();
-  if (title.length < 8 || title.length > 120) throw new ApiError(400, "Title must be 8–120 characters");
-  if (body.length > 500) throw new ApiError(400, "Details are limited to 500 characters");
+  if (title.length < MIN_TITLE_LENGTH || title.length > MAX_TITLE_LENGTH) {
+    throw new ApiError(400, `Title must be ${MIN_TITLE_LENGTH}–${MAX_TITLE_LENGTH} characters`);
+  }
+  if (body.length > MAX_BODY_LENGTH) {
+    throw new ApiError(400, `Details are limited to ${MAX_BODY_LENGTH} characters`);
+  }
   const rows = await db()`
     INSERT INTO proposals(title, body, author_address)
     VALUES (${title}, ${body}, ${session.address})
@@ -290,9 +304,7 @@ const castVote = async (headers, payload) => {
   const choice = String(payload.choice || "");
   if (!["up", "down"].includes(choice)) throw new ApiError(400, "Invalid vote choice");
   const proposalId = normalizeUuid(payload.proposalId);
-  const exists = await db()`SELECT id FROM proposals WHERE id = ${proposalId} LIMIT 1`;
-  if (!exists[0]) throw new ApiError(404, "Proposal not found");
-  const rows = await db()`
+  const rows = await onProposal(db()`
     WITH removed AS (
       DELETE FROM votes
       WHERE proposal_id = ${proposalId}
@@ -306,7 +318,7 @@ const castVote = async (headers, payload) => {
     ON CONFLICT (proposal_id, voter_address) DO UPDATE SET
       choice = EXCLUDED.choice, updated_at = now()
     RETURNING choice
-  `;
+  `);
   return json(200, { myVote: rows[0]?.choice || null });
 };
 
@@ -315,15 +327,15 @@ const addNote = async (headers, payload) => {
   await rateLimit(`note:${session.address}`, 30, 3600);
   await requireVult(session.address);
   const body = String(payload.body || "").trim();
-  if (body.length < 1 || body.length > 1000) throw new ApiError(400, "Notes must be 1–1,000 characters");
+  if (body.length < 1 || body.length > MAX_NOTE_LENGTH) {
+    throw new ApiError(400, `Notes must be 1–${MAX_NOTE_LENGTH.toLocaleString("en-US")} characters`);
+  }
   const proposalId = normalizeUuid(payload.proposalId);
-  const exists = await db()`SELECT id FROM proposals WHERE id = ${proposalId} LIMIT 1`;
-  if (!exists[0]) throw new ApiError(404, "Proposal not found");
-  const rows = await db()`
+  const rows = await onProposal(db()`
     INSERT INTO notes(proposal_id, author_address, body)
     VALUES (${proposalId}, ${session.address}, ${body})
     RETURNING id, author_address AS "authorAddress", body, created_at AS "createdAt"
-  `;
+  `);
   return json(201, { note: rows[0] });
 };
 

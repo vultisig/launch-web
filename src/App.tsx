@@ -33,6 +33,7 @@ import { CoreProvider } from "@/providers/core";
 import { StyledProvider } from "@/providers/styled";
 import {
   addNote,
+  type BoardResponse,
   createFeatureProposal,
   deleteNote,
   deleteProposal,
@@ -50,12 +51,16 @@ import { clearFeatureBoardSession, getFeatureBoardSession, setFeatureBoardSessio
 import { modalHash } from "@/utils/constants";
 import { wagmiConfig } from "@/utils/wagmi";
 
+import {
+  MAX_BODY_LENGTH,
+  MAX_NOTE_LENGTH,
+  MAX_TITLE_LENGTH,
+  MIN_TITLE_LENGTH,
+} from "../shared/featureBoard.js";
+
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 2, staleTime: 15_000 } },
 });
-const MAX_TITLE_LENGTH = 120;
-const MAX_BODY_LENGTH = 500;
-const MAX_NOTE_LENGTH = 1000;
 
 type IconName =
   | "search"
@@ -244,8 +249,17 @@ function FeatureBoard() {
         ...current,
         [proposal.id]: nextVote(proposal.myVote, choice),
       }));
-      await toggleVote(authenticated.token, proposal.id, choice);
-      await board.refetch();
+      const { myVote } = await toggleVote(authenticated.token, proposal.id, choice);
+      queryClient.setQueryData<BoardResponse>(
+        ["feature-board", authenticated.token],
+        (data) =>
+          data && {
+            ...data,
+            proposals: data.proposals.map((item) =>
+              item.id === proposal.id ? withVote(item, myVote) : item,
+            ),
+          },
+      );
     } catch (error) {
       handleActionError(error);
       await board.refetch();
@@ -717,7 +731,7 @@ function FeatureBoard() {
                     maxLength={MAX_TITLE_LENGTH}
                     name="title"
                     required
-                    minLength={8}
+                    minLength={MIN_TITLE_LENGTH}
                     placeholder="What should Vultisig build?"
                   />
                   <small className="field-hint">

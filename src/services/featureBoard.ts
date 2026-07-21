@@ -41,29 +41,6 @@ export class FeatureBoardApiError extends Error {
   }
 }
 
-const request = async <T>(
-  action: string,
-  payload: Record<string, unknown> = {},
-  token?: string,
-) => {
-  const response = await fetch("/api", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify({ action, ...payload }),
-  });
-  const data = await parseResponse<T>(response);
-  if (!response.ok) {
-    throw new FeatureBoardApiError(
-      data.error || `Request failed (${response.status})`,
-      response.status,
-    );
-  }
-  return data;
-};
-
 const parseResponse = async <T>(response: Response) => {
   const contentType = response.headers.get("content-type") || "";
   if (!contentType.includes("application/json")) {
@@ -74,17 +51,39 @@ const parseResponse = async <T>(response: Response) => {
   return response.json() as Promise<T & { error?: string }>;
 };
 
-const get = async <T>(query: string, token?: string) => {
-  const response = await fetch(`/api?${query}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  });
+const handle = async <T>(response: Response) => {
   const data = await parseResponse<T>(response);
-  if (!response.ok) throw new FeatureBoardApiError(
-    data.error || `Request failed (${response.status})`,
-    response.status,
-  );
+  if (!response.ok) {
+    throw new FeatureBoardApiError(
+      data.error || `Request failed (${response.status})`,
+      response.status,
+    );
+  }
   return data;
 };
+
+const request = async <T>(
+  action: string,
+  payload: Record<string, unknown> = {},
+  token?: string,
+) =>
+  handle<T>(
+    await fetch("/api", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ action, ...payload }),
+    }),
+  );
+
+const get = async <T>(query: string, token?: string) =>
+  handle<T>(
+    await fetch(`/api?${query}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    }),
+  );
 
 export const fetchBoard = (token?: string) =>
   get<BoardResponse>("action=board", token);
