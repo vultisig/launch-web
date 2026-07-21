@@ -27,29 +27,29 @@ CREATE INDEX IF NOT EXISTS rate_limits_expiry_idx ON rate_limits(expires_at);
 
 CREATE TABLE IF NOT EXISTS proposals (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  title VARCHAR(160) NOT NULL CHECK (char_length(title) BETWEEN 8 AND 160),
-  body TEXT NOT NULL CHECK (char_length(body) BETWEEN 24 AND 10000),
+  title VARCHAR(120) NOT NULL CHECK (char_length(title) BETWEEN 8 AND 120),
+  body TEXT NOT NULL DEFAULT '' CHECK (char_length(body) <= 500),
   author_address TEXT NOT NULL CHECK (author_address ~ '^0x[0-9a-f]{40}$'),
-  moderation_state TEXT NOT NULL DEFAULT 'pending'
-    CHECK (moderation_state IN ('pending', 'approved', 'rejected')),
-  voting_starts_at TIMESTAMPTZ,
-  voting_ends_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CHECK (
-    (moderation_state <> 'approved') OR
-    (voting_starts_at IS NOT NULL AND voting_ends_at > voting_starts_at)
-  )
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS proposals_state_idx
-  ON proposals(moderation_state, voting_starts_at, voting_ends_at);
+CREATE INDEX IF NOT EXISTS proposals_created_idx ON proposals(created_at);
 
 CREATE TABLE IF NOT EXISTS votes (
   proposal_id UUID NOT NULL REFERENCES proposals(id) ON DELETE CASCADE,
   voter_address TEXT NOT NULL CHECK (voter_address ~ '^0x[0-9a-f]{40}$'),
-  choice TEXT NOT NULL CHECK (choice IN ('for', 'against', 'abstain')),
+  choice TEXT NOT NULL CHECK (choice IN ('up', 'down')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (proposal_id, voter_address)
 );
 CREATE INDEX IF NOT EXISTS votes_proposal_idx ON votes(proposal_id);
+
+CREATE TABLE IF NOT EXISTS notes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  proposal_id UUID NOT NULL REFERENCES proposals(id) ON DELETE CASCADE,
+  author_address TEXT NOT NULL CHECK (author_address ~ '^0x[0-9a-f]{40}$'),
+  body TEXT NOT NULL CHECK (char_length(body) BETWEEN 1 AND 1000),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS notes_proposal_idx ON notes(proposal_id, created_at);
