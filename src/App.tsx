@@ -18,12 +18,13 @@ import {
 import { useCore } from "@/hooks/useCore";
 import { i18nInstance } from "@/i18n/config";
 import { CheckIcon } from "@/icons/CheckIcon";
+import { ChevronDownIcon } from "@/icons/ChevronDownIcon";
 import { ChevronRightIcon } from "@/icons/ChevronRightIcon";
 import { CrossIcon } from "@/icons/CrossIcon";
 import { PlusIcon } from "@/icons/PlusIcon";
 import { SearchIcon } from "@/icons/SearchIcon";
 import { TimerIcon } from "@/icons/TimerIcon";
-import { UsersIcon } from "@/icons/UsersIcon";
+import { TrashIcon } from "@/icons/TrashIcon";
 import { DefaultLayout } from "@/layouts/Default";
 import { NotFoundPage } from "@/pages/NotFound";
 import { SwapPage } from "@/pages/Swap";
@@ -31,68 +32,62 @@ import { AntdProvider } from "@/providers/antd";
 import { CoreProvider } from "@/providers/core";
 import { StyledProvider } from "@/providers/styled";
 import {
+  addNote,
+  type BoardResponse,
   createFeatureProposal,
+  deleteNote,
+  deleteProposal,
   FeatureBoardApiError,
   type FeatureProposal,
   fetchBoard,
+  fetchNotes,
   formatExactDate,
-  moderateProposal,
   type Session,
   signIn,
-  submitVote,
+  toggleVote,
   type VoteChoice,
 } from "@/services/featureBoard";
 import { clearFeatureBoardSession, getFeatureBoardSession, setFeatureBoardSession } from "@/storage/featureBoardSession";
 import { modalHash } from "@/utils/constants";
 import { wagmiConfig } from "@/utils/wagmi";
 
+import {
+  MAX_BODY_LENGTH,
+  MAX_NOTE_LENGTH,
+  MAX_TITLE_LENGTH,
+  MIN_TITLE_LENGTH,
+} from "../shared/featureBoard.js";
+
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 2, staleTime: 15_000 } },
 });
-const MAX_TITLE_LENGTH = 160;
-const MAX_BODY_LENGTH = 10_000;
 
 type IconName =
   | "search"
   | "arrow"
   | "check"
-  | "users"
   | "clock"
   | "plus"
-  | "close";
+  | "close"
+  | "chevron-down"
+  | "trash";
 function Icon({ name }: { name: IconName }) {
   const icons = {
     search: SearchIcon,
     arrow: ChevronRightIcon,
     check: CheckIcon,
-    users: UsersIcon,
     clock: TimerIcon,
     plus: PlusIcon,
     close: CrossIcon,
+    "chevron-down": ChevronDownIcon,
+    trash: TrashIcon,
   };
   const Component = icons[name];
   return <Component aria-hidden="true" />;
 }
 
-const statusLabel = (proposal: FeatureProposal) =>
-  ({
-    pending: "Pending review",
-    rejected: "Rejected",
-    upcoming: "Upcoming",
-    active: "Active",
-    closed: "Closed",
-  })[proposal.state];
-
-const timingLabel = (proposal: FeatureProposal) => {
-  if (proposal.state === "pending")
-    return `Submitted ${formatExactDate(proposal.createdAt)}`;
-  if (proposal.state === "rejected") return "Not selected for voting";
-  if (proposal.state === "upcoming")
-    return `Starts ${formatExactDate(proposal.startsAt!)}`;
-  if (proposal.state === "active")
-    return `Ends ${formatExactDate(proposal.endsAt!)}`;
-  return `Ended ${formatExactDate(proposal.endsAt!)}`;
-};
+const shortAddress = (address: string) =>
+  `${address.slice(0, 6)}...${address.slice(-4)}`;
 
 const errorMessage = (error: unknown) =>
   error instanceof Error
@@ -101,6 +96,22 @@ const errorMessage = (error: unknown) =>
 
 const isExpiredSession = (error: unknown) =>
   error instanceof FeatureBoardApiError && error.status === 401;
+
+const nextVote = (
+  current: VoteChoice | null,
+  choice: VoteChoice,
+): VoteChoice | null => (current === choice ? null : choice);
+
+const withVote = (
+  proposal: FeatureProposal,
+  vote: VoteChoice | null,
+): FeatureProposal => {
+  const upVotes =
+    proposal.upVotes - (proposal.myVote === "up" ? 1 : 0) + (vote === "up" ? 1 : 0);
+  const downVotes =
+    proposal.downVotes - (proposal.myVote === "down" ? 1 : 0) + (vote === "down" ? 1 : 0);
+  return { ...proposal, upVotes, downVotes, score: upVotes - downVotes, myVote: vote };
+};
 
 function FeatureBoard() {
   const { setCurrentPage } = useCore();
@@ -113,14 +124,14 @@ function FeatureBoard() {
   const { signMessageAsync } = useSignMessage();
   const [session, setSession] = useState<Session | null>(getFeatureBoardSession);
   const [proposalOpen, setProposalOpen] = useState(false);
-  const [selected, setSelected] = useState<FeatureProposal | null>(null);
-  const [choice, setChoice] = useState<VoteChoice | null>(null);
-  const [tab, setTab] = useState<"All" | "Active" | "Upcoming" | "Closed">(
-    "All",
-  );
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [sort, setSort] = useState<"Top" | "New">("Top");
   const [query, setQuery] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const [busy, setBusy] = useState<
+    "" | "post" | "note" | "note-delete" | "idea-delete"
+  >("");
   const [actionError, setActionError] = useState("");
+  const [deleteArmed, setDeleteArmed] = useState(false);
   const activeSession =
     session &&
     address &&
@@ -152,32 +163,50 @@ function FeatureBoard() {
   };
 
   const proposals = board.data?.proposals ?? [];
-  const filtered = useMemo(
-    () =>
-      proposals.filter((proposal) => {
-        const statusMatches = tab === "All" || statusLabel(proposal) === tab;
-        const queryMatches = `${proposal.title} ${proposal.body}`
-          .toLowerCase()
-          .includes(query.trim().toLowerCase());
-        return statusMatches && queryMatches;
-      }),
-    [proposals, query, tab],
-  );
-  const activeCount = proposals.filter(
-    (proposal) => proposal.state === "active",
-  ).length;
-  const upcomingCount = proposals.filter(
-    (proposal) => proposal.state === "upcoming",
-  ).length;
-  const ballotCount = proposals.reduce(
-    (sum, proposal) => sum + proposal.voteCount,
+  const filtered = useMemo(() => {
+    const matching = proposals.filter((proposal) =>
+      `${proposal.title} ${proposal.body}`
+        .toLowerCase()
+        .includes(query.trim().toLowerCase()),
+    );
+    return sort === "New"
+      ? [...matching].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      : matching;
+  }, [proposals, query, sort]);
+  const voteCount = proposals.reduce(
+    (sum, proposal) => sum + proposal.upVotes + proposal.downVotes,
     0,
   );
+  const noteCount = proposals.reduce(
+    (sum, proposal) => sum + proposal.noteCount,
+    0,
+  );
+  const selected = proposals.find((proposal) => proposal.id === selectedId) ?? null;
+
+  const notes = useQuery({
+    queryKey: ["feature-board-notes", selectedId],
+    queryFn: () => fetchNotes(selectedId!),
+    enabled: Boolean(selectedId),
+  });
+
+  const handleActionError = (error: unknown) => {
+    if (isExpiredSession(error)) {
+      clearFeatureBoardSession();
+      setSession(null);
+    }
+    setActionError(errorMessage(error));
+  };
 
   const openProposalForm = () => {
     setActionError("");
     if (!isConnected) window.location.hash = modalHash.connect;
     else setProposalOpen(true);
+  };
+
+  const openProposal = (proposal: FeatureProposal) => {
+    setSelectedId(proposal.id);
+    setActionError("");
+    setDeleteArmed(false);
   };
 
   const createProposal = async (event: FormEvent<HTMLFormElement>) => {
@@ -186,102 +215,108 @@ function FeatureBoard() {
     const data = new FormData(form);
     const title = String(data.get("title") || "").trim();
     const body = String(data.get("body") || "").trim();
-    setSubmitting(true);
+    setBusy("post");
     setActionError("");
     try {
       const authenticated = await authenticate();
-      await createFeatureProposal(
-        authenticated.token,
-        title,
-        body,
-      );
+      await createFeatureProposal(authenticated.token, title, body);
       form.reset();
       setProposalOpen(false);
       await board.refetch();
     } catch (error) {
-      if (isExpiredSession(error)) {
-        clearFeatureBoardSession();
-        setSession(null);
-      }
-      setActionError(errorMessage(error));
+      handleActionError(error);
     } finally {
-      setSubmitting(false);
+      setBusy("");
     }
   };
 
-  const vote = async () => {
-    if (!selected || !choice) return;
-    setSubmitting(true);
+  const patchBoard = (
+    token: string | undefined,
+    proposalId: string,
+    transform: (proposal: FeatureProposal) => FeatureProposal,
+  ) =>
+    queryClient.setQueryData<BoardResponse>(
+      ["feature-board", token],
+      (data) =>
+        data && {
+          ...data,
+          proposals: data.proposals.map((item) =>
+            item.id === proposalId ? transform(item) : item,
+          ),
+        },
+    );
+
+  const vote = async (proposal: FeatureProposal, choice: VoteChoice) => {
+    if (!isConnected) {
+      window.location.hash = modalHash.connect;
+      return;
+    }
     setActionError("");
+    patchBoard(activeSession?.token, proposal.id, (item) =>
+      withVote(item, nextVote(item.myVote, choice)),
+    );
     try {
       const authenticated = await authenticate();
-      await submitVote(authenticated.token, selected.id, choice);
-      await board.refetch();
-      setSelected((current) =>
-        current ? { ...current, myVote: choice } : current,
-      );
-      setChoice(null);
+      const { myVote } = await toggleVote(authenticated.token, proposal.id, choice);
+      patchBoard(authenticated.token, proposal.id, (item) => withVote(item, myVote));
     } catch (error) {
-      if (isExpiredSession(error)) {
-        clearFeatureBoardSession();
-        setSession(null);
-      }
-      setActionError(errorMessage(error));
-    } finally {
-      setSubmitting(false);
+      handleActionError(error);
+      await board.refetch();
     }
   };
 
-  const moderate = async (
-    event: FormEvent<HTMLFormElement>,
-    moderationState: "approved" | "rejected",
-  ) => {
+  const submitNote = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!selected) return;
-    const data = new FormData(event.currentTarget);
-    const startsAt = String(data.get("startsAt") || "");
-    const endsAt = String(data.get("endsAt") || "");
-    setSubmitting(true);
+    const form = event.currentTarget;
+    const body = String(new FormData(form).get("note") || "").trim();
+    if (!body) return;
+    setBusy("note");
     setActionError("");
     try {
       const authenticated = await authenticate();
-      await moderateProposal(
-        authenticated.token,
-        selected.id,
-        moderationState,
-        new Date(startsAt).toISOString(),
-        new Date(endsAt).toISOString(),
-      );
-      setSelected(null);
-      await board.refetch();
+      await addNote(authenticated.token, selected.id, body);
+      form.reset();
+      await Promise.all([notes.refetch(), board.refetch()]);
     } catch (error) {
-      if (isExpiredSession(error)) {
-        clearFeatureBoardSession();
-        setSession(null);
-      }
-      setActionError(errorMessage(error));
+      handleActionError(error);
     } finally {
-      setSubmitting(false);
+      setBusy("");
     }
   };
 
-  const rejectProposal = async () => {
-    if (!selected) return;
-    setSubmitting(true);
+  const removeNote = async (noteId: string) => {
+    setBusy("note-delete");
     setActionError("");
     try {
       const authenticated = await authenticate();
-      await moderateProposal(authenticated.token, selected.id, "rejected");
-      setSelected(null);
+      await deleteNote(authenticated.token, noteId);
+      await Promise.all([notes.refetch(), board.refetch()]);
+    } catch (error) {
+      handleActionError(error);
+    } finally {
+      setBusy("");
+    }
+  };
+
+  const removeProposal = async () => {
+    if (!selected) return;
+    if (!deleteArmed) {
+      setDeleteArmed(true);
+      return;
+    }
+    setBusy("idea-delete");
+    setActionError("");
+    try {
+      const authenticated = await authenticate();
+      await deleteProposal(authenticated.token, selected.id);
+      setSelectedId(null);
       await board.refetch();
     } catch (error) {
-      if (isExpiredSession(error)) {
-        clearFeatureBoardSession();
-        setSession(null);
-      }
-      setActionError(errorMessage(error));
+      handleActionError(error);
     } finally {
-      setSubmitting(false);
+      setBusy("");
+      setDeleteArmed(false);
     }
   };
 
@@ -299,15 +334,15 @@ function FeatureBoard() {
             <em>what’s next.</em>
           </h1>
           <p>
-            Suggest improvements and vote on upcoming Vultisig features. Every
-            wallet with at least 100 VULT gets one vote.
+            Post ideas and vote on what Vultisig builds next. Every wallet with
+            at least 100 VULT can post, vote, and discuss — no review queue.
           </p>
           <div className="hero-actions">
             <a href="#proposals" className="primary-button">
-              Explore proposals <Icon name="arrow" />
+              Explore ideas <Icon name="arrow" />
             </a>
             <button className="text-button" onClick={openProposalForm}>
-              Submit an idea
+              Post an idea
             </button>
           </div>
           <div className="trust-row">
@@ -341,21 +376,15 @@ function FeatureBoard() {
             <strong>
               {board.isLoading ? "—" : proposals.length.toLocaleString()}
             </strong>
-            <span>Proposals</span>
+            <span>Ideas</span>
           </div>
           <div>
-            <strong>{board.isLoading ? "—" : activeCount}</strong>
-            <span>Active votes</span>
+            <strong>{board.isLoading ? "—" : voteCount.toLocaleString()}</strong>
+            <span>Votes cast</span>
           </div>
           <div>
-            <strong>{board.isLoading ? "—" : upcomingCount}</strong>
-            <span>Upcoming</span>
-          </div>
-          <div>
-            <strong>
-              {board.isLoading ? "—" : ballotCount.toLocaleString()}
-            </strong>
-            <span>Ballots cast</span>
+            <strong>{board.isLoading ? "—" : noteCount.toLocaleString()}</strong>
+            <span>Notes</span>
           </div>
         </section>
 
@@ -366,41 +395,39 @@ function FeatureBoard() {
                 <span />
                 Community input
               </div>
-              <h2>Feature proposals</h2>
-              <p>Ideas submitted and voted on by verified VULT holders.</p>
+              <h2>Feature ideas</h2>
+              <p>Posted and ranked by verified VULT holders.</p>
             </div>
             <button className="secondary-button" onClick={openProposalForm}>
               <Icon name="plus" />
-              New proposal
+              Post idea
             </button>
           </div>
           <div className="toolbar">
             <div className="tabs">
-              {(["All", "Active", "Upcoming", "Closed"] as const).map(
-                (item) => (
-                  <button
-                    className={tab === item ? "active" : ""}
-                    onClick={() => setTab(item)}
-                    key={item}
-                  >
-                    {item}
-                  </button>
-                ),
-              )}
+              {(["Top", "New"] as const).map((item) => (
+                <button
+                  className={sort === item ? "active" : ""}
+                  onClick={() => setSort(item)}
+                  key={item}
+                >
+                  {item}
+                </button>
+              ))}
             </div>
             <label className="search">
               <Icon name="search" />
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search proposals"
-                aria-label="Search proposals"
+                placeholder="Search ideas"
+                aria-label="Search ideas"
               />
             </label>
           </div>
           {board.isLoading && (
             <div className="empty">
-              <strong>Loading feature proposals…</strong>
+              <strong>Loading feature ideas…</strong>
             </div>
           )}
           {board.isError && (
@@ -417,93 +444,69 @@ function FeatureBoard() {
           )}
           {board.isSuccess && (
             <div className="proposal-list">
-              {filtered.map((proposal) => {
-                const decided = proposal.forVotes + proposal.againstVotes;
-                const forPercent = decided
-                  ? Math.round((proposal.forVotes / decided) * 100)
-                  : 0;
-                return (
-                  <article
-                    className="proposal-card"
-                    key={proposal.id}
-                    onClick={() => {
-                      setSelected(proposal);
-                      setActionError("");
-                    }}
+              {filtered.map((proposal) => (
+                <article className="proposal-card" key={proposal.id}>
+                  <div className="vote-rail">
+                    <button
+                      aria-label={`Upvote ${proposal.title}`}
+                      aria-pressed={proposal.myVote === "up"}
+                      className={`vote-button up ${proposal.myVote === "up" ? "active" : ""}`}
+                      onClick={() => vote(proposal, "up")}
+                    >
+                      <Icon name="chevron-down" />
+                    </button>
+                    <strong className="score">{proposal.score}</strong>
+                    <button
+                      aria-label={`Downvote ${proposal.title}`}
+                      aria-pressed={proposal.myVote === "down"}
+                      className={`vote-button down ${proposal.myVote === "down" ? "active" : ""}`}
+                      onClick={() => vote(proposal, "down")}
+                    >
+                      <Icon name="chevron-down" />
+                    </button>
+                  </div>
+                  <div
+                    className="proposal-main"
+                    onClick={() => openProposal(proposal)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault();
-                        setSelected(proposal);
+                        openProposal(proposal);
                       }
                     }}
+                    role="button"
                     tabIndex={0}
                   >
-                    <div className="proposal-main">
-                      <div className="proposal-meta">
-                        <span className={`badge ${proposal.state}`}>
-                          {statusLabel(proposal)}
-                        </span>
-                        {proposal.moderationState === "pending" && (
-                          <span>Only visible to you and admins</span>
-                        )}
-                      </div>
-                      <h3>{proposal.title}</h3>
-                      <p>{proposal.body}</p>
-                      <div className="proposal-foot">
-                        <span>
-                          <Icon name="clock" />
-                          {timingLabel(proposal)}
-                        </span>
-                        <span>
-                          <Icon name="users" />
-                          {proposal.voteCount.toLocaleString()} ballots
-                        </span>
-                        <span>
-                          by{" "}
-                          {`${proposal.authorAddress.slice(0, 6)}...${proposal.authorAddress.slice(-4)}`}
-                        </span>
-                      </div>
+                    <h3>{proposal.title}</h3>
+                    {proposal.body && <p>{proposal.body}</p>}
+                    <div className="proposal-foot">
+                      <span>
+                        <Icon name="clock" />
+                        {formatExactDate(proposal.createdAt)}
+                      </span>
+                      <span>
+                        {proposal.noteCount.toLocaleString()}{" "}
+                        {proposal.noteCount === 1 ? "note" : "notes"}
+                      </span>
+                      <span>by {shortAddress(proposal.authorAddress)}</span>
                     </div>
-                    <div className="vote-summary">
-                      {proposal.state === "pending" ? (
-                        <div className="upcoming-mark">
-                          <span>Moderation</span>
-                          <strong>Awaiting review</strong>
-                        </div>
-                      ) : proposal.state === "upcoming" ? (
-                        <div className="upcoming-mark">
-                          <span>Scheduled</span>
-                          <strong>{formatExactDate(proposal.startsAt!)}</strong>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="vote-label">
-                            <span>For</span>
-                            <strong>{forPercent}%</strong>
-                          </div>
-                          <div className="progress">
-                            <span style={{ width: `${forPercent}%` }} />
-                          </div>
-                          <div className="vote-label muted">
-                            <span>Against</span>
-                            <span>{100 - forPercent}%</span>
-                          </div>
-                        </>
-                      )}
-                      <button aria-label={`View ${proposal.title}`}>
-                        <Icon name="arrow" />
-                      </button>
-                    </div>
-                  </article>
-                );
-              })}
+                  </div>
+                  <button
+                    aria-label={`Open ${proposal.title}`}
+                    className="open-button"
+                    onClick={() => openProposal(proposal)}
+                  >
+                    <Icon name="arrow" />
+                  </button>
+                </article>
+              ))}
               {!filtered.length && (
                 <div className="empty">
-                  <strong>No proposals found</strong>
+                  <strong>No ideas found</strong>
                   <p>
                     {proposals.length
-                      ? "Try another status or search term."
-                      : "Be the first VULT holder to submit a feature idea."}
+                      ? "Try another search term."
+                      : "Be the first VULT holder to post a feature idea."}
                   </p>
                 </div>
               )}
@@ -530,18 +533,18 @@ function FeatureBoard() {
             </div>
             <div>
               <b>02</b>
-              <h3>Suggest</h3>
+              <h3>Post</h3>
               <p>
-                Submit an idea. Vultisig reviews it for clarity and schedules
-                the voting window.
+                Share a short idea. It goes live on the board instantly — no
+                review queue.
               </p>
             </div>
             <div>
               <b>03</b>
-              <h3>Vote</h3>
+              <h3>Vote & discuss</h3>
               <p>
-                Cast one vote per wallet. You can update your choice while
-                voting is open.
+                Upvote or downvote any idea straight from the list, and add
+                notes to make the case.
               </p>
             </div>
           </div>
@@ -558,7 +561,10 @@ function FeatureBoard() {
 
       {selected &&
         createPortal(
-          <div className="modal-backdrop" onMouseDown={() => setSelected(null)}>
+          <div
+            className="modal-backdrop"
+            onMouseDown={() => setSelectedId(null)}
+          >
             <div
               className="modal proposal-modal"
               onMouseDown={(event) => event.stopPropagation()}
@@ -567,164 +573,123 @@ function FeatureBoard() {
               aria-labelledby="proposal-title"
             >
               <button
-                aria-label="Close proposal details"
+                aria-label="Close idea details"
                 className="modal-close"
-                onClick={() => setSelected(null)}
+                onClick={() => setSelectedId(null)}
               >
                 <Icon name="close" />
               </button>
-              <div className="proposal-meta">
-                <span className={`badge ${selected.state}`}>
-                  {statusLabel(selected)}
+              <h2 id="proposal-title">{selected.title}</h2>
+              {selected.body && (
+                <p className="proposal-body">{selected.body}</p>
+              )}
+              <div className="proposal-foot">
+                <span>
+                  <Icon name="clock" />
+                  {formatExactDate(selected.createdAt)}
+                </span>
+                <span>by {shortAddress(selected.authorAddress)}</span>
+                <span>
+                  {selected.upVotes} up · {selected.downVotes} down
                 </span>
               </div>
-              <h2 id="proposal-title">{selected.title}</h2>
-              <p className="proposal-body">{selected.body}</p>
-              <div className="detail-box">
-                <h4>
-                  {selected.state === "pending"
-                    ? "Submission"
-                    : "Voting window"}
-                </h4>
-                <p>
-                  {selected.state === "pending" ? (
-                    `Submitted ${formatExactDate(selected.createdAt)}. Vultisig will review and schedule it.`
-                  ) : (
-                    <>
-                      <strong>Starts:</strong>{" "}
-                      {formatExactDate(selected.startsAt!)}
-                      <br />
-                      <strong>Ends:</strong> {formatExactDate(selected.endsAt!)}
-                    </>
-                  )}
-                </p>
-              </div>
-              <div className="result-list">
-                {(["for", "against", "abstain"] as VoteChoice[]).map((item) => {
-                  const count =
-                    item === "for"
-                      ? selected.forVotes
-                      : item === "against"
-                        ? selected.againstVotes
-                        : selected.abstainVotes;
-                  const percent = selected.voteCount
-                    ? Math.round((count / selected.voteCount) * 100)
-                    : 0;
-                  return (
-                    <div className="result-row" key={item}>
-                      <div>
-                        <span>{item[0].toUpperCase() + item.slice(1)}</span>
-                        <strong>{percent}%</strong>
-                      </div>
-                      <div className="progress">
-                        <span style={{ width: `${percent}%` }} />
-                      </div>
-                      <small>{count} wallets</small>
-                    </div>
-                  );
-                })}
-              </div>
-              {selected.state === "active" && (
-                <div className="ballot">
-                  <h4>
-                    {selected.myVote ? "Change your vote" : "Cast your vote"}
-                  </h4>
-                  {selected.myVote && (
-                    <p className="ballot-note">
-                      Your current vote is <strong>{selected.myVote}</strong>.
-                      Selecting a different option replaces it—your wallet still
-                      counts as one ballot.
-                    </p>
-                  )}
-                  <div className="vote-options dynamic">
-                    {(["for", "against", "abstain"] as VoteChoice[]).map(
-                      (item) => (
-                        <button
-                          className={
-                            (choice || selected.myVote) === item
-                              ? "selected"
-                              : ""
-                          }
-                          onClick={() => setChoice(item)}
-                          key={item}
-                        >
-                          <span>{item[0].toUpperCase() + item.slice(1)}</span>
-                          <small>
-                            {selected.myVote === item
-                              ? "Current vote"
-                              : choice === item
-                                ? "New choice"
-                                : selected.myVote
-                                  ? "Select to replace"
-                                  : "One wallet, one vote"}
-                          </small>
-                        </button>
-                      ),
-                    )}
-                  </div>
+              <div className="ballot">
+                <div className="vote-rail horizontal">
                   <button
-                    className="primary-button full"
-                    disabled={
-                      !choice || choice === selected.myVote || submitting
-                    }
-                    onClick={vote}
+                    aria-pressed={selected.myVote === "up"}
+                    className={`vote-button up ${selected.myVote === "up" ? "active" : ""}`}
+                    onClick={() => vote(selected, "up")}
                   >
-                    {submitting
-                      ? "Verifying wallet…"
-                      : activeSession
-                        ? selected.myVote
-                          ? "Update vote"
-                          : "Submit vote"
-                        : selected.myVote
-                          ? "Sign message & update vote"
-                          : "Sign message & submit vote"}
+                    <Icon name="chevron-down" />
+                    Upvote
+                  </button>
+                  <strong className="score">{selected.score}</strong>
+                  <button
+                    aria-pressed={selected.myVote === "down"}
+                    className={`vote-button down ${selected.myVote === "down" ? "active" : ""}`}
+                    onClick={() => vote(selected, "down")}
+                  >
+                    <Icon name="chevron-down" />
+                    Downvote
                   </button>
                 </div>
-              )}
-              {activeSession?.isAdmin && selected.state === "pending" && (
-                <form
-                  className="admin-panel"
-                  onSubmit={(event) => moderate(event, "approved")}
-                >
-                  <h4>Admin review</h4>
-                  <div className="date-grid">
-                    <label>
-                      Voting starts
-                      <input name="startsAt" type="datetime-local" required />
-                    </label>
-                    <label>
-                      Voting ends
-                      <input name="endsAt" type="datetime-local" required />
-                    </label>
-                  </div>
-                  <div className="admin-actions">
-                    <button
-                      className="secondary-button"
-                      type="button"
-                      disabled={submitting}
-                      onClick={rejectProposal}
-                    >
-                      Reject
-                    </button>
-                    <button
-                      className="primary-button"
-                      type="submit"
-                      disabled={submitting}
-                    >
-                      Approve & schedule
-                    </button>
-                  </div>
+              </div>
+              <div className="note-section">
+                <h4>Notes</h4>
+                {notes.isLoading && <p className="ballot-note">Loading notes…</p>}
+                {notes.isSuccess && !notes.data.notes.length && (
+                  <p className="ballot-note">
+                    No notes yet. Make the case for this idea.
+                  </p>
+                )}
+                {notes.isSuccess && notes.data.notes.length > 0 && (
+                  <ul className="note-list">
+                    {notes.data.notes.map((note) => (
+                      <li key={note.id}>
+                        <div className="note-head">
+                          <span>{shortAddress(note.authorAddress)}</span>
+                          <span>{formatExactDate(note.createdAt)}</span>
+                          {(activeSession?.isAdmin ||
+                            activeSession?.address.toLowerCase() ===
+                              note.authorAddress.toLowerCase()) && (
+                            <button
+                              aria-label="Delete note"
+                              className="note-delete"
+                              disabled={busy !== ""}
+                              onClick={() => removeNote(note.id)}
+                            >
+                              <Icon name="trash" />
+                            </button>
+                          )}
+                        </div>
+                        <p>{note.body}</p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <form onSubmit={submitNote}>
+                  <textarea
+                    maxLength={MAX_NOTE_LENGTH}
+                    name="note"
+                    placeholder="Add a note…"
+                    required
+                    rows={3}
+                  />
+                  <button
+                    className="secondary-button"
+                    disabled={busy !== ""}
+                    type="submit"
+                  >
+                    {busy === "note"
+                      ? "Verifying wallet…"
+                      : activeSession
+                        ? "Add note"
+                        : "Sign message & add note"}
+                  </button>
                 </form>
+              </div>
+              {activeSession?.isAdmin && (
+                <div className="admin-panel">
+                  <h4>Admin</h4>
+                  <button
+                    className="secondary-button danger"
+                    disabled={busy !== ""}
+                    onClick={removeProposal}
+                  >
+                    <Icon name="trash" />
+                    {busy === "idea-delete"
+                      ? "Deleting…"
+                      : deleteArmed
+                        ? "Confirm delete"
+                        : "Delete idea"}
+                  </button>
+                </div>
               )}
               {actionError && (
                 <p className="action-error" role="alert">
                   {actionError}
                 </p>
               )}
-              <div className="modal-footer-row">
-                <span>{selected.voteCount.toLocaleString()} ballots</span>
-                <strong>One wallet = one vote</strong>
-              </div>
             </div>
           </div>,
           document.body,
@@ -744,26 +709,26 @@ function FeatureBoard() {
               aria-labelledby="new-proposal-title"
             >
               <button
-                aria-label="Close new proposal dialog"
+                aria-label="Close new idea dialog"
                 className="modal-close"
                 onClick={() => setProposalOpen(false)}
               >
                 <Icon name="close" />
               </button>
-              <div className="modal-kicker">Feature proposal</div>
-              <h2 id="new-proposal-title">Bring an idea forward</h2>
+              <div className="modal-kicker">Feature idea</div>
+              <h2 id="new-proposal-title">Post an idea</h2>
               <p>
-                Describe the user problem and desired outcome. Vultisig will
-                review it before scheduling a vote.
+                Keep it short. Your idea goes live on the board immediately —
+                holders vote it up or down from there.
               </p>
               <form onSubmit={createProposal}>
                 <label>
-                  Proposal title
+                  Idea
                   <input
                     maxLength={MAX_TITLE_LENGTH}
                     name="title"
                     required
-                    minLength={8}
+                    minLength={MIN_TITLE_LENGTH}
                     placeholder="What should Vultisig build?"
                   />
                   <small className="field-hint">
@@ -771,23 +736,17 @@ function FeatureBoard() {
                   </small>
                 </label>
                 <label>
-                  Full proposal
+                  Details <span className="optional">(optional)</span>
                   <textarea
                     maxLength={MAX_BODY_LENGTH}
                     name="body"
-                    required
-                    minLength={24}
-                    rows={8}
-                    placeholder="Describe the problem, proposed change, tradeoffs, and success criteria."
+                    rows={4}
+                    placeholder="Anything that helps holders judge the idea."
                   />
                   <small className="field-hint">
-                    Up to {MAX_BODY_LENGTH.toLocaleString()} characters
+                    Up to {MAX_BODY_LENGTH} characters
                   </small>
                 </label>
-                <div className="form-note">
-                  <Icon name="check" />
-                  Submitted for Vultisig review before voting
-                </div>
                 {actionError && (
                   <p className="action-error" role="alert">
                     {actionError}
@@ -796,13 +755,13 @@ function FeatureBoard() {
                 <button
                   className="primary-button full"
                   type="submit"
-                  disabled={submitting}
+                  disabled={busy === "post"}
                 >
-                  {submitting
+                  {busy === "post"
                     ? "Verifying wallet…"
                     : activeSession
-                      ? "Submit for review"
-                      : "Sign message & submit for review"}
+                      ? "Post idea"
+                      : "Sign message & post idea"}
                 </button>
               </form>
             </div>

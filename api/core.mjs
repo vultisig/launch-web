@@ -1,4 +1,4 @@
-import { neon } from "@neondatabase/serverless";
+import { neon, neonConfig } from "@neondatabase/serverless";
 import { createHash, randomBytes } from "node:crypto";
 import {
   createPublicClient,
@@ -11,6 +11,10 @@ import { createSiweMessage, generateSiweNonce, parseSiweMessage } from "viem/siw
 
 import {
   FEATURE_BOARD_CHAIN_ID,
+  MAX_BODY_LENGTH,
+  MAX_NOTE_LENGTH,
+  MAX_TITLE_LENGTH,
+  MIN_TITLE_LENGTH,
   MINIMUM_VULT_BALANCE,
   VULT_CONTRACT_ADDRESS,
 } from "../shared/featureBoard.js";
@@ -18,6 +22,12 @@ import {
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
 const NONCE_TTL_SECONDS = 10 * 60;
 const MAX_BODY_BYTES = 24_000;
+
+// Local development only: route the Neon HTTP driver to a local SQL-over-HTTP
+// proxy (e.g. ghcr.io/timowilhelm/local-neon-http-proxy). Unset in production.
+if (process.env.NEON_LOCAL_FETCH_ENDPOINT) {
+  neonConfig.fetchEndpoint = process.env.NEON_LOCAL_FETCH_ENDPOINT;
+}
 
 let sqlClient;
 const db = () => {
@@ -34,12 +44,22 @@ const ethereum = () => createPublicClient({
   }),
 });
 
+// Open CORS is safe here: auth is a Bearer header, never a cookie, so
+// cross-origin requests carry no ambient credentials.
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Max-Age": "86400",
+};
+
 const json = (status, body) => ({
   status,
   headers: {
     "Cache-Control": "no-store",
     "Content-Type": "application/json; charset=utf-8",
     "X-Content-Type-Options": "nosniff",
+    ...corsHeaders,
   },
   body,
 });
@@ -51,10 +71,10 @@ const normalizeAddress = (value) => {
   return /** @type {import("viem").Address} */ (address);
 };
 
-const normalizeProposalId = (value) => {
+const normalizeUuid = (value) => {
   const id = String(value || "");
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
-    throw new ApiError(400, "Invalid proposal ID");
+    throw new ApiError(400, "Invalid ID");
   }
   return id;
 };
@@ -67,6 +87,12 @@ class ApiError extends Error {
 }
 
 const hashToken = (token) => createHash("sha256").update(token).digest("hex");
+
+// Postgres foreign-key violation on proposal_id means the proposal is gone.
+const mapMissingProposal = (query) => query.catch((error) => {
+  if (error?.code === "23503") throw new ApiError(404, "Proposal not found");
+  throw error;
+});
 const adminWallets = () => new Set(
   String(process.env.ADMIN_WALLETS || "")
     .split(",")
@@ -155,30 +181,17 @@ const board = async (headers) => {
   const rows = await db()`
     SELECT
       p.id, p.title, p.body, p.author_address AS "authorAddress",
-      p.moderation_state AS "moderationState",
-      p.voting_starts_at AS "startsAt", p.voting_ends_at AS "endsAt",
       p.created_at AS "createdAt",
-      CASE
-        WHEN p.moderation_state = 'pending' THEN 'pending'
-        WHEN p.moderation_state = 'rejected' THEN 'rejected'
-        WHEN p.voting_starts_at > now() THEN 'upcoming'
-        WHEN p.voting_ends_at > now() THEN 'active'
-        ELSE 'closed'
-      END AS state,
-      COUNT(v.*)::int AS "voteCount",
-      COUNT(v.*) FILTER (WHERE v.choice = 'for')::int AS "forVotes",
-      COUNT(v.*) FILTER (WHERE v.choice = 'against')::int AS "againstVotes",
-      COUNT(v.*) FILTER (WHERE v.choice = 'abstain')::int AS "abstainVotes",
-      MAX(v.choice) FILTER (WHERE v.voter_address = ${address}) AS "myVote"
+      COUNT(v.*) FILTER (WHERE v.choice = 'up')::int AS "upVotes",
+      COUNT(v.*) FILTER (WHERE v.choice = 'down')::int AS "downVotes",
+      (COUNT(v.*) FILTER (WHERE v.choice = 'up')
+        - COUNT(v.*) FILTER (WHERE v.choice = 'down'))::int AS score,
+      MAX(v.choice) FILTER (WHERE v.voter_address = ${address}) AS "myVote",
+      (SELECT COUNT(*)::int FROM notes n WHERE n.proposal_id = p.id) AS "noteCount"
     FROM proposals p
     LEFT JOIN votes v ON v.proposal_id = p.id
-    WHERE p.moderation_state = 'approved'
-       OR (p.moderation_state = 'pending' AND ${address} <> '' AND p.author_address = ${address})
-       OR (p.moderation_state = 'pending' AND ${session?.isAdmin || false})
     GROUP BY p.id
-    ORDER BY
-      CASE WHEN p.moderation_state = 'pending' THEN 0 ELSE 1 END,
-      p.created_at DESC
+    ORDER BY score DESC, p.created_at DESC
     LIMIT 500
   `;
   return json(200, {
@@ -186,6 +199,18 @@ const board = async (headers) => {
     viewer: session ? { address: session.address, isAdmin: session.isAdmin } : null,
     rules: { minimumVult: MINIMUM_VULT_BALANCE, votingModel: "one-wallet-one-vote" },
   });
+};
+
+const listNotes = async (parsedUrl) => {
+  const proposalId = normalizeUuid(parsedUrl.searchParams.get("proposalId"));
+  const rows = await db()`
+    SELECT id, author_address AS "authorAddress", body, created_at AS "createdAt"
+    FROM notes
+    WHERE proposal_id = ${proposalId}
+    ORDER BY created_at ASC
+    LIMIT 500
+  `;
+  return json(200, { notes: rows });
 };
 
 const issueNonce = async (payload, requestKey, headers) => {
@@ -268,14 +293,18 @@ const createProposal = async (headers, payload) => {
   await requireVult(session.address);
   const title = String(payload.title || "").trim();
   const body = String(payload.body || "").trim();
-  if (title.length < 8 || title.length > 160) throw new ApiError(400, "Title must be 8–160 characters");
-  if (body.length < 24 || body.length > 10_000) throw new ApiError(400, "Proposal must be 24–10,000 characters");
+  if (title.length < MIN_TITLE_LENGTH || title.length > MAX_TITLE_LENGTH) {
+    throw new ApiError(400, `Title must be ${MIN_TITLE_LENGTH}–${MAX_TITLE_LENGTH} characters`);
+  }
+  if (body.length > MAX_BODY_LENGTH) {
+    throw new ApiError(400, `Details are limited to ${MAX_BODY_LENGTH} characters`);
+  }
   const rows = await db()`
     INSERT INTO proposals(title, body, author_address)
     VALUES (${title}, ${body}, ${session.address})
     RETURNING id
   `;
-  return json(201, { id: rows[0].id, moderationState: "pending" });
+  return json(201, { id: rows[0].id });
 };
 
 const castVote = async (headers, payload) => {
@@ -283,53 +312,77 @@ const castVote = async (headers, payload) => {
   await rateLimit(`vote:${session.address}`, 60, 60);
   await requireVult(session.address);
   const choice = String(payload.choice || "");
-  if (!["for", "against", "abstain"].includes(choice)) throw new ApiError(400, "Invalid vote choice");
-  const proposalId = normalizeProposalId(payload.proposalId);
-  const active = await db()`
-    SELECT id FROM proposals
-    WHERE id = ${proposalId} AND moderation_state = 'approved'
-      AND voting_starts_at <= now() AND voting_ends_at > now()
-    LIMIT 1
-  `;
-  if (!active[0]) throw new ApiError(409, "This proposal is not currently open for voting");
-  await db()`
+  if (!["up", "down"].includes(choice)) throw new ApiError(400, "Invalid vote choice");
+  const proposalId = normalizeUuid(payload.proposalId);
+  const rows = await mapMissingProposal(db()`
+    WITH removed AS (
+      DELETE FROM votes
+      WHERE proposal_id = ${proposalId}
+        AND voter_address = ${session.address}
+        AND choice = ${choice}
+      RETURNING choice
+    )
     INSERT INTO votes(proposal_id, voter_address, choice)
-    VALUES (${proposalId}, ${session.address}, ${choice})
+    SELECT ${proposalId}, ${session.address}, ${choice}
+    WHERE NOT EXISTS (SELECT 1 FROM removed)
     ON CONFLICT (proposal_id, voter_address) DO UPDATE SET
       choice = EXCLUDED.choice, updated_at = now()
-  `;
-  return json(200, { recorded: true, choice });
+    RETURNING choice
+  `);
+  return json(200, { myVote: rows[0]?.choice || null });
 };
 
-const moderate = async (headers, payload) => {
+const addNote = async (headers, payload) => {
   const session = await sessionFromHeaders(headers);
-  if (!session.isAdmin) throw new ApiError(403, "Admin access required");
-  const state = String(payload.moderationState || "");
-  if (!["approved", "rejected"].includes(state)) throw new ApiError(400, "Invalid moderation state");
-  const startsAt = state === "approved" ? new Date(payload.startsAt) : null;
-  const endsAt = state === "approved" ? new Date(payload.endsAt) : null;
-  if (state === "approved" &&
-      (!Number.isFinite(startsAt.getTime()) || !Number.isFinite(endsAt.getTime()) || endsAt <= startsAt || endsAt <= new Date())) {
-    throw new ApiError(400, "Choose a valid voting start and end time");
+  await rateLimit(`note:${session.address}`, 30, 3600);
+  await requireVult(session.address);
+  const body = String(payload.body || "").trim();
+  if (body.length < 1 || body.length > MAX_NOTE_LENGTH) {
+    throw new ApiError(400, `Notes must be 1–${MAX_NOTE_LENGTH.toLocaleString("en-US")} characters`);
   }
-  const proposalId = normalizeProposalId(payload.proposalId);
+  const proposalId = normalizeUuid(payload.proposalId);
+  const rows = await mapMissingProposal(db()`
+    INSERT INTO notes(proposal_id, author_address, body)
+    VALUES (${proposalId}, ${session.address}, ${body})
+    RETURNING id, author_address AS "authorAddress", body, created_at AS "createdAt"
+  `);
+  return json(201, { note: rows[0] });
+};
+
+const deleteNote = async (headers, payload) => {
+  const session = await sessionFromHeaders(headers);
+  await rateLimit(`deleteNote:${session.address}`, 30, 3600);
+  const noteId = normalizeUuid(payload.noteId);
   const rows = await db()`
-    UPDATE proposals SET
-      moderation_state = ${state},
-      voting_starts_at = ${startsAt?.toISOString() || null},
-      voting_ends_at = ${endsAt?.toISOString() || null},
-      updated_at = now()
-    WHERE id = ${proposalId}
+    DELETE FROM notes
+    WHERE id = ${noteId}
+      AND (author_address = ${session.address} OR ${session.isAdmin})
     RETURNING id
   `;
+  if (!rows[0]) throw new ApiError(404, "Note not found");
+  return json(200, { deleted: true });
+};
+
+const deleteProposal = async (headers, payload) => {
+  const session = await sessionFromHeaders(headers);
+  if (!session.isAdmin) throw new ApiError(403, "Admin access required");
+  await rateLimit(`deleteProposal:${session.address}`, 30, 3600);
+  const proposalId = normalizeUuid(payload.proposalId);
+  const rows = await db()`
+    DELETE FROM proposals WHERE id = ${proposalId} RETURNING id
+  `;
   if (!rows[0]) throw new ApiError(404, "Proposal not found");
-  return json(200, { updated: true });
+  return json(200, { deleted: true });
 };
 
 export async function handleApi({ method, url, headers = {}, body = "" }) {
+  if (method === "OPTIONS") {
+    return { status: 204, headers: corsHeaders, body: null };
+  }
   try {
     const parsedUrl = new URL(url, "http://localhost");
     if (method === "GET" && parsedUrl.searchParams.get("action") === "board") return await board(headers);
+    if (method === "GET" && parsedUrl.searchParams.get("action") === "notes") return await listNotes(parsedUrl);
     if (method !== "POST") throw new ApiError(405, "Method not allowed");
     if (Buffer.byteLength(body) > MAX_BODY_BYTES) throw new ApiError(413, "Request is too large");
     const payload = JSON.parse(body || "{}");
@@ -340,7 +393,9 @@ export async function handleApi({ method, url, headers = {}, body = "" }) {
     if (payload.action === "verify") return await verifySignIn(payload, requestKey, headers);
     if (payload.action === "createProposal") return await createProposal(headers, payload);
     if (payload.action === "vote") return await castVote(headers, payload);
-    if (payload.action === "moderate") return await moderate(headers, payload);
+    if (payload.action === "addNote") return await addNote(headers, payload);
+    if (payload.action === "deleteNote") return await deleteNote(headers, payload);
+    if (payload.action === "deleteProposal") return await deleteProposal(headers, payload);
     throw new ApiError(404, "Unknown API action");
   } catch (error) {
     if (error instanceof ApiError) return json(error.status, { error: error.message });

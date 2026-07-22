@@ -1,4 +1,4 @@
-import { neon } from "@neondatabase/serverless";
+import { neon, neonConfig } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -9,6 +9,10 @@ try {
   }
 } catch {
   // Environment variables may already be set by the shell.
+}
+
+if (process.env.NEON_LOCAL_FETCH_ENDPOINT) {
+  neonConfig.fetchEndpoint = process.env.NEON_LOCAL_FETCH_ENDPOINT;
 }
 
 if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is not configured");

@@ -1,14 +1,15 @@
 # Vultisig Feature Board
 
-A wallet-gated product-feedback board for VULT holders, integrated into Vultisig Launch. The feature board is the primary `/` page and the existing swap remains available at `/swap`; the unused Pool and Claim navigation is removed. This is intentionally not a governance protocol: proposals and votes inform Vultisig's product roadmap, while the Vultisig team retains moderation and scheduling control.
+A wallet-gated, forum-style feature board for VULT holders, integrated into Vultisig Launch. The feature board is the primary `/` page and the existing swap remains available at `/swap`; the unused Pool and Claim navigation is removed. This is intentionally not a governance protocol: ideas and votes inform Vultisig's product roadmap.
 
 ## Product rules
 
-- A wallet must currently hold at least 100 VULT on Ethereum to submit or vote.
-- Each eligible wallet gets one vote per proposal.
-- Voters can update their choice while voting remains open.
-- New proposals are private to their author and admins until approved.
-- Admins approve or reject submissions and set exact voting start/end dates.
+- A wallet must currently hold at least 100 VULT on Ethereum to post, vote, or add notes.
+- Ideas are short (title up to 120 characters, optional 500-character detail) and go live instantly — there is no review queue.
+- Each eligible wallet gets one up or down vote per idea, toggled directly from the list. Clicking the same direction again removes the vote.
+- Ideas never close; the board sorts by score (upvotes minus downvotes) or by newest.
+- Holders can attach plain-text notes (up to 1,000 characters) to any idea. Note authors can delete their own notes.
+- Admins can delete any idea or note after the fact; they cannot gate what goes live.
 - Wallet login uses a gasless signed message. No token approvals or transactions are requested.
 
 The server independently verifies signatures and VULT balances. Client-side balance displays are never trusted for authorization.
@@ -32,7 +33,9 @@ ADMIN_WALLETS=0xAdminAddress,0xSecondAdmin
 VITE_WALLETCONNECT_PROJECT_ID=your_reown_project_id
 ```
 
-`ADMIN_WALLETS` is a comma-separated list of team-controlled Ethereum addresses. It does not custody funds; it only grants moderation controls in this application.
+`ADMIN_WALLETS` is a comma-separated list of team-controlled Ethereum addresses. It does not custody funds; it only grants post-hoc delete controls in this application.
+
+For fully local development without a Neon account, run any Postgres plus a Neon SQL-over-HTTP proxy (for example `ghcr.io/timowilhelm/local-neon-http-proxy`) and set `NEON_LOCAL_FETCH_ENDPOINT=http://127.0.0.1:4444/sql`. The variable must stay unset in production.
 
 3. Apply the schema and start both the API and web app:
 
@@ -58,9 +61,9 @@ No ENS name, Snapshot space, governance wallet, smart contract, or treasury setu
 
 - Nonces expire after 10 minutes and are consumed once.
 - Sessions are random, hashed in storage, and expire after seven days.
-- Proposal/vote writes re-check the live VULT balance server-side.
-- Database constraints prevent duplicate votes and invalid proposal states.
-- Auth, proposal and vote endpoints are rate-limited.
+- Idea, vote, and note writes re-check the live VULT balance server-side.
+- Database constraints prevent duplicate votes and enforce content length caps.
+- Auth, idea, vote, and note endpoints are rate-limited.
 - User content is rendered as plain text; React escapes it by default.
 - Bearer-token writes are not vulnerable to cross-site request forgery.
 
