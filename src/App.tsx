@@ -17,14 +17,17 @@ import {
 
 import { useCore } from "@/hooks/useCore";
 import { i18nInstance } from "@/i18n/config";
+import { CalendarIcon } from "@/icons/CalendarIcon";
 import { CheckIcon } from "@/icons/CheckIcon";
 import { ChevronDownIcon } from "@/icons/ChevronDownIcon";
 import { ChevronRightIcon } from "@/icons/ChevronRightIcon";
 import { CrossIcon } from "@/icons/CrossIcon";
-import { PlusIcon } from "@/icons/PlusIcon";
+import { LightbulbIcon } from "@/icons/LightbulbIcon";
+import { MessageSmileIcon } from "@/icons/MessageSmileIcon";
+import { NoteIcon } from "@/icons/NoteIcon";
 import { SearchIcon } from "@/icons/SearchIcon";
-import { TimerIcon } from "@/icons/TimerIcon";
 import { TrashIcon } from "@/icons/TrashIcon";
+import { UserIcon } from "@/icons/UserIcon";
 import { DefaultLayout } from "@/layouts/Default";
 import { NotFoundPage } from "@/pages/NotFound";
 import { SwapPage } from "@/pages/Swap";
@@ -42,7 +45,9 @@ import {
   fetchBoard,
   fetchNotes,
   formatExactDate,
+  type IdeaStatus,
   type Session,
+  setIdeaStatus,
   signIn,
   toggleVote,
   type VoteChoice,
@@ -66,8 +71,11 @@ type IconName =
   | "search"
   | "arrow"
   | "check"
-  | "clock"
-  | "plus"
+  | "calendar"
+  | "lightbulb"
+  | "note"
+  | "message"
+  | "user"
   | "close"
   | "chevron-down"
   | "trash";
@@ -76,8 +84,11 @@ function Icon({ name }: { name: IconName }) {
     search: SearchIcon,
     arrow: ChevronRightIcon,
     check: CheckIcon,
-    clock: TimerIcon,
-    plus: PlusIcon,
+    calendar: CalendarIcon,
+    lightbulb: LightbulbIcon,
+    note: NoteIcon,
+    message: MessageSmileIcon,
+    user: UserIcon,
     close: CrossIcon,
     "chevron-down": ChevronDownIcon,
     trash: TrashIcon,
@@ -85,6 +96,14 @@ function Icon({ name }: { name: IconName }) {
   const Component = icons[name];
   return <Component aria-hidden="true" />;
 }
+
+const BOARD_FILTERS = ["New", "Top", "Accepted", "Declined"] as const;
+type BoardFilter = (typeof BOARD_FILTERS)[number];
+
+const statusLabels: Record<Exclude<IdeaStatus, "none">, string> = {
+  accepted: "Accepted",
+  declined: "Declined",
+};
 
 const shortAddress = (address: string) =>
   `${address.slice(0, 6)}...${address.slice(-4)}`;
@@ -113,6 +132,38 @@ const withVote = (
   return { ...proposal, upVotes, downVotes, score: upVotes - downVotes, myVote: vote };
 };
 
+function VoteRail({
+  horizontal,
+  proposal,
+  onVote,
+}: {
+  horizontal?: boolean;
+  proposal: FeatureProposal;
+  onVote: (proposal: FeatureProposal, choice: VoteChoice) => void;
+}) {
+  return (
+    <div className={`vote-rail ${horizontal ? "horizontal" : ""}`}>
+      <button
+        aria-label={`Upvote ${proposal.title}`}
+        aria-pressed={proposal.myVote === "up"}
+        className={`vote-button up ${proposal.myVote === "up" ? "active" : ""}`}
+        onClick={() => onVote(proposal, "up")}
+      >
+        <Icon name="chevron-down" />
+      </button>
+      <strong className="score">{proposal.score}</strong>
+      <button
+        aria-label={`Downvote ${proposal.title}`}
+        aria-pressed={proposal.myVote === "down"}
+        className={`vote-button down ${proposal.myVote === "down" ? "active" : ""}`}
+        onClick={() => onVote(proposal, "down")}
+      >
+        <Icon name="chevron-down" />
+      </button>
+    </div>
+  );
+}
+
 function FeatureBoard() {
   const { setCurrentPage } = useCore();
   useEffect(() => {
@@ -125,10 +176,10 @@ function FeatureBoard() {
   const [session, setSession] = useState<Session | null>(getFeatureBoardSession);
   const [proposalOpen, setProposalOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [sort, setSort] = useState<"Top" | "New">("Top");
+  const [filter, setFilter] = useState<BoardFilter>("New");
   const [query, setQuery] = useState("");
   const [busy, setBusy] = useState<
-    "" | "post" | "note" | "note-delete" | "idea-delete"
+    "" | "post" | "note" | "note-delete" | "idea-delete" | "status"
   >("");
   const [actionError, setActionError] = useState("");
   const [deleteArmed, setDeleteArmed] = useState(false);
@@ -164,15 +215,22 @@ function FeatureBoard() {
 
   const proposals = board.data?.proposals ?? [];
   const filtered = useMemo(() => {
-    const matching = proposals.filter((proposal) =>
-      `${proposal.title} ${proposal.body}`
+    const matching = proposals.filter((proposal) => {
+      const statusMatches =
+        filter === "Accepted"
+          ? proposal.status === "accepted"
+          : filter === "Declined"
+            ? proposal.status === "declined"
+            : true;
+      const queryMatches = `${proposal.title} ${proposal.body}`
         .toLowerCase()
-        .includes(query.trim().toLowerCase()),
-    );
-    return sort === "New"
-      ? [...matching].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-      : matching;
-  }, [proposals, query, sort]);
+        .includes(query.trim().toLowerCase());
+      return statusMatches && queryMatches;
+    });
+    return filter === "Top"
+      ? matching
+      : [...matching].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }, [proposals, query, filter]);
   const voteCount = proposals.reduce(
     (sum, proposal) => sum + proposal.upVotes + proposal.downVotes,
     0,
@@ -320,111 +378,135 @@ function FeatureBoard() {
     }
   };
 
+  const applyStatus = async (status: IdeaStatus) => {
+    if (!selected) return;
+    setBusy("status");
+    setActionError("");
+    try {
+      const authenticated = await authenticate();
+      await setIdeaStatus(authenticated.token, selected.id, status);
+      await board.refetch();
+    } catch (error) {
+      handleActionError(error);
+    } finally {
+      setBusy("");
+    }
+  };
+
   return (
     <div className="governance-app">
       <main id="top">
         <section className="hero">
-          <div className="eyebrow">
-            <span />
-            Vultisig holder feature board
-          </div>
-          <h1>
-            Help shape
-            <br />
-            <em>what’s next.</em>
-          </h1>
-          <p>
-            Post ideas and vote on what Vultisig builds next. Every wallet with
-            at least 100 VULT can post, vote, and discuss — no review queue.
-          </p>
-          <div className="hero-actions">
-            <a href="#proposals" className="primary-button">
-              Explore ideas <Icon name="arrow" />
-            </a>
-            <button className="text-button" onClick={openProposalForm}>
-              Post an idea
-            </button>
-          </div>
-          <div className="trust-row">
-            <span>
-              <Icon name="check" />
-              100 VULT to participate
-            </span>
-            <span>
-              <Icon name="check" />
-              One wallet, one vote
-            </span>
-            <span>
-              <Icon name="check" />
-              No transaction or gas
-            </span>
-          </div>
-          <div className="hero-orbit" aria-hidden="true">
-            <div className="orb">
-              <img src="/logo.svg" alt="" />
+          <div className="hero-copy">
+            <h1>
+              Help shape
+              <br />
+              what’s next.
+            </h1>
+            <p>
+              Post ideas and vote on what Vultisig builds next. Every wallet
+              with at least 100 VULT can post, vote, and discuss.
+            </p>
+            <div className="trust-row">
+              <span>
+                <Icon name="check" />
+                100 VULT to participate
+              </span>
+              <span>
+                <Icon name="check" />
+                One wallet, one vote
+              </span>
+              <span>
+                <Icon name="check" />
+                No transaction or gas
+              </span>
             </div>
-            <div className="ring one" />
-            <div className="ring two" />
-            <span className="node n1" />
-            <span className="node n2" />
-            <span className="node n3" />
+            <div className="hero-actions">
+              <a href="#proposals" className="primary-button">
+                Explore ideas <Icon name="arrow" />
+              </a>
+              <button className="secondary-button" onClick={openProposalForm}>
+                Post an idea <Icon name="lightbulb" />
+              </button>
+            </div>
           </div>
+          <img
+            alt=""
+            className="hero-art"
+            src="/hero-illustration.png"
+          />
         </section>
 
-        <section className="stats" aria-label="Feature board statistics">
-          <div>
-            <strong>
-              {board.isLoading ? "—" : proposals.length.toLocaleString()}
-            </strong>
-            <span>Ideas</span>
+        <section className="board" id="proposals">
+          <div className="board-heading">
+            <h2>Feature ideas</h2>
+            <p>Posted and ranked by verified VULT holders.</p>
           </div>
-          <div>
-            <strong>{board.isLoading ? "—" : voteCount.toLocaleString()}</strong>
-            <span>Votes cast</span>
-          </div>
-          <div>
-            <strong>{board.isLoading ? "—" : noteCount.toLocaleString()}</strong>
-            <span>Notes</span>
-          </div>
-        </section>
 
-        <section className="proposals-section" id="proposals">
-          <div className="section-heading">
+          <div className="stats" aria-label="Feature board statistics">
             <div>
-              <div className="eyebrow">
-                <span />
-                Community input
+              <span className="stat-chip">
+                <Icon name="lightbulb" />
+              </span>
+              <div className="stat-copy">
+                <span>Ideas posted</span>
+                <strong>
+                  {board.isLoading ? "—" : proposals.length.toLocaleString()}
+                </strong>
               </div>
-              <h2>Feature ideas</h2>
-              <p>Posted and ranked by verified VULT holders.</p>
             </div>
-            <button className="secondary-button" onClick={openProposalForm}>
-              <Icon name="plus" />
-              Post idea
-            </button>
+            <div>
+              <span className="stat-chip">
+                <Icon name="message" />
+              </span>
+              <div className="stat-copy">
+                <span>Votes cast</span>
+                <strong>
+                  {board.isLoading ? "—" : voteCount.toLocaleString()}
+                </strong>
+              </div>
+            </div>
+            <div>
+              <span className="stat-chip">
+                <Icon name="note" />
+              </span>
+              <div className="stat-copy">
+                <span>Notes</span>
+                <strong>
+                  {board.isLoading ? "—" : noteCount.toLocaleString()}
+                </strong>
+              </div>
+            </div>
           </div>
+
           <div className="toolbar">
             <div className="tabs">
-              {(["Top", "New"] as const).map((item) => (
+              {BOARD_FILTERS.map((item) => (
                 <button
-                  className={sort === item ? "active" : ""}
-                  onClick={() => setSort(item)}
+                  className={filter === item ? "active" : ""}
+                  onClick={() => setFilter(item)}
                   key={item}
                 >
                   {item}
                 </button>
               ))}
             </div>
-            <label className="search">
-              <Icon name="search" />
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search ideas"
-                aria-label="Search ideas"
-              />
-            </label>
+            <div className="toolbar-actions">
+              <label className="search">
+                <Icon name="search" />
+                <input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Search ideas"
+                  aria-label="Search ideas"
+                />
+              </label>
+              <button className="primary-button" onClick={openProposalForm}>
+                Post an idea <Icon name="lightbulb" />
+              </button>
+            </div>
           </div>
+
           {board.isLoading && (
             <div className="empty">
               <strong>Loading feature ideas…</strong>
@@ -443,30 +525,12 @@ function FeatureBoard() {
             </div>
           )}
           {board.isSuccess && (
-            <div className="proposal-list">
+            <div className="idea-list">
               {filtered.map((proposal) => (
-                <article className="proposal-card" key={proposal.id}>
-                  <div className="vote-rail">
-                    <button
-                      aria-label={`Upvote ${proposal.title}`}
-                      aria-pressed={proposal.myVote === "up"}
-                      className={`vote-button up ${proposal.myVote === "up" ? "active" : ""}`}
-                      onClick={() => vote(proposal, "up")}
-                    >
-                      <Icon name="chevron-down" />
-                    </button>
-                    <strong className="score">{proposal.score}</strong>
-                    <button
-                      aria-label={`Downvote ${proposal.title}`}
-                      aria-pressed={proposal.myVote === "down"}
-                      className={`vote-button down ${proposal.myVote === "down" ? "active" : ""}`}
-                      onClick={() => vote(proposal, "down")}
-                    >
-                      <Icon name="chevron-down" />
-                    </button>
-                  </div>
+                <article className="idea-card" key={proposal.id}>
+                  <VoteRail proposal={proposal} onVote={vote} />
                   <div
-                    className="proposal-main"
+                    className="idea-main"
                     onClick={() => openProposal(proposal)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
@@ -477,18 +541,29 @@ function FeatureBoard() {
                     role="button"
                     tabIndex={0}
                   >
-                    <h3>{proposal.title}</h3>
+                    <div className="idea-title">
+                      <h3>{proposal.title}</h3>
+                      {proposal.status !== "none" && (
+                        <span className={`status-badge ${proposal.status}`}>
+                          {statusLabels[proposal.status]}
+                        </span>
+                      )}
+                    </div>
                     {proposal.body && <p>{proposal.body}</p>}
-                    <div className="proposal-foot">
+                    <div className="idea-meta">
                       <span>
-                        <Icon name="clock" />
+                        <Icon name="calendar" />
                         {formatExactDate(proposal.createdAt)}
                       </span>
                       <span>
+                        <Icon name="note" />
                         {proposal.noteCount.toLocaleString()}{" "}
                         {proposal.noteCount === 1 ? "note" : "notes"}
                       </span>
-                      <span>by {shortAddress(proposal.authorAddress)}</span>
+                      <span>
+                        <Icon name="user" />
+                        by {shortAddress(proposal.authorAddress)}
+                      </span>
                     </div>
                   </div>
                   <button
@@ -505,7 +580,7 @@ function FeatureBoard() {
                   <strong>No ideas found</strong>
                   <p>
                     {proposals.length
-                      ? "Try another search term."
+                      ? "Try another tab or search term."
                       : "Be the first VULT holder to post a feature idea."}
                   </p>
                 </div>
@@ -516,10 +591,6 @@ function FeatureBoard() {
 
         <section className="how" id="how-it-works">
           <div>
-            <div className="eyebrow">
-              <span />
-              Simple by design
-            </div>
             <h2>From idea to signal</h2>
           </div>
           <div className="steps">
@@ -566,7 +637,7 @@ function FeatureBoard() {
             onMouseDown={() => setSelectedId(null)}
           >
             <div
-              className="modal proposal-modal"
+              className="modal"
               onMouseDown={(event) => event.stopPropagation()}
               role="dialog"
               aria-modal="true"
@@ -579,46 +650,38 @@ function FeatureBoard() {
               >
                 <Icon name="close" />
               </button>
-              <h2 id="proposal-title">{selected.title}</h2>
+              <div className="idea-title">
+                <h2 id="proposal-title">{selected.title}</h2>
+                {selected.status !== "none" && (
+                  <span className={`status-badge ${selected.status}`}>
+                    {statusLabels[selected.status]}
+                  </span>
+                )}
+              </div>
               {selected.body && (
                 <p className="proposal-body">{selected.body}</p>
               )}
-              <div className="proposal-foot">
+              <div className="idea-meta">
                 <span>
-                  <Icon name="clock" />
+                  <Icon name="calendar" />
                   {formatExactDate(selected.createdAt)}
                 </span>
-                <span>by {shortAddress(selected.authorAddress)}</span>
+                <span>
+                  <Icon name="user" />
+                  by {shortAddress(selected.authorAddress)}
+                </span>
                 <span>
                   {selected.upVotes} up · {selected.downVotes} down
                 </span>
               </div>
               <div className="ballot">
-                <div className="vote-rail horizontal">
-                  <button
-                    aria-pressed={selected.myVote === "up"}
-                    className={`vote-button up ${selected.myVote === "up" ? "active" : ""}`}
-                    onClick={() => vote(selected, "up")}
-                  >
-                    <Icon name="chevron-down" />
-                    Upvote
-                  </button>
-                  <strong className="score">{selected.score}</strong>
-                  <button
-                    aria-pressed={selected.myVote === "down"}
-                    className={`vote-button down ${selected.myVote === "down" ? "active" : ""}`}
-                    onClick={() => vote(selected, "down")}
-                  >
-                    <Icon name="chevron-down" />
-                    Downvote
-                  </button>
-                </div>
+                <VoteRail horizontal proposal={selected} onVote={vote} />
               </div>
               <div className="note-section">
                 <h4>Notes</h4>
-                {notes.isLoading && <p className="ballot-note">Loading notes…</p>}
+                {notes.isLoading && <p className="muted-note">Loading notes…</p>}
                 {notes.isSuccess && !notes.data.notes.length && (
-                  <p className="ballot-note">
+                  <p className="muted-note">
                     No notes yet. Make the case for this idea.
                   </p>
                 )}
@@ -671,18 +734,47 @@ function FeatureBoard() {
               {activeSession?.isAdmin && (
                 <div className="admin-panel">
                   <h4>Admin</h4>
-                  <button
-                    className="secondary-button danger"
-                    disabled={busy !== ""}
-                    onClick={removeProposal}
-                  >
-                    <Icon name="trash" />
-                    {busy === "idea-delete"
-                      ? "Deleting…"
-                      : deleteArmed
-                        ? "Confirm delete"
-                        : "Delete idea"}
-                  </button>
+                  <div className="admin-actions">
+                    {selected.status !== "accepted" && (
+                      <button
+                        className="secondary-button success"
+                        disabled={busy !== ""}
+                        onClick={() => applyStatus("accepted")}
+                      >
+                        Accept
+                      </button>
+                    )}
+                    {selected.status !== "declined" && (
+                      <button
+                        className="secondary-button danger"
+                        disabled={busy !== ""}
+                        onClick={() => applyStatus("declined")}
+                      >
+                        Decline
+                      </button>
+                    )}
+                    {selected.status !== "none" && (
+                      <button
+                        className="secondary-button"
+                        disabled={busy !== ""}
+                        onClick={() => applyStatus("none")}
+                      >
+                        Clear status
+                      </button>
+                    )}
+                    <button
+                      className="secondary-button danger"
+                      disabled={busy !== ""}
+                      onClick={removeProposal}
+                    >
+                      <Icon name="trash" />
+                      {busy === "idea-delete"
+                        ? "Deleting…"
+                        : deleteArmed
+                          ? "Confirm delete"
+                          : "Delete idea"}
+                    </button>
+                  </div>
                 </div>
               )}
               {actionError && (
@@ -702,7 +794,7 @@ function FeatureBoard() {
             onMouseDown={() => setProposalOpen(false)}
           >
             <div
-              className="modal proposal-modal"
+              className="modal"
               onMouseDown={(event) => event.stopPropagation()}
               role="dialog"
               aria-modal="true"
@@ -715,11 +807,10 @@ function FeatureBoard() {
               >
                 <Icon name="close" />
               </button>
-              <div className="modal-kicker">Feature idea</div>
               <h2 id="new-proposal-title">Post an idea</h2>
-              <p>
-                Keep it short. Your idea goes live on the board immediately —
-                holders vote it up or down from there.
+              <p className="modal-sub">
+                Keep it short. Your idea goes live on the board immediately.
+                Holders vote it up or down from there.
               </p>
               <form onSubmit={createProposal}>
                 <label>
@@ -741,7 +832,7 @@ function FeatureBoard() {
                     maxLength={MAX_BODY_LENGTH}
                     name="body"
                     rows={4}
-                    placeholder="Anything that helps holders judge the idea."
+                    placeholder="Anything that helps holders understand the idea."
                   />
                   <small className="field-hint">
                     Up to {MAX_BODY_LENGTH} characters
@@ -753,7 +844,7 @@ function FeatureBoard() {
                   </p>
                 )}
                 <button
-                  className="primary-button full"
+                  className="primary-button pill"
                   type="submit"
                   disabled={busy === "post"}
                 >
