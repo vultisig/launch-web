@@ -181,7 +181,7 @@ const board = async (headers) => {
   const rows = await db()`
     SELECT
       p.id, p.title, p.body, p.author_address AS "authorAddress",
-      p.created_at AS "createdAt",
+      p.status, p.created_at AS "createdAt",
       COUNT(v.*) FILTER (WHERE v.choice = 'up')::int AS "upVotes",
       COUNT(v.*) FILTER (WHERE v.choice = 'down')::int AS "downVotes",
       (COUNT(v.*) FILTER (WHERE v.choice = 'up')
@@ -363,6 +363,22 @@ const deleteNote = async (headers, payload) => {
   return json(200, { deleted: true });
 };
 
+const setStatus = async (headers, payload) => {
+  const session = await sessionFromHeaders(headers);
+  if (!session.isAdmin) throw new ApiError(403, "Admin access required");
+  await rateLimit(`setStatus:${session.address}`, 60, 3600);
+  const status = String(payload.status || "");
+  if (!["none", "accepted", "declined"].includes(status)) throw new ApiError(400, "Invalid status");
+  const proposalId = normalizeUuid(payload.proposalId);
+  const rows = await db()`
+    UPDATE proposals SET status = ${status}, updated_at = now()
+    WHERE id = ${proposalId}
+    RETURNING status
+  `;
+  if (!rows[0]) throw new ApiError(404, "Proposal not found");
+  return json(200, { status: rows[0].status });
+};
+
 const deleteProposal = async (headers, payload) => {
   const session = await sessionFromHeaders(headers);
   if (!session.isAdmin) throw new ApiError(403, "Admin access required");
@@ -395,6 +411,7 @@ export async function handleApi({ method, url, headers = {}, body = "" }) {
     if (payload.action === "vote") return await castVote(headers, payload);
     if (payload.action === "addNote") return await addNote(headers, payload);
     if (payload.action === "deleteNote") return await deleteNote(headers, payload);
+    if (payload.action === "setStatus") return await setStatus(headers, payload);
     if (payload.action === "deleteProposal") return await deleteProposal(headers, payload);
     throw new ApiError(404, "Unknown API action");
   } catch (error) {
