@@ -1,9 +1,31 @@
 @use "@fontsource/montserrat/latin.css" as montserrat;
+:root {
+  --bg: #02122b;
+  --surface-1: #061b3a;
+  --surface-1-2: #0d2240;
+  --surface-2: #11284a;
+  --input-bg: #051937;
+  --border-light: #11284a;
+  --border-normal: #1b3f73;
+  --border-xlight: rgba(255, 255, 255, 0.03);
+  --text-primary: #f0f4fc;
+  --text-secondary: #c9d6e8;
+  --text-tertiary: #8295ae;
+  --cta: #0b4eff;
+  --accent-3: #2155df;
+  --accent-4: #4879fd;
+  --success-bg: rgba(19, 200, 157, 0.05);
+  --success-border: rgba(19, 200, 157, 0.15);
+  --success: #13c89d;
+  --error-bg: rgba(255, 92, 92, 0.05);
+  --error-border: rgba(255, 92, 92, 0.15);
+  --error: #ff5c5c;
+}
 .governance-app {
   color-scheme: dark;
-  font-family: Montserrat, sans-serif;
-  background: #06152d;
-  color: #f1f5ff;
+  font-family: Brockmann, Montserrat, sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
 }
 .governance-app,
 .governance-app * {

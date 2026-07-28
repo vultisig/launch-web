@@ -1,5 +1,13 @@
+@font-face {
+  font-family: "Brockmann";
+  src: url("/fonts/brockmann-medium-webfont.woff2") format("woff2");
+  font-weight: 400 600;
+  font-style: normal;
+  font-display: swap;
+}
+
 body {
-  font-family: "Montserrat", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Brockmann", "Montserrat", Tahoma, Geneva, Verdana, sans-serif;
   min-width: 400px;
   overflow-x: hidden;
 }
