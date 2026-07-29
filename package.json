@@ -44,7 +44,6 @@
   "devDependencies": {
     "@eslint/js": "^9.38.0",
     "@fontsource/montserrat": "^5.2.8",
-    "@fontsource/righteous": "^5.2.7",
     "@fontsource/roboto-mono": "^5.2.8",
     "@types/lodash": "^4.17.20",
     "@types/node": "^24.9.2",

@@ -1,12 +1,16 @@
 import type { Address, Hex } from "viem";
 
+import { IDEA_STATUSES } from "../../shared/featureBoard.js";
+
 export type VoteChoice = "up" | "down";
+export type IdeaStatus = (typeof IDEA_STATUSES)[number];
 
 export type FeatureProposal = {
   id: string;
   title: string;
   body: string;
   authorAddress: string;
+  status: IdeaStatus;
   createdAt: string;
   upVotes: number;
   downVotes: number;
@@ -123,6 +127,12 @@ export const deleteNote = (token: string, noteId: string) =>
 
 export const deleteProposal = (token: string, proposalId: string) =>
   request<{ deleted: true }>("deleteProposal", { proposalId }, token);
+
+export const setIdeaStatus = (
+  token: string,
+  proposalId: string,
+  status: IdeaStatus,
+) => request<{ status: IdeaStatus }>("setStatus", { proposalId, status }, token);
 
 export const formatExactDate = (date: string) =>
   new Intl.DateTimeFormat(undefined, {

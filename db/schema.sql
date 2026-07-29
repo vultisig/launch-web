@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS proposals (
   title VARCHAR(120) NOT NULL CHECK (char_length(title) BETWEEN 8 AND 120),
   body TEXT NOT NULL DEFAULT '' CHECK (char_length(body) <= 500),
   author_address TEXT NOT NULL CHECK (author_address ~ '^0x[0-9a-f]{40}$'),
+  status TEXT NOT NULL DEFAULT 'none' CHECK (status IN ('none', 'accepted', 'declined')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -53,3 +54,6 @@ CREATE TABLE IF NOT EXISTS notes (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS notes_proposal_idx ON notes(proposal_id, created_at);
+
+-- Idempotent upgrades for databases provisioned before a column existed
+ALTER TABLE proposals ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'none' CHECK (status IN ('none', 'accepted', 'declined'));

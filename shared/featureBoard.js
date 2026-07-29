@@ -7,3 +7,5 @@ export const MIN_TITLE_LENGTH = 8;
 export const MAX_TITLE_LENGTH = 120;
 export const MAX_BODY_LENGTH = 500;
 export const MAX_NOTE_LENGTH = 1000;
+
+export const IDEA_STATUSES = ["none", "accepted", "declined"];
