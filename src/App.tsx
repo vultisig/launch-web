@@ -786,7 +786,9 @@ function FeatureBoard() {
                   </small>
                 </label>
                 <label>
-                  Details <span className="optional">(optional)</span>
+                  <span>
+                    Details <span className="optional">(optional)</span>
+                  </span>
                   <textarea
                     maxLength={MAX_BODY_LENGTH}
                     name="body"
