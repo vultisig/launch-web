@@ -433,7 +433,9 @@ function FeatureBoard() {
           <img
             alt=""
             className="hero-art"
-            src="/hero-illustration.png"
+            height="561"
+            src="/hero-illustration.webp"
+            width="661"
           />
         </section>
 
