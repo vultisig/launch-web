@@ -11,6 +11,7 @@ import { createSiweMessage, generateSiweNonce, parseSiweMessage } from "viem/siw
 
 import {
   FEATURE_BOARD_CHAIN_ID,
+  IDEA_STATUSES,
   MAX_BODY_LENGTH,
   MAX_NOTE_LENGTH,
   MAX_TITLE_LENGTH,
@@ -368,7 +369,7 @@ const setStatus = async (headers, payload) => {
   if (!session.isAdmin) throw new ApiError(403, "Admin access required");
   await rateLimit(`setStatus:${session.address}`, 60, 3600);
   const status = String(payload.status || "");
-  if (!["none", "accepted", "declined"].includes(status)) throw new ApiError(400, "Invalid status");
+  if (!IDEA_STATUSES.some((allowed) => allowed === status)) throw new ApiError(400, "Invalid status");
   const proposalId = normalizeUuid(payload.proposalId);
   const rows = await db()`
     UPDATE proposals SET status = ${status}, updated_at = now()

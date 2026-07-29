@@ -54,3 +54,6 @@ CREATE TABLE IF NOT EXISTS notes (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS notes_proposal_idx ON notes(proposal_id, created_at);
+
+-- Idempotent upgrades for databases provisioned before a column existed
+ALTER TABLE proposals ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'none' CHECK (status IN ('none', 'accepted', 'declined'));

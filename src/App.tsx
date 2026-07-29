@@ -5,7 +5,7 @@ import {
   QueryClientProvider,
   useQuery,
 } from "@tanstack/react-query";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { I18nextProvider } from "react-i18next";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
@@ -67,43 +67,37 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 2, staleTime: 15_000 } },
 });
 
-type IconName =
-  | "search"
-  | "arrow"
-  | "check"
-  | "calendar"
-  | "lightbulb"
-  | "note"
-  | "message"
-  | "user"
-  | "close"
-  | "chevron-down"
-  | "trash";
+const icons = {
+  search: SearchIcon,
+  arrow: ChevronRightIcon,
+  check: CheckIcon,
+  calendar: CalendarIcon,
+  lightbulb: LightbulbIcon,
+  note: NoteIcon,
+  message: MessageSmileIcon,
+  user: UserIcon,
+  close: CrossIcon,
+  "chevron-down": ChevronDownIcon,
+  trash: TrashIcon,
+};
+type IconName = keyof typeof icons;
 function Icon({ name }: { name: IconName }) {
-  const icons = {
-    search: SearchIcon,
-    arrow: ChevronRightIcon,
-    check: CheckIcon,
-    calendar: CalendarIcon,
-    lightbulb: LightbulbIcon,
-    note: NoteIcon,
-    message: MessageSmileIcon,
-    user: UserIcon,
-    close: CrossIcon,
-    "chevron-down": ChevronDownIcon,
-    trash: TrashIcon,
-  };
   const Component = icons[name];
   return <Component aria-hidden="true" />;
 }
 
-const BOARD_FILTERS = ["New", "Top", "Accepted", "Declined"] as const;
-type BoardFilter = (typeof BOARD_FILTERS)[number];
+const BOARD_FILTERS = {
+  New: { status: null, sort: "recent" },
+  Top: { status: null, sort: "score" },
+  Accepted: { status: "accepted", sort: "recent" },
+  Declined: { status: "declined", sort: "recent" },
+} as const satisfies Record<
+  string,
+  { status: IdeaStatus | null; sort: "recent" | "score" }
+>;
+type BoardFilter = keyof typeof BOARD_FILTERS;
 
-const statusLabels: Record<Exclude<IdeaStatus, "none">, string> = {
-  accepted: "Accepted",
-  declined: "Declined",
-};
+type Busy = "" | "post" | "note" | "note-delete" | "idea-delete" | "status";
 
 const shortAddress = (address: string) =>
   `${address.slice(0, 6)}...${address.slice(-4)}`;
@@ -178,9 +172,7 @@ function FeatureBoard() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<BoardFilter>("New");
   const [query, setQuery] = useState("");
-  const [busy, setBusy] = useState<
-    "" | "post" | "note" | "note-delete" | "idea-delete" | "status"
-  >("");
+  const [busy, setBusy] = useState<Busy>("");
   const [actionError, setActionError] = useState("");
   const [deleteArmed, setDeleteArmed] = useState(false);
   const activeSession =
@@ -214,23 +206,20 @@ function FeatureBoard() {
   };
 
   const proposals = board.data?.proposals ?? [];
+  const deferredQuery = useDeferredValue(query);
   const filtered = useMemo(() => {
-    const matching = proposals.filter((proposal) => {
-      const statusMatches =
-        filter === "Accepted"
-          ? proposal.status === "accepted"
-          : filter === "Declined"
-            ? proposal.status === "declined"
-            : true;
-      const queryMatches = `${proposal.title} ${proposal.body}`
-        .toLowerCase()
-        .includes(query.trim().toLowerCase());
-      return statusMatches && queryMatches;
-    });
-    return filter === "Top"
+    const { status, sort } = BOARD_FILTERS[filter];
+    const needle = deferredQuery.trim().toLowerCase();
+    const matching = proposals.filter(
+      (proposal) =>
+        (status === null || proposal.status === status) &&
+        `${proposal.title} ${proposal.body}`.toLowerCase().includes(needle),
+    );
+    // "score" keeps the server's ORDER BY score DESC from the board query
+    return sort === "score"
       ? matching
       : [...matching].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  }, [proposals, query, filter]);
+  }, [proposals, deferredQuery, filter]);
   const voteCount = proposals.reduce(
     (sum, proposal) => sum + proposal.upVotes + proposal.downVotes,
     0,
@@ -267,25 +256,34 @@ function FeatureBoard() {
     setDeleteArmed(false);
   };
 
+  const runAction = async (
+    kind: Exclude<Busy, "">,
+    action: (token: string) => Promise<unknown>,
+  ) => {
+    setBusy(kind);
+    setActionError("");
+    try {
+      const { token } = await authenticate();
+      await action(token);
+    } catch (error) {
+      handleActionError(error);
+    } finally {
+      setBusy("");
+    }
+  };
+
   const createProposal = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = event.currentTarget;
     const data = new FormData(form);
     const title = String(data.get("title") || "").trim();
     const body = String(data.get("body") || "").trim();
-    setBusy("post");
-    setActionError("");
-    try {
-      const authenticated = await authenticate();
-      await createFeatureProposal(authenticated.token, title, body);
+    await runAction("post", async (token) => {
+      await createFeatureProposal(token, title, body);
       form.reset();
       setProposalOpen(false);
       await board.refetch();
-    } catch (error) {
-      handleActionError(error);
-    } finally {
-      setBusy("");
-    }
+    });
   };
 
   const patchBoard = (
@@ -329,33 +327,18 @@ function FeatureBoard() {
     const form = event.currentTarget;
     const body = String(new FormData(form).get("note") || "").trim();
     if (!body) return;
-    setBusy("note");
-    setActionError("");
-    try {
-      const authenticated = await authenticate();
-      await addNote(authenticated.token, selected.id, body);
+    await runAction("note", async (token) => {
+      await addNote(token, selected.id, body);
       form.reset();
       await Promise.all([notes.refetch(), board.refetch()]);
-    } catch (error) {
-      handleActionError(error);
-    } finally {
-      setBusy("");
-    }
+    });
   };
 
-  const removeNote = async (noteId: string) => {
-    setBusy("note-delete");
-    setActionError("");
-    try {
-      const authenticated = await authenticate();
-      await deleteNote(authenticated.token, noteId);
+  const removeNote = (noteId: string) =>
+    runAction("note-delete", async (token) => {
+      await deleteNote(token, noteId);
       await Promise.all([notes.refetch(), board.refetch()]);
-    } catch (error) {
-      handleActionError(error);
-    } finally {
-      setBusy("");
-    }
-  };
+    });
 
   const removeProposal = async () => {
     if (!selected) return;
@@ -363,34 +346,21 @@ function FeatureBoard() {
       setDeleteArmed(true);
       return;
     }
-    setBusy("idea-delete");
-    setActionError("");
-    try {
-      const authenticated = await authenticate();
-      await deleteProposal(authenticated.token, selected.id);
+    await runAction("idea-delete", async (token) => {
+      await deleteProposal(token, selected.id);
       setSelectedId(null);
       await board.refetch();
-    } catch (error) {
-      handleActionError(error);
-    } finally {
-      setBusy("");
-      setDeleteArmed(false);
-    }
+    });
+    setDeleteArmed(false);
   };
 
-  const applyStatus = async (status: IdeaStatus) => {
+  const applyStatus = (status: IdeaStatus) => {
     if (!selected) return;
-    setBusy("status");
-    setActionError("");
-    try {
-      const authenticated = await authenticate();
-      await setIdeaStatus(authenticated.token, selected.id, status);
-      await board.refetch();
-    } catch (error) {
-      handleActionError(error);
-    } finally {
-      setBusy("");
-    }
+    const { id } = selected;
+    return runAction("status", async (token) => {
+      const { status: applied } = await setIdeaStatus(token, id, status);
+      patchBoard(token, id, (item) => ({ ...item, status: applied }));
+    });
   };
 
   return (
@@ -433,6 +403,7 @@ function FeatureBoard() {
           <img
             alt=""
             className="hero-art"
+            fetchPriority="high"
             height="561"
             src="/hero-illustration.webp"
             width="661"
@@ -446,44 +417,28 @@ function FeatureBoard() {
           </div>
 
           <div className="stats" aria-label="Feature board statistics">
-            <div>
-              <span className="stat-chip">
-                <Icon name="lightbulb" />
-              </span>
-              <div className="stat-copy">
-                <span>Ideas posted</span>
-                <strong>
-                  {board.isLoading ? "—" : proposals.length.toLocaleString()}
-                </strong>
+            {(
+              [
+                { icon: "lightbulb", label: "Ideas posted", value: proposals.length },
+                { icon: "message", label: "Votes cast", value: voteCount },
+                { icon: "note", label: "Notes", value: noteCount },
+              ] as const
+            ).map(({ icon, label, value }) => (
+              <div key={label}>
+                <span className="stat-chip">
+                  <Icon name={icon} />
+                </span>
+                <div className="stat-copy">
+                  <span>{label}</span>
+                  <strong>{board.isLoading ? "—" : value.toLocaleString()}</strong>
+                </div>
               </div>
-            </div>
-            <div>
-              <span className="stat-chip">
-                <Icon name="message" />
-              </span>
-              <div className="stat-copy">
-                <span>Votes cast</span>
-                <strong>
-                  {board.isLoading ? "—" : voteCount.toLocaleString()}
-                </strong>
-              </div>
-            </div>
-            <div>
-              <span className="stat-chip">
-                <Icon name="note" />
-              </span>
-              <div className="stat-copy">
-                <span>Notes</span>
-                <strong>
-                  {board.isLoading ? "—" : noteCount.toLocaleString()}
-                </strong>
-              </div>
-            </div>
+            ))}
           </div>
 
           <div className="toolbar">
             <div className="tabs">
-              {BOARD_FILTERS.map((item) => (
+              {(Object.keys(BOARD_FILTERS) as BoardFilter[]).map((item) => (
                 <button
                   className={filter === item ? "active" : ""}
                   onClick={() => setFilter(item)}
@@ -547,7 +502,7 @@ function FeatureBoard() {
                       <h3>{proposal.title}</h3>
                       {proposal.status !== "none" && (
                         <span className={`status-badge ${proposal.status}`}>
-                          {statusLabels[proposal.status]}
+                          {proposal.status}
                         </span>
                       )}
                     </div>
@@ -656,7 +611,7 @@ function FeatureBoard() {
                 <h2 id="proposal-title">{selected.title}</h2>
                 {selected.status !== "none" && (
                   <span className={`status-badge ${selected.status}`}>
-                    {statusLabels[selected.status]}
+                    {selected.status}
                   </span>
                 )}
               </div>

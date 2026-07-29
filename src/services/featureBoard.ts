@@ -1,7 +1,9 @@
 import type { Address, Hex } from "viem";
 
+import { IDEA_STATUSES } from "../../shared/featureBoard.js";
+
 export type VoteChoice = "up" | "down";
-export type IdeaStatus = "none" | "accepted" | "declined";
+export type IdeaStatus = (typeof IDEA_STATUSES)[number];
 
 export type FeatureProposal = {
   id: string;

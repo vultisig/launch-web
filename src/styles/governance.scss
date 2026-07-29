@@ -1,25 +1,30 @@
-@use "@fontsource/montserrat/latin.css" as montserrat;
+/* Values are the Figma design tokens (Vultisig-App § Feature Suggestions).
+   The styled-components theme in src/utils/styled.ts approximates the same
+   palette in HSL — change both when the palette moves. */
 :root {
   --bg: #02122b;
   --surface-1: #061b3a;
-  --surface-1-2: #0d2240;
+  --surface-raised: #0d2240;
   --surface-2: #11284a;
   --input-bg: #051937;
   --border-light: #11284a;
   --border-normal: #1b3f73;
-  --border-xlight: rgba(255, 255, 255, 0.03);
+  --border-hairline: rgba(255, 255, 255, 0.03);
   --text-primary: #f0f4fc;
   --text-secondary: #c9d6e8;
   --text-tertiary: #8295ae;
   --cta: #0b4eff;
-  --accent-3: #2155df;
-  --accent-4: #4879fd;
+  --accent: #2155df;
+  --accent-bright: #4879fd;
   --success-bg: rgba(19, 200, 157, 0.05);
   --success-border: rgba(19, 200, 157, 0.15);
   --success: #13c89d;
   --error-bg: rgba(255, 92, 92, 0.05);
   --error-border: rgba(255, 92, 92, 0.15);
   --error: #ff5c5c;
+  --bevel-raised:
+    inset 0 -1px 0.5px #0f1c3e,
+    inset 0 1px 1px rgba(255, 255, 255, 0.1);
 }
 .governance-app {
   color-scheme: dark;
@@ -57,14 +62,11 @@
   width: 100%;
 }
 
-.primary-button {
+.primary-button,
+.secondary-button {
   align-items: center;
-  background: var(--cta);
   border: 0;
   border-radius: 12px;
-  box-shadow:
-    inset 0 -1px 1.6px rgba(15, 28, 62, 0.48),
-    inset 0 1px 1.9px rgba(255, 255, 255, 0.24);
   color: var(--text-primary);
   cursor: pointer;
   display: inline-flex;
@@ -77,12 +79,24 @@
   padding: 10px 16px;
   transition: 0.15s;
 }
-.primary-button:hover {
-  background: var(--accent-3);
-}
-.primary-button svg {
+.primary-button svg,
+.secondary-button svg {
   width: 16px;
   height: 16px;
+}
+.primary-button:disabled,
+.secondary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.primary-button {
+  background: var(--cta);
+  box-shadow:
+    inset 0 -1px 1.6px rgba(15, 28, 62, 0.48),
+    inset 0 1px 1.9px rgba(255, 255, 255, 0.24);
+}
+.primary-button:hover {
+  background: var(--accent);
 }
 .primary-button.pill {
   border-radius: 99px;
@@ -92,35 +106,11 @@
   min-width: 206px;
 }
 .secondary-button {
-  align-items: center;
   background: var(--surface-2);
-  border: 0;
-  border-radius: 12px;
-  box-shadow:
-    inset 0 -1px 0.5px #0f1c3e,
-    inset 0 1px 1px rgba(255, 255, 255, 0.1);
-  color: var(--text-primary);
-  cursor: pointer;
-  display: inline-flex;
-  font-size: 12px;
-  font-weight: 500;
-  gap: 4px;
-  height: 50px;
-  justify-content: center;
-  letter-spacing: 0.12px;
-  padding: 10px 16px;
-  transition: 0.15s;
+  box-shadow: var(--bevel-raised);
 }
 .secondary-button:hover {
   background: var(--border-normal);
-}
-.secondary-button svg {
-  width: 16px;
-  height: 16px;
-}
-.secondary-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
 }
 .secondary-button.danger {
   color: var(--error);
@@ -233,7 +223,7 @@
   align-items: center;
   background: #2356dd;
   border-radius: 10px;
-  box-shadow: inset 0 2px 9.8px #4879fd;
+  box-shadow: inset 0 2px 9.8px var(--accent-bright);
   display: flex;
   height: 32px;
   justify-content: center;
@@ -289,10 +279,8 @@
   color: var(--text-primary);
 }
 .tabs button.active {
-  background: var(--surface-1-2);
-  box-shadow:
-    inset 0 -1px 0.5px #0f1c3e,
-    inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  background: var(--surface-raised);
+  box-shadow: var(--bevel-raised);
   color: var(--text-primary);
 }
 .toolbar-actions {
@@ -404,8 +392,6 @@
   width: auto;
 }
 .vote-rail.horizontal .vote-button {
-  gap: 8px;
-  font-size: 13px;
   padding: 12px 16px;
   width: auto;
 }
@@ -447,6 +433,7 @@
   letter-spacing: 0.12px;
   line-height: 16px;
   padding: 4px 10px;
+  text-transform: capitalize;
 }
 .status-badge.accepted {
   background: var(--success-bg);
@@ -545,7 +532,7 @@
   grid-template-columns: repeat(3, 1fr);
 }
 .steps b {
-  color: var(--accent-4);
+  color: var(--accent-bright);
   font-size: 14px;
 }
 .steps h3 {
@@ -586,7 +573,7 @@
 
 .modal-backdrop {
   align-items: center;
-  background: rgba(2, 18, 43, 0.8);
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
   display: flex;
   inset: 0;
   justify-content: center;
@@ -650,7 +637,7 @@
   width: 40px;
 }
 .modal-close:hover {
-  background: var(--surface-1-2);
+  background: var(--surface-raised);
 }
 .modal-close svg {
   width: 16px;
@@ -673,7 +660,7 @@
 .modal input,
 .modal textarea {
   background: var(--input-bg);
-  border: 1px solid var(--border-xlight);
+  border: 1px solid var(--border-hairline);
   border-radius: 16px;
   color: var(--text-primary);
   font-size: 14px;
@@ -820,7 +807,7 @@
 .primary-button:focus-visible,
 .secondary-button:focus-visible,
 .tabs button:focus-visible {
-  outline: 2px solid var(--accent-4);
+  outline: 2px solid var(--accent-bright);
   outline-offset: 3px;
 }
 
