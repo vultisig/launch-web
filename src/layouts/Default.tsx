@@ -4,9 +4,7 @@ import { useTranslation } from "react-i18next";
 import MediaQuery from "react-responsive";
 import { Link, Outlet } from "react-router-dom";
 import { createGlobalStyle, useTheme } from "styled-components";
-import { erc20Abi, formatUnits } from "viem";
-import { useAccount, useReadContract } from "wagmi";
-import { mainnet } from "wagmi/chains";
+import { useAccount } from "wagmi";
 
 import { ConnectModal } from "@/components/ConnectModal";
 import { MiddleTruncate } from "@/components/MiddleTruncate";
@@ -16,7 +14,7 @@ import { ArrowDownUpIcon } from "@/icons/ArrowDownUpIcon";
 import { ChartPieIcon } from "@/icons/ChartPieIcon";
 import { Button } from "@/toolkits/Button";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
-import { contractAddress, modalHash } from "@/utils/constants";
+import { modalHash } from "@/utils/constants";
 import { RouteKey, routeTree } from "@/utils/routes";
 
 const { Footer, Header } = Layout;
@@ -31,21 +29,6 @@ export const DefaultLayout = () => {
   const { t } = useTranslation();
   const { currentPage } = useCore();
   const { address = "", isConnected } = useAccount();
-  const {
-    data: rawVultBalance,
-    isError: vultBalanceError,
-    isLoading: vultBalanceLoading,
-  } = useReadContract({
-    address: contractAddress.vultToken,
-    abi: erc20Abi,
-    chainId: mainnet.id,
-    functionName: "balanceOf",
-    args: address ? [address] : undefined,
-    query: { enabled: Boolean(address) },
-  });
-  const vultBalance = rawVultBalance === undefined
-    ? 0
-    : Number(formatUnits(rawVultBalance, 18));
   const colors = useTheme();
 
   const menu: NavItem[] = [
@@ -126,18 +109,6 @@ export const DefaultLayout = () => {
               <MiddleTruncate $style={{ textAlign: "center", width: "110px" }}>
                 {address}
               </MiddleTruncate>
-              <MediaQuery minWidth={768}>
-                <Stack
-                  as="span"
-                  $style={{ fontSize: "12px", fontWeight: "600", whiteSpace: "nowrap" }}
-                >
-                  {vultBalanceLoading
-                    ? "Checking VULT…"
-                    : vultBalanceError
-                      ? "VULT unavailable"
-                    : `${vultBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })} VULT`}
-                </Stack>
-              </MediaQuery>
             </Button>
           ) : (
             <Button href={modalHash.connect}>{t("connectWallet")}</Button>
