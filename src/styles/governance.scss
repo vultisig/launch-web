@@ -573,6 +573,7 @@
 
 .modal-backdrop {
   align-items: center;
+  background: rgba(2, 18, 43, 0.8);
   background: color-mix(in srgb, var(--bg) 80%, transparent);
   display: flex;
   inset: 0;
@@ -802,6 +803,7 @@
 }
 
 .idea-main:focus-visible,
+.search:focus-within,
 .vote-button:focus-visible,
 .open-button:focus-visible,
 .primary-button:focus-visible,

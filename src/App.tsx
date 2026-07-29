@@ -357,6 +357,7 @@ function FeatureBoard() {
   const applyStatus = (status: IdeaStatus) => {
     if (!selected) return;
     const { id } = selected;
+    setDeleteArmed(false);
     return runAction("status", async (token) => {
       const { status: applied } = await setIdeaStatus(token, id, status);
       patchBoard(token, id, (item) => ({ ...item, status: applied }));
@@ -440,6 +441,7 @@ function FeatureBoard() {
             <div className="tabs">
               {(Object.keys(BOARD_FILTERS) as BoardFilter[]).map((item) => (
                 <button
+                  aria-pressed={filter === item}
                   className={filter === item ? "active" : ""}
                   onClick={() => setFilter(item)}
                   key={item}

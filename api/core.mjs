@@ -368,8 +368,10 @@ const setStatus = async (headers, payload) => {
   const session = await sessionFromHeaders(headers);
   if (!session.isAdmin) throw new ApiError(403, "Admin access required");
   await rateLimit(`setStatus:${session.address}`, 60, 3600);
-  const status = String(payload.status || "");
-  if (!IDEA_STATUSES.some((allowed) => allowed === status)) throw new ApiError(400, "Invalid status");
+  const status = payload.status;
+  if (typeof status !== "string" || !IDEA_STATUSES.some((allowed) => allowed === status)) {
+    throw new ApiError(400, "Invalid status");
+  }
   const proposalId = normalizeUuid(payload.proposalId);
   const rows = await db()`
     UPDATE proposals SET status = ${status}, updated_at = now()
