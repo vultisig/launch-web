@@ -19,6 +19,7 @@ import { api } from "@/utils/api";
 import { launchListABI } from "@/utils/constants";
 import { contractAddress, defaultTokens } from "@/utils/constants";
 import { getBrowserProvider, getRPCProvider } from "@/utils/providers";
+import { minOutAfterSlippage, parseAmount } from "@/utils/swapMath";
 import { TickerKey, TxStatus, UniswapTokenProps } from "@/utils/types";
 
 export const useSwapVult = () => {
@@ -86,10 +87,13 @@ export const useSwapVult = () => {
       if (!address || !walletClient) throw new Error("");
 
       const poolConstants = await getPoolConstants(tokenIn, tokenOut);
-      const parsedAmountIn = parseUnits(String(amountIn), tokenIn.decimals);
-      const amountOutMinimum = parseUnits(
-        String(amountOut * (1 - gasSetting.slippage / 100)),
-        tokenOut.decimals
+      const parsedAmountIn = parseAmount(amountIn, tokenIn.decimals);
+      // Slippage floor computed in integer/base-unit space — a float string here
+      // (e.g. 1234.5825) makes parseUnits throw for 6-decimal output tokens.
+      const amountOutMinimum = minOutAfterSlippage(
+        amountOut,
+        tokenOut.decimals,
+        gasSetting.slippage
       );
       const sqrtPriceLimitX96 = 0; // No price limit
       // Always use WETH address for Uniswap
@@ -110,7 +114,7 @@ export const useSwapVult = () => {
             fee: poolConstants.fee,
             recipient: isOutETH ? contractAddress.swapRouter : address,
             deadline: Math.floor(Date.now() / 1000) + 60 * 10, // 10 min deadline
-            amountIn: BigInt(parsedAmountIn),
+            amountIn: parsedAmountIn,
             amountOutMinimum,
             sqrtPriceLimitX96,
           },
@@ -149,7 +153,7 @@ export const useSwapVult = () => {
           gasSetting.maxFee > 0
             ? BigInt(parseUnits(gasSetting.maxFee.toString(), "gwei"))
             : undefined,
-        value: isETH(tokenIn) ? BigInt(parsedAmountIn) : 0n,
+        value: isETH(tokenIn) ? parsedAmountIn : 0n,
       });
 
       return tx;
@@ -405,7 +409,7 @@ export const useSwapVult = () => {
         tokenA.address,
         tokenB.address,
         poolConstants.fee,
-        parseUnits(String(amountIn), tokenA.decimals).toString(),
+        parseAmount(amountIn, tokenA.decimals).toString(),
         0
       );
 
