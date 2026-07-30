@@ -88,8 +88,6 @@ export const useSwapVult = () => {
 
       const poolConstants = await getPoolConstants(tokenIn, tokenOut);
       const parsedAmountIn = parseAmount(amountIn, tokenIn.decimals);
-      // Slippage floor computed in integer/base-unit space — a float string here
-      // (e.g. 1234.5825) makes parseUnits throw for 6-decimal output tokens.
       const amountOutMinimum = minOutAfterSlippage(
         amountOut,
         tokenOut.decimals,
@@ -158,10 +156,8 @@ export const useSwapVult = () => {
 
       return tx;
     } catch (error) {
-      // Surface the failure to the caller instead of silently returning
-      // undefined (which made the Swap button appear to do nothing).
       console.error("Swap failed:", error);
-      throw error;
+      throw error; // caller relies on this to surface failures to the user
     }
   };
 

@@ -174,10 +174,8 @@ export const toValueFormat = (
   return `${currencySymbols[currency]}${toNumberFormat(value, decimal)}`;
 };
 
-// A user declining the wallet prompt is not an error worth alerting on.
-// The swap path sends via viem (walletClient), whose UserRejectedRequestError
-// nests the EIP-1193 4001 code on the cause chain; ethers surfaces
-// "ACTION_REJECTED". Walk the cause chain to catch both shapes.
+// viem nests the EIP-1193 4001 code on the cause chain; ethers uses a top-level
+// "ACTION_REJECTED". Walk the chain so both wallet-cancel shapes are caught.
 export const isUserRejection = (error: unknown): boolean => {
   let current: unknown = error;
   for (let depth = 0; depth < 5 && isObject(current); depth++) {

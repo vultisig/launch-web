@@ -169,9 +169,7 @@ export const SwapVult = () => {
 
       // If the token is ETH, we need to reserve some for gas fees
       if (ticker === "ETH") {
-        // getMaxNetworkFee(1) already returns the fee denominated in ETH
-        // (maxNetworkFeeEth * ethPrice, with ethPrice = 1). Dividing again by
-        // the ETH/USD price under-reserved by ~2700x, leaving nothing for gas.
+        // getMaxNetworkFee(1) already returns the fee in ETH (ethPrice = 1).
         const estimatedGasFeeEth = getMaxNetworkFee(1);
 
         // Add a 10% buffer to ensure we have enough for gas fluctuations
@@ -252,9 +250,7 @@ export const SwapVult = () => {
     if (!loading) {
       const { allocateToken, allocateAmount, buyAmount, buyToken } =
         form.getFieldsValue();
-      // Re-quote from whichever side the user entered, in its own direction.
-      // (Passing the buy amount down the forward path collapsed buyAmount and
-      // destroyed the amountOutMinimum slippage floor.)
+      // Re-quote the entered side in its own direction (never output->input).
       if (allocateAmount) {
         handleUpdateQuote(allocateToken, buyToken, allocateAmount, false);
       } else if (buyAmount) {
