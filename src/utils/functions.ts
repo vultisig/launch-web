@@ -175,9 +175,20 @@ export const toValueFormat = (
 };
 
 // A user declining the wallet prompt is not an error worth alerting on.
-// Covers ethers v6 ("ACTION_REJECTED") and EIP-1193 (code 4001).
+// The swap path sends via viem (walletClient), whose UserRejectedRequestError
+// nests the EIP-1193 4001 code on the cause chain; ethers surfaces
+// "ACTION_REJECTED". Walk the cause chain to catch both shapes.
 export const isUserRejection = (error: unknown): boolean => {
-  if (!isObject(error)) return false;
-  const code = error.code;
-  return code === "ACTION_REJECTED" || code === 4001;
+  let current: unknown = error;
+  for (let depth = 0; depth < 5 && isObject(current); depth++) {
+    if (
+      current.code === "ACTION_REJECTED" ||
+      current.code === 4001 ||
+      current.name === "UserRejectedRequestError"
+    ) {
+      return true;
+    }
+    current = current.cause;
+  }
+  return false;
 };
