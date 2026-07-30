@@ -194,13 +194,9 @@ export const useSwapVult = () => {
   };
 
   const getMaxNetworkFee = (ethPrice: number) => {
-    // Convert Gwei to ETH (1 Gwei = 10^-9 ETH)
-    const maxFeeEth = gasSetting.maxFee * 1e-9;
-    const maxPriorityFeeEth = gasSetting.maxPriorityFee * 1e-9;
-
-    // Calculate max network fee in ETH
-    const maxNetworkFeeEth =
-      (maxFeeEth + maxPriorityFeeEth) * gasSetting.gasLimit;
+    // maxFeePerGas is the EIP-1559 total per-gas cap (tip included), so the
+    // ceiling is maxFee * gasLimit — don't add maxPriorityFee again. Gwei→ETH = 1e-9.
+    const maxNetworkFeeEth = gasSetting.maxFee * 1e-9 * gasSetting.gasLimit;
 
     // Convert to USD
     const maxNetworkFeeUsd = maxNetworkFeeEth * ethPrice;
@@ -392,9 +388,9 @@ export const useSwapVult = () => {
         0
       );
 
-      return parseFloat(
-        parseFloat(formatUnits(quotedAmountOut, tokenB.decimals)).toFixed(3)
-      );
+      // Keep full precision — amountOutMinimum derives from this, so rounding
+      // here would loosen the slippage floor on small amounts (form formats separately).
+      return parseFloat(formatUnits(quotedAmountOut, tokenB.decimals));
     } catch (err) {
       if (err instanceof Error) {
         return Promise.reject(err.message);
@@ -432,7 +428,7 @@ export const useSwapVult = () => {
 
       const approvalData = encodeApproval(
         contractAddress.swapRouter as `0x${string}`,
-        parseUnits(String(allocateAmount), tokenDecimals)
+        parseAmount(allocateAmount, tokenDecimals)
       );
 
       await walletClient.switchChain(mainnet);
