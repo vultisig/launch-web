@@ -84,7 +84,7 @@ export const useSwapVult = () => {
     tokenOut: UniswapTokenProps
   ) => {
     try {
-      if (!address || !walletClient) throw new Error("");
+      if (!address || !walletClient) throw new Error("Wallet not connected");
 
       const poolConstants = await getPoolConstants(tokenIn, tokenOut);
       const parsedAmountIn = parseAmount(amountIn, tokenIn.decimals);
@@ -158,7 +158,10 @@ export const useSwapVult = () => {
 
       return tx;
     } catch (error) {
-      console.log(`Swap failed: ${error}`);
+      // Surface the failure to the caller instead of silently returning
+      // undefined (which made the Swap button appear to do nothing).
+      console.error("Swap failed:", error);
+      throw error;
     }
   };
 
@@ -242,26 +245,6 @@ export const useSwapVult = () => {
     ]);
 
     return { token0, token1, fee };
-  };
-
-  const getPoolPrice = async (
-    tokenA: UniswapTokenProps,
-    tokenB: UniswapTokenProps
-  ): Promise<number> => {
-    try {
-      const poolContract = await getPoolConstant(tokenA, tokenB);
-      const [sqrtPriceX96]: bigint[] = await poolContract.slot0();
-
-      if (sqrtPriceX96) {
-        const price = (Number(sqrtPriceX96) / Number(2n ** 96n)) ** 2;
-
-        return parseFloat(price.toFixed(tokenB.decimals));
-      } else {
-        return 0;
-      }
-    } catch {
-      return 0;
-    }
   };
 
   const getPriceImpact = async (
@@ -513,7 +496,6 @@ export const useSwapVult = () => {
     getCurrentPhase,
     getPoolConstants,
     getMaxNetworkFee,
-    getPoolPrice,
     getPriceImpact,
     getTxStatus,
     getTxStatuses,

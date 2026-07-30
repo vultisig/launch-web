@@ -75,6 +75,7 @@ export const en = {
   staking: "Staking",
   success: "Success",
   swap: "Swap",
+  swapFailed: "Swap failed. Please try again.",
   // T
   to: "To",
   toBuy: "To buy",

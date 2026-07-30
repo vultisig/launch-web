@@ -173,3 +173,11 @@ export const toValueFormat = (
 ): string => {
   return `${currencySymbols[currency]}${toNumberFormat(value, decimal)}`;
 };
+
+// A user declining the wallet prompt is not an error worth alerting on.
+// Covers ethers v6 ("ACTION_REJECTED") and EIP-1193 (code 4001).
+export const isUserRejection = (error: unknown): boolean => {
+  if (!isObject(error)) return false;
+  const code = error.code;
+  return code === "ACTION_REJECTED" || code === 4001;
+};

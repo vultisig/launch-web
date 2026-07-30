@@ -17,6 +17,7 @@ import { Spin } from "@/toolkits/Spin";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
 import { modalHash, uniswapTokens } from "@/utils/constants";
 import {
+  isUserRejection,
   toAmountFormat,
   toNumberFormat,
   toValueFormat,
@@ -28,7 +29,6 @@ type StateProps = {
   loading?: boolean;
   maxNetworkFee: number;
   needsApproval?: boolean;
-  poolPrice: number;
   priceImpact: number;
   swapping?: boolean;
   values?: Record<TickerKey, number>;
@@ -38,7 +38,6 @@ export const SwapVult = () => {
   const { t } = useTranslation();
   const [state, setState] = useState<StateProps>({
     maxNetworkFee: 0,
-    poolPrice: 0,
     priceImpact: 0,
   });
   const {
@@ -58,7 +57,6 @@ export const SwapVult = () => {
     checkApproval,
     executeSwap,
     getMaxNetworkFee,
-    getPoolPrice,
     getPriceImpact,
     getTokensValue,
     getUniswapQuote,
@@ -138,6 +136,9 @@ export const SwapVult = () => {
               ]);
             }
           })
+          .catch((error) => {
+            if (!isUserRejection(error)) message.error(t("swapFailed"));
+          })
           .finally(() => {
             setState((prevState) => ({ ...prevState, swapping: false }));
           });
@@ -168,10 +169,10 @@ export const SwapVult = () => {
 
       // If the token is ETH, we need to reserve some for gas fees
       if (ticker === "ETH") {
-        // Get max network fee using the existing function
-        const estimatedGasFeeInCurrency = getMaxNetworkFee(1);
-        const ethValuePerUnit = values?.ETH || 1;
-        const estimatedGasFeeEth = estimatedGasFeeInCurrency / ethValuePerUnit;
+        // getMaxNetworkFee(1) already returns the fee denominated in ETH
+        // (maxNetworkFeeEth * ethPrice, with ethPrice = 1). Dividing again by
+        // the ETH/USD price under-reserved by ~2700x, leaving nothing for gas.
+        const estimatedGasFeeEth = getMaxNetworkFee(1);
 
         // Add a 10% buffer to ensure we have enough for gas fluctuations
         const gasFeeWithBuffer = estimatedGasFeeEth * 1.1;
@@ -219,13 +220,12 @@ export const SwapVult = () => {
       .then((amountOut) => {
         Promise.all([
           getTokensValue(),
-          getPoolPrice(tokenA, tokenB),
           getPriceImpact(tokenA, tokenB, amountIn),
           checkApproval(
             reverse ? amountOut : amountIn,
             reverse ? tokenB : tokenA
           ).then(({ needsApproval }) => needsApproval),
-        ]).then(([values, poolPrice, priceImpact, needsApproval]) => {
+        ]).then(([values, priceImpact, needsApproval]) => {
           form.setFieldValue(
             reverse ? "allocateAmount" : "buyAmount",
             amountOut
@@ -236,7 +236,6 @@ export const SwapVult = () => {
             loading: false,
             maxNetworkFee: getMaxNetworkFee(values.ETH),
             needsApproval,
-            poolPrice,
             priceImpact,
             values,
           }));
@@ -251,8 +250,16 @@ export const SwapVult = () => {
 
   const handleRefresh = () => {
     if (!loading) {
-      const { allocateToken, buyAmount, buyToken } = form.getFieldsValue();
-      handleUpdateQuote(buyToken, allocateToken, buyAmount, false);
+      const { allocateToken, allocateAmount, buyAmount, buyToken } =
+        form.getFieldsValue();
+      // Re-quote from whichever side the user entered, in its own direction.
+      // (Passing the buy amount down the forward path collapsed buyAmount and
+      // destroyed the amountOutMinimum slippage floor.)
+      if (allocateAmount) {
+        handleUpdateQuote(allocateToken, buyToken, allocateAmount, false);
+      } else if (buyAmount) {
+        handleUpdateQuote(buyToken, allocateToken, buyAmount, true);
+      }
     }
   };
 
