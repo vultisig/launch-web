@@ -8,6 +8,9 @@ import { Connector, useAccount, useConnect } from "wagmi";
 import { HStack, Stack } from "@/toolkits/Stack";
 import { modalHash } from "@/utils/constants";
 
+const vultisigExtensionUrl =
+  "https://chromewebstore.google.com/detail/vultisig-extension/ggafhcdaplkhmmnlbfjpnnkepdfjaelb";
+
 export const ConnectModal = () => {
   const { t } = useTranslation();
   const { isConnected } = useAccount();
@@ -22,6 +25,7 @@ export const ConnectModal = () => {
       icon: "connectors/walletConnect.jpg",
       isShow: true,
     },
+    { name: "Vultisig", icon: "logo.svg", isShow: true },
     { name: "MetaMask", icon: "connectors/metamask.png", isShow: true },
     { name: "Safe", icon: "", isShow: false },
   ];
@@ -36,6 +40,11 @@ export const ConnectModal = () => {
   };
 
   const handleConnect = (connector: Connector) => {
+    if (connector.id === "vultisig" && !window.vultisig?.ethereum) {
+      window.location.assign(vultisigExtensionUrl);
+      return;
+    }
+
     connect({ connector });
     navigate(-1);
   };
