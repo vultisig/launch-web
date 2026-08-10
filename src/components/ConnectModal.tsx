@@ -22,6 +22,7 @@ export const ConnectModal = () => {
       icon: "connectors/walletConnect.jpg",
       isShow: true,
     },
+    { name: "Vultisig", icon: "logo.svg", isShow: true },
     { name: "MetaMask", icon: "connectors/metamask.png", isShow: true },
     { name: "Safe", icon: "", isShow: false },
   ];
